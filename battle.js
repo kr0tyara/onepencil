@@ -2,7 +2,12 @@ var battle;
 
 const   IDLE = 0,
         ATTACK = 1,
-        OWN_ATTACK = 2;
+        OWN_ATTACK = 2,
+        
+        ATTACK_NONE = 0,
+        ATTACK_CIRCLE = 1,
+        ATTACK_TRIANGLE = 2,
+        ATTACK_STAR = 3;
 
 class Battle
 {
@@ -13,23 +18,47 @@ class Battle
 
         this.mode = IDLE;
 
-        window.addEventListener('click', this.Click.bind(this));
+        this.canvas.addEventListener('click', this.Click.bind(this));
+        this.canvas.addEventListener('pointerdown', this.PointerDown.bind(this));
         window.addEventListener('pointermove', this.PointerMove.bind(this));
+        window.addEventListener('pointerup', this.PointerUp.bind(this));
 
         this.bounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
 
         this.hp = 100;
+        this.enemyHP = 500;
 
         this.soul = new Soul(this.bounds.x1, this.bounds.y1);
 
-        this.attacks = [new Attack(30, 200), new AssAttack()];
+        this.attacks = [new Attack(30, 200), new AssAttack(), new CockAttack()];
         this.attack = null;
 
+        this.dollar = new DollarRecognizer();
+        this.drawing = false;
+        this.drawnPoints = [];
+        
+        this.ownAttackPending = false;
+        this.ownAttackTime = 100;
+        this.ownAttackTimer = 0;
+        this.ownAttackType = ATTACK_NONE;
+        this.ownAttackDamage = 0;
+
+        let attackSprites = [
+            './img/miss.png',
+            './img/circle.png',
+            './img/triangle.png',
+            './img/star.png',
+        ];
+        this.ownAttackSprites = [];
+        for(let i in attackSprites)
+        {
+            let img = new Image();
+            img.src = attackSprites[i];
+            this.ownAttackSprites.push(img);
+        }
+
         this.buttons = [
-            {name: 'die', action: this.Attack.bind(this)},
-            {name: 'die', action: this.Attack.bind(this)},
-            {name: 'die', action: this.Attack.bind(this)},
-            {name: 'own', action: this.OwnAttack.bind(this)},
+            {name: 'attack', action: this.OwnAttack.bind(this)},
         ];
 
         let w = (this.bounds.x2 - this.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
@@ -53,12 +82,29 @@ class Battle
 
         this.ctx.strokeStyle = '#000';
         this.ctx.lineWidth = 1;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
         this.ctx.strokeRect(this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1);
         
         this.ctx.font = '36px serif';
         this.ctx.textBaseline = 'top';
         this.ctx.fillStyle = '#000';
+
+        this.ctx.textAlign = 'left';
         this.ctx.fillText(`${this.hp}/100 ${this.attack ? this.attack.attackTimer : ''}`, this.bounds.x1, this.bounds.y2 + 10);
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(`${this.enemyHP}/500`, this.bounds.x2, this.bounds.y2 + 10);
+
+        if(this.ownAttackPending)
+        {
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`${this.ownAttackDamage}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 - 100);
+            
+            let sprite = this.ownAttackSprites[this.ownAttackType];
+            this.ctx.drawImage(sprite, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2 - sprite.width / 2, this.bounds.y1 - 150 - sprite.height);
+        }
 
         this.ctx.lineWidth = 5;
 
@@ -69,14 +115,27 @@ class Battle
         }
         else
         {
-            this.ctx.strokeStyle = '#AAA';
-            this.ctx.fillStyle = '#AAA';
+            this.ctx.strokeStyle = '#aaa';
+            this.ctx.fillStyle = '#aaa';
         }
 
+        this.ctx.textBaseline = 'top';
+        this.ctx.textAlign = 'left';
         for(let i in this.buttons)
         {
             this.ctx.strokeRect(this.buttons[i].x, this.bounds.y2 + 70, this.buttons[i].w, 50);
             this.ctx.fillText(this.buttons[i].name, this.buttons[i].x, this.bounds.y2 + 70);
+        }
+
+        if(this.mode == OWN_ATTACK)
+        {
+            this.ctx.strokeStyle = '#000';
+            this.ctx.beginPath();
+            for(let i in this.drawnPoints)
+            {
+                this.ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
+            }
+            this.ctx.stroke();
         }
 
         this.soul.Render(this.ctx);
@@ -85,9 +144,23 @@ class Battle
         {
             this.projectiles[i].Render(this.ctx);
         }
+
+        if(this.attack != null)
+            this.attack.Render(this.ctx);
     }
     GameLoop()
     {
+        if(this.ownAttackPending)
+        {
+            this.ownAttackTimer--;
+
+            if(this.ownAttackTimer <= 0)
+            {
+                this.ownAttackPending = false;
+                this.Attack();
+            }
+        }
+
         if(this.attack != null)
         {
             this.attack.GameLoop();
@@ -162,11 +235,55 @@ class Battle
         }
     }
 
+    PointerDown(e)
+    {
+        if(!this.ownAttackPending && this.mode == OWN_ATTACK)
+        {
+            this.drawing = true;
+            this.drawnPoints = [];
+        }
+    }
+    PointerUp(e)
+    {
+        if(!this.ownAttackPending && this.mode == OWN_ATTACK && this.drawing && this.drawnPoints.length > 0)
+        {
+            let res = this.dollar.Recognize(this.drawnPoints, false);
+            
+            let damage = 0;
+            let attack = ATTACK_NONE;
+            switch(res.Name)
+            {
+                case 'circle':
+                    damage = 70;
+                    attack = ATTACK_CIRCLE;
+                    break;
+                
+                case 'triangle':
+                    damage = 40;
+                    attack = ATTACK_TRIANGLE;
+                    break;
+
+                case 'star':
+                    damage = 100;
+                    attack = ATTACK_STAR;
+                    break;
+            }
+
+            damage *= res.Score;
+            damage = ~~damage;
+
+            this.DealDamage(attack, damage);
+        }
+
+        this.drawing = false;
+        this.drawnPoints = [];
+    }
+
     PointerMove(e)
     {
         let pos = Utils.MousePos(e, this.canvas);
 
-        if(this.mode == ATTACK)
+        if(this.mode == ATTACK || this.mode == OWN_ATTACK)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -189,6 +306,23 @@ class Battle
 
         this.soul.x = pos.x;
         this.soul.y = pos.y;
+
+        if(!this.ownAttackPending && this.mode == OWN_ATTACK && this.drawing)
+        {
+            if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
+                this.drawnPoints.push(pos);
+        }
+    }
+
+    DealDamage(_attack, _damage)
+    {
+        this.enemyHP -= _damage;
+        
+        this.ownAttackPending = true;
+        this.ownAttackType = _attack;
+        this.ownAttackDamage = _damage;
+
+        this.ownAttackTimer = this.ownAttackTime;
     }
 }
 
@@ -252,7 +386,7 @@ class Soul extends Entity
         {
             this.invinsibleTimer--;
 
-            if(this.invinsibleTimer == 0)
+            if(this.invinsibleTimer <= 0)
                 this.invinsible = false;
         }
     }
@@ -314,6 +448,11 @@ class Utils
         };
     }
 
+    static Distance(_a, _b)
+    {
+        let d = {x: _a.x - _b.x, y: _a.y - _b.y};
+        return Math.sqrt(d.x * d.x + d.y * d.y);
+    }
     static RotatePoint(_point, _center, _angle)
     {
         let cos = Math.cos(_angle);

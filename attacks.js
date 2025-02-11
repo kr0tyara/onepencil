@@ -2,14 +2,21 @@ class Attack
 {
     constructor(_projectileTime, _attackTime)
     {
+        this.tickCount = 0;
         this.projectileTime = _projectileTime;
         this.attackTime = _attackTime;
     }
 
     Start()
     {
+        this.tickCount = 0;
         this.projectileTimer = 0;
         this.attackTimer = this.attackTime;
+    }
+
+    Render(_ctx)
+    {
+
     }
 
     GameLoop()
@@ -24,12 +31,20 @@ class Attack
         this.projectileTimer--;
         if(this.projectileTimer <= 0)
         {
-            this.SpawnProjectile();
+            this.tickCount++;
+            this.SpawnProjectile(this.tickCount);
             this.projectileTimer = this.projectileTime;
         }
+
+        this.OnGameLoop();
     }
 
-    SpawnProjectile()
+    OnGameLoop()
+    {
+
+    }
+
+    SpawnProjectile(_tickCount)
     {
         let projectile = new Projectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150), 25, 25, 10, 7);
         battle.AddProjectile(projectile);
@@ -84,7 +99,7 @@ class AssAttack extends Attack
         super(30, 300);
     }
     
-    SpawnProjectile()
+    SpawnProjectile(_tickCount)
     {
         let angle = Utils.Random(0, Math.PI * 2);
         let center = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2};
@@ -127,5 +142,58 @@ class AssProjectile extends Projectile
 
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed;
+    }
+}
+
+class CockAttack extends Attack
+{
+    constructor()
+    {
+        super(30, 400);
+    }
+    
+    Start()
+    {
+        super.Start();
+        
+        this.speed = 5;
+        this.drawer = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2};
+        this.lastPos = {x: this.drawer.x, y: this.drawer.y};
+        this.SetAngle();
+    }
+
+    SetAngle()
+    {
+        let delta = {x: battle.soul.x - this.drawer.x, y: battle.soul.y - this.drawer.y};
+        this.angle = Math.atan2(delta.y, delta.x);
+    }
+
+    SpawnProjectile(_tickCount)
+    {
+        if(_tickCount % 2 == 0)
+        {
+            this.SetAngle();
+        }
+    }
+
+    Render(_ctx)
+    {
+        _ctx.fillStyle = 'red';
+        _ctx.fillRect(this.drawer.x - 10, this.drawer.y - 50, 20, 50);
+    }
+
+    OnGameLoop()
+    {
+        this.drawer.x += Math.cos(this.angle) * this.speed;
+        this.drawer.y += Math.sin(this.angle) * this.speed;
+
+        if(Utils.Distance(this.drawer, this.lastPos) >= 5)
+        {
+            let projectile = new Projectile(this.drawer.x, this.drawer.y, 10, 10, 10, 0);
+            battle.AddProjectile(projectile);
+
+            this.lastPos.x = this.drawer.x;
+            this.lastPos.y = this.drawer.y;
+        }
     }
 }
