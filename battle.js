@@ -145,6 +145,8 @@ class Battle
 
         this.attacks = [new Attack(30, 200), new AssAttack(), new CockAttack()];
         this.attack = null;
+        this.attackCounter = -1;
+
         this.projectiles = [];
 
         this.render = requestAnimationFrame(this.Render.bind(this));
@@ -263,7 +265,8 @@ class Battle
 
         this.SetMode(ATTACK);
 
-        this.attack = Utils.RandomArray(this.attacks);
+        this.attackCounter++;
+        this.attack = this.attacks[this.attackCounter % this.attacks.length];
         this.attack.Start();
     }
     OwnAttack()

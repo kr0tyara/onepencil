@@ -97,7 +97,7 @@ class AssAttack extends Attack
 {
     constructor()
     {
-        super(20, 300);
+        super(40, 300);
     }
     
     SpawnProjectile(_tickCount)
@@ -113,7 +113,7 @@ class AssProjectile extends Projectile
 {
     constructor(_x, _y)
     {
-        super(_x, _y, 25, 80, 10, 50);
+        super(_x, _y, 25, 80, 10, 40);
 
         this.honingTime = 50;
         this.honingTimer = this.honingTime;
@@ -179,8 +179,15 @@ class CockAttack extends Attack
 
     Render(_ctx, _dt)
     {
-        _ctx.fillStyle = 'red';
-        _ctx.fillRect(this.drawer.x - 10, this.drawer.y - 50, 20, 50);
+        _ctx.save();
+
+        _ctx.translate(this.drawer.x, this.drawer.y);
+        _ctx.rotate(this.angle);
+
+        _ctx.fillStyle = 'green';
+        _ctx.fillRect(-10, -30, 40, 70);
+
+        _ctx.restore();
     }
 
     OnGameLoop()
@@ -188,9 +195,9 @@ class CockAttack extends Attack
         this.drawer.x += Math.cos(this.angle) * this.speed;
         this.drawer.y += Math.sin(this.angle) * this.speed;
 
-        if(Utils.Distance(this.drawer, this.lastPos) >= 5)
+        if(Utils.Distance(this.drawer, this.lastPos) >= 12)
         {
-            let projectile = new Projectile(this.drawer.x, this.drawer.y, 10, 10, 10, 0);
+            let projectile = new Projectile(this.drawer.x, this.drawer.y, 25, 25, 10, 0);
             battle.AddProjectile(projectile);
 
             this.lastPos.x = this.drawer.x;
