@@ -79,7 +79,7 @@ class Projectile extends Entity
 
     Draw(_ctx)
     {
-        _ctx.fillStyle = 'green';
+        _ctx.fillStyle = 'red';
         _ctx.fillRect(-this.pivot.x, -this.pivot.y, this.w, this.h);
 
         /*_ctx.fillStyle = 'blue';

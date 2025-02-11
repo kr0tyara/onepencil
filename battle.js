@@ -38,6 +38,13 @@ class Battle
             this.enemySprites.push(img);
         }
         this.enemyHP = 500;
+        this.checkText = '* PromoDuck appears!';
+        this.flavourText = [
+            '* PromoDuck cleans his feathers.\n* He finds a bald spot.',
+            '* 9/30000 Tooners recommend!',
+            '* PromoDuck is drooling over your Pencil.',
+            '* PromoDuck uses a toothpick.\n* After that, he swallows it.',
+        ];
 
         this.hp = 100;
         this.soul = new Soul(this.bounds.x1, this.bounds.y1);
@@ -55,8 +62,10 @@ class Battle
         this.pendingAnimationTime = 50;
         this.ownAttackPendingTime = 60;
         this.ownAttackPendingTimer = 0;
+
         this.ownAttackType = ATTACK_NONE;
         this.ownAttackDamage = 0;
+        this.ownAttackStrength = 0;
 
         let attackSprites = [
             './img/miss.png',
@@ -73,7 +82,7 @@ class Battle
         }
 
         this.buttons = [
-            {name: 'attack', action: this.OwnAttack.bind(this)},
+            {name: 'ATTACK', action: this.OwnAttack.bind(this)},
         ];
 
         let w = (this.bounds.x2 - this.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
@@ -112,7 +121,7 @@ class Battle
 
         this.ctx.strokeStyle = '#000';
         this.ctx.fillStyle = '#fff';
-        this.ctx.lineWidth = 1;
+        this.ctx.lineWidth = 5;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
 
@@ -122,9 +131,15 @@ class Battle
         this.ctx.stroke();
         this.ctx.closePath();
         
-        this.ctx.font = '36px serif';
+        this.ctx.font = '36px Arial';
         this.ctx.textBaseline = 'top';
         this.ctx.fillStyle = '#000';
+
+        if(this.mode == IDLE)
+        {
+            this.ctx.textAlign = 'left';
+            Utils.MultiLineText(this.ctx, this.checkText, this.bounds.x1 + 25, this.bounds.y1 + 25);
+        }
 
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`${this.hp}/100`, this.bounds.x1, this.bounds.y2 + 10);
@@ -143,7 +158,7 @@ class Battle
             }
             else
             {
-                this.ctx.fillStyle = '#ff0000';
+                this.ctx.fillStyle = this.ownAttackStrength > .7 ? '#FF0000' : this.ownAttackStrength > .4 ? '#FF9F00' : '#808080';
                 this.ctx.textAlign = 'right';
                 this.ctx.textBaseline = 'bottom';
 
@@ -279,6 +294,8 @@ class Battle
         if(this.mode == GAME_OVER)
             return;
         
+        this.checkText = Utils.RandomArray(this.flavourText);
+
         this.mode = IDLE;
         this.attack = null;
         this.projectiles = [];
@@ -340,29 +357,29 @@ class Battle
         let res = this.dollar.Recognize(this.drawnPoints, false);
             
         let damage = 0;
+        let baseDamage = 0;
         let attack = ATTACK_NONE;
         switch(res.Name)
         {
             case 'circle':
-                damage = 70;
+                baseDamage = 70;
                 attack = ATTACK_CIRCLE;
                 break;
             
             case 'triangle':
-                damage = 40;
+                baseDamage = 40;
                 attack = ATTACK_TRIANGLE;
                 break;
 
             case 'star':
-                damage = 100;
+                baseDamage = 100;
                 attack = ATTACK_STAR;
                 break;
         }
 
-        damage *= res.Score;
-        damage = ~~damage;
+        damage = ~~(baseDamage * res.Score);
 
-        this.DealDamage(attack, damage);
+        this.DealDamage(attack, damage, baseDamage);
         
         this.drawing = false;
         this.drawnPoints = [];
@@ -421,7 +438,7 @@ class Battle
         }
     }
 
-    DealDamage(_attack, _damage)
+    DealDamage(_attack, _damage, _baseDamage)
     {
         this.enemyHP -= _damage;
         if(this.enemyHP <= 0)
@@ -436,6 +453,7 @@ class Battle
         this.ownAttackPending = true;
         this.ownAttackType = _attack;
         this.ownAttackDamage = _damage;
+        this.ownAttackStrength = _damage / _baseDamage;
 
         this.ownAttackPendingTimer = this.ownAttackPendingTime;
     }
@@ -577,6 +595,19 @@ class Utils
             x: _center.x + (_point.x - _center.x) * cos - (_point.y - _center.y) * sin, 
             y: _center.y + (_point.x - _center.x) * sin + (_point.y - _center.y) * cos 
         };
+    }
+
+    static MultiLineText(_ctx, _text, _x, _y)
+    {
+        let lines = _text.split('\n');
+
+        let metrics = _ctx.measureText(_text);
+        let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+
+        for(let i = 0; i < lines.length; i++)
+        {
+            _ctx.fillText(lines[i], _x, _y + h * i);
+        }
     }
 }
 
