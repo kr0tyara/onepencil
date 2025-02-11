@@ -14,7 +14,7 @@ class Attack
         this.attackTimer = this.attackTime;
     }
 
-    Render(_ctx)
+    Render(_ctx, _dt)
     {
 
     }
@@ -77,7 +77,7 @@ class Projectile extends Entity
         return false;
     }
 
-    Draw(_ctx)
+    Draw(_ctx, _dt)
     {
         _ctx.fillStyle = 'red';
         _ctx.fillRect(-this.pivot.x, -this.pivot.y, this.w, this.h);
@@ -86,7 +86,7 @@ class Projectile extends Entity
         _ctx.fillRect(-5, -5, 10, 10);*/
     }
 
-    Update()
+    GameLoop()
     {
         this.y += this.speed;
         this.rotation += Math.PI / 60;
@@ -133,7 +133,7 @@ class AssProjectile extends Projectile
         return super.Collision(_point);
     }
 
-    Update()
+    GameLoop()
     {
         if(this.honingTimer > 0)
         {
@@ -177,7 +177,7 @@ class CockAttack extends Attack
         }
     }
 
-    Render(_ctx)
+    Render(_ctx, _dt)
     {
         _ctx.fillStyle = 'red';
         _ctx.fillRect(this.drawer.x - 10, this.drawer.y - 50, 20, 50);

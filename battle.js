@@ -10,6 +10,109 @@ const   IDLE = 0,
         ATTACK_TRIANGLE = 2,
         ATTACK_STAR = 3;
 
+class EnemySprite
+{
+    constructor()
+    {
+        let spr = [
+            './img/duck.png',
+            './img/duck2.png',
+        ];
+
+        this.sprites = [];
+        for(let i in spr)
+        {
+            let img = new Image();
+            img.src = spr[i];
+            this.sprites.push(img);
+        }
+
+        this.attacked = false;
+        this.shakeDistance = 0;
+    }
+
+    SetAnimation(_attacked, _time)
+    {
+        this.attacked = _attacked;
+
+        if(_attacked)
+            this.shakeDistance = 20 * _time;
+        else
+            this.shakeDistance = 0;
+    }
+
+    Render(_ctx, _dt)
+    {
+        let shake = Math.sin(_dt / 20) * this.shakeDistance;
+
+        // утка
+        _ctx.drawImage(this.sprites[this.attacked ? 1 : 0], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - 300 / 2 + shake, 0, 300, 300);
+    }
+}
+
+class BattleUI
+{
+    constructor()
+    {
+    }
+
+    Start()
+    {
+        this.buttons = [
+            {name: 'АТАКА', action: battle.OwnAttack.bind(battle)},
+        ];
+
+        let w = (battle.bounds.x2 - battle.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
+        for(let i in this.buttons)
+        {
+            this.buttons[i].x = battle.bounds.x1 + i * (w + 20);
+            this.buttons[i].w = w;
+        }
+    }
+
+    Click(e)
+    {
+        let pos = Utils.MousePos(e, battle.canvas);
+
+        if(pos.y >= battle.bounds.y2 + 70 && pos.y <= battle.bounds.y2 + 70 + 50)
+        {
+            for(let i in this.buttons)
+            {
+                if(pos.x >= this.buttons[i].x && pos.x <= this.buttons[i].x + this.buttons[i].w)
+                {
+                    this.buttons[i].action();
+                    battle.PointerMove(e);
+                    return;
+                }
+            }
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.lineWidth = 5;
+        if(battle.mode.id == IDLE)
+        {
+            _ctx.strokeStyle = '#000';
+            _ctx.fillStyle = '#000';
+        }
+        else
+        {
+            _ctx.strokeStyle = '#aaa';
+            _ctx.fillStyle = '#aaa';
+        }
+
+        _ctx.font = '36px Arial';
+        _ctx.textBaseline = 'middle';
+        _ctx.textAlign = 'center';
+        for(let i in this.buttons)
+        {
+            _ctx.strokeRect(this.buttons[i].x, battle.bounds.y2 + 70, this.buttons[i].w, 50);
+            _ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, battle.bounds.y2 + 70 + 25);
+        }
+    }
+}
+
 class Battle
 {
     constructor()
@@ -17,7 +120,14 @@ class Battle
         this.canvas = document.querySelector('#battle');
         this.ctx    = this.canvas.getContext('2d');
 
-        this.mode = IDLE;
+        this.modes =
+        [
+            new IdleMode(),
+            new AttackMode(),
+            new OwnAttackMode(),
+            new GameOverMode()
+        ];
+        this.mode = this.modes[IDLE];
 
         this.canvas.addEventListener('click', this.Click.bind(this));
         this.canvas.addEventListener('pointerdown', this.PointerDown.bind(this));
@@ -25,85 +135,25 @@ class Battle
         window.addEventListener('pointerup', this.PointerUp.bind(this));
 
         this.bounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
+        this.ui = new BattleUI();
 
-        let spr = [
-            './img/duck.png',
-            './img/duck2.png',
-        ];
-        this.enemySprites = [];
-        for(let i in spr)
-        {
-            let img = new Image();
-            img.src = spr[i];
-            this.enemySprites.push(img);
-        }
+        this.enemySprite = new EnemySprite();
         this.enemyHP = 500;
-        
-        /*this.checkText = '* PromoDuck appears!';
-        this.flavourText = [
-            '* PromoDuck cleans his feathers.\n* He finds a bald spot.',
-            '* 9/30000 Tooners recommend!',
-            '* PromoDuck is drooling over your Pencil.',
-            '* PromoDuck uses a toothpick.\n* Oh, wait. \n* He swallows it.',
-        ];*/
-        this.checkText = '* А вот и ПромоУтка!';
-        this.flavourText = [
-            '* ПромоУтка чистит пёрышки.\n* Он нашёл залысину.',
-            '* 9 из 30000 Тунеров рекомендуют!',
-            '* ПромоУтка пускает слюни на Карандаш.',
-            '* ПромоУтка использует зубочистку.\n* А, стоп... \n* Он грызёт её...',
-        ];
 
-        this.hp = 100;
         this.soul = new Soul(this.bounds.x1, this.bounds.y1);
+        this.hp = 100;
 
         this.attacks = [new Attack(30, 200), new AssAttack(), new CockAttack()];
         this.attack = null;
-
-        this.dollar = new DollarRecognizer();
-        this.drawing = false;
-        this.drawnPoints = [];
-        
-        this.ownAttackCastTime = 40;
-        this.ownAttackCastTimer = 0;
-        this.ownAttackPending = false;
-        this.pendingAnimationTime = 50;
-        this.ownAttackPendingTime = 60;
-        this.ownAttackPendingTimer = 0;
-
-        this.ownAttackType = ATTACK_NONE;
-        this.ownAttackDamage = 0;
-        this.ownAttackStrength = 0;
-
-        let attackSprites = [
-            './img/miss.png',
-            './img/circle.png',
-            './img/triangle.png',
-            './img/star.png',
-        ];
-        this.ownAttackSprites = [];
-        for(let i in attackSprites)
-        {
-            let img = new Image();
-            img.src = attackSprites[i];
-            this.ownAttackSprites.push(img);
-        }
-
-        this.buttons = [
-            {name: 'АТАКА', action: this.OwnAttack.bind(this)},
-        ];
-
-        let w = (this.bounds.x2 - this.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
-        for(let i in this.buttons)
-        {
-            this.buttons[i].x = this.bounds.x1 + i * (w + 20);
-            this.buttons[i].w = w;
-        }
-
         this.projectiles = [];
 
         this.render = requestAnimationFrame(this.Render.bind(this));
         this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
+    }
+
+    Start()
+    {
+        this.ui.Start();
     }
 
     Render(_dt)
@@ -112,7 +162,7 @@ class Battle
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        if(this.mode == GAME_OVER)
+        if(this.mode.id == GAME_OVER)
         {
             this.ctx.font = '36px Arial';
             this.ctx.fillStyle = '#000';
@@ -124,21 +174,15 @@ class Battle
             return;
         }
 
-        let shake = 0;
-        
-        if(this.ownAttackPending && this.ownAttackPendingTimer < this.pendingAnimationTime)
-        {
-            let dist = 20 * (this.ownAttackPendingTimer / this.pendingAnimationTime);
-            shake = Math.sin(_dt / 20) * dist;
-        }
+        // утка
+        this.enemySprite.Render(this.ctx, _dt);
 
-        this.ctx.drawImage(this.enemySprites[this.ownAttackPending ? 1 : 0], this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2 - 300 / 2 + shake, 0, 300, 300);
-
-        this.ctx.strokeStyle = '#000';
-        this.ctx.fillStyle = '#fff';
+        // поле боя
         this.ctx.lineWidth = 5;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.fillStyle = '#fff';
 
         this.ctx.beginPath();
         this.ctx.rect(this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1);
@@ -146,127 +190,41 @@ class Battle
         this.ctx.stroke();
         this.ctx.closePath();
         
+        // здоровье
         this.ctx.font = '36px Arial';
-        this.ctx.textBaseline = 'top';
         this.ctx.fillStyle = '#000';
 
-        if(this.mode == IDLE)
-        {
-            this.ctx.textAlign = 'left';
-            Utils.MultiLineText(this.ctx, this.checkText, this.bounds.x1 + 25, this.bounds.y1 + 25);
-        }
-
+        this.ctx.textBaseline = 'top';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(`${this.hp}/100`, this.bounds.x1, this.bounds.y2 + 10);
 
         this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
         this.ctx.fillText(`${this.enemyHP}/500`, this.bounds.x2, this.bounds.y1 - 10);
+        
+        // текущий режим
+        this.mode.Render(this.ctx, _dt);
 
-        if(this.ownAttackPending)
-        {
-            if(this.ownAttackPendingTimer >= this.pendingAnimationTime)
-            {
-                let x = ((this.bounds.x2 - this.bounds.x1) / 2) * (1 - (this.ownAttackPendingTimer - this.pendingAnimationTime) / (this.ownAttackPendingTime - this.pendingAnimationTime));
-                let sprite = this.ownAttackSprites[this.ownAttackType];
-                this.ctx.drawImage(sprite, this.bounds.x2 - x + sprite.width / 2, this.bounds.y1 - 150 - sprite.height);
-            }
-            else
-            {
-                this.ctx.fillStyle = this.ownAttackStrength > .7 ? '#FF0000' : this.ownAttackStrength > .4 ? '#FF9F00' : '#808080';
-                this.ctx.textAlign = 'right';
-                this.ctx.textBaseline = 'bottom';
+        // кнопки
+        this.ui.Render(this.ctx, _dt);
 
-                this.ctx.fillText(`-${this.ownAttackDamage}`, this.bounds.x2, this.bounds.y1 - 40);
-            }
-        }
-
-        this.ctx.lineWidth = 5;
-
-        if(this.mode == IDLE)
-        {
-            this.ctx.strokeStyle = '#000';
-            this.ctx.fillStyle = '#000';
-        }
-        else
-        {
-            this.ctx.strokeStyle = '#aaa';
-            this.ctx.fillStyle = '#aaa';
-        }
-
-        this.ctx.textBaseline = 'middle';
-        this.ctx.textAlign = 'center';
-        for(let i in this.buttons)
-        {
-            this.ctx.strokeRect(this.buttons[i].x, this.bounds.y2 + 70, this.buttons[i].w, 50);
-            this.ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, this.bounds.y2 + 70 + 25);
-        }
-
-        if(this.mode == OWN_ATTACK)
-        {
-            if(!this.ownAttackPending)
-            {
-                this.ctx.fillStyle = '#ff0000';
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'top';
-
-                if(this.drawing)
-                    this.ctx.fillText(`${this.ownAttackCastTimer}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
-                else
-                    this.ctx.fillText('РИСУЙ!!!', this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
-            }
-
-            this.ctx.strokeStyle = '#000';
-            this.ctx.beginPath();
-            for(let i in this.drawnPoints)
-            {
-                this.ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
-            }
-            this.ctx.stroke();
-        }
-
-        this.soul.Render(this.ctx);
+        // душа, проджектайлы и атака
+        this.soul.Render(this.ctx, _dt);
 
         for(let i in this.projectiles)
         {
-            this.projectiles[i].Render(this.ctx);
+            this.projectiles[i].Render(this.ctx, _dt);
         }
 
         if(this.attack != null)
-            this.attack.Render(this.ctx);
+            this.attack.Render(this.ctx, _dt);
     }
     GameLoop()
     {
-        if(this.mode == GAME_OVER)
+        if(this.mode.id == GAME_OVER)
             return;
 
-        if(this.ownAttackPending)
-        {
-            this.ownAttackPendingTimer--;
-
-            if(this.ownAttackPendingTimer <= 0)
-            {
-                this.ownAttackPending = false;
-                
-                if(this.enemyHP > 0)
-                    this.Attack();
-                else
-                {
-                    alert('ТЫ ВЫИГРАЛ!');
-                    this.GameOver();
-                }
-            }
-        }
-
-        if(this.drawing)
-        {
-            this.ownAttackCastTimer--;
-
-            if(this.ownAttackCastTimer <= 0)
-            {
-                this.FinishOwnAttack();
-            }
-        }
+        this.mode.GameLoop();
 
         if(this.attack != null)
         {
@@ -274,7 +232,7 @@ class Battle
 
             for(let i in this.projectiles)
             {
-                this.projectiles[i].Update();
+                this.projectiles[i].GameLoop();
             }
 
             for(let i = this.projectiles.length - 1; i >= 0; i--)
@@ -285,48 +243,55 @@ class Battle
                     this.Hurt(projectile.damage);                    
                     this.projectiles.splice(i, 1);
                 }
-                else if(projectile.x + projectile.w < 0 || projectile.y + projectile.h < 0 || projectile.x - projectile.w > this.canvas.width || projectile.y - projectile.h > this.canvas.height)
-                {
+                else if(
+                    projectile.x + projectile.w < 0 ||
+                    projectile.y + projectile.h < 0 ||
+                    projectile.x - projectile.w > this.canvas.width ||
+                    projectile.y - projectile.h > this.canvas.height
+                )
                     this.projectiles.splice(i, 1);
-                }
             }
         }
 
-        this.soul.Update();
+        this.soul.GameLoop();
     }
 
     Attack()
     {
-        if(this.mode == GAME_OVER)
+        if(this.mode.id == GAME_OVER)
             return;
 
-        this.mode = ATTACK;
+        this.SetMode(ATTACK);
+
         this.attack = Utils.RandomArray(this.attacks);
         this.attack.Start();
     }
     OwnAttack()
     {
-        if(this.mode == GAME_OVER)
+        if(this.mode.id == GAME_OVER)
             return;
 
-        this.mode = OWN_ATTACK;
+        this.SetMode(OWN_ATTACK);
     }
     Idle()
     {
-        if(this.mode == GAME_OVER)
+        if(this.mode.id == GAME_OVER)
             return;
         
-        this.checkText = Utils.RandomArray(this.flavourText);
-
-        this.mode = IDLE;
-        this.attack = null;
-        this.projectiles = [];
+        this.SetMode(IDLE);
     }
     GameOver()
     {
-        this.mode = GAME_OVER;
+        this.SetMode(GAME_OVER);
+    }
+
+    SetMode(_id)
+    {
         this.attack = null;
         this.projectiles = [];
+
+        this.mode = this.modes[_id];
+        this.mode.Start();
     }
 
     AddProjectile(_projectile)
@@ -336,82 +301,23 @@ class Battle
 
     Click(e)
     {
-        if(this.mode != IDLE)
-            return;
-
-        let pos = Utils.MousePos(e, this.canvas);
-        if(pos.y >= this.bounds.y2 + 70 && pos.y <= this.bounds.y2 + 70 + 50)
-        {
-            for(let i in this.buttons)
-            {
-                if(pos.x >= this.buttons[i].x && pos.x <= this.buttons[i].x + this.buttons[i].w)
-                {
-                    this.buttons[i].action();
-                    this.PointerMove(e);
-                    return;
-                }
-            }
-        }
+        this.mode.Click(e);
     }
 
     PointerDown(e)
     {
-        if(!this.ownAttackPending && this.mode == OWN_ATTACK)
-        {
-            this.ownAttackCastTimer = this.ownAttackCastTime;
-
-            this.drawing = true;
-            this.drawnPoints = [];
-        }
+        this.mode.PointerDown(e);
     }
     PointerUp(e)
     {
-        if(!this.ownAttackPending && this.mode == OWN_ATTACK && this.drawing)
-        {
-            this.FinishOwnAttack();
-        }
-
-        this.drawing = false;
-        this.drawnPoints = [];
-    }
-    FinishOwnAttack()
-    {
-        let res = this.dollar.Recognize(this.drawnPoints, false);
-            
-        let damage = 0;
-        let baseDamage = 0;
-        let attack = ATTACK_NONE;
-        switch(res.Name)
-        {
-            case 'triangle':
-                baseDamage = 50;
-                attack = ATTACK_TRIANGLE;
-                break;
-
-            case 'circle':
-                baseDamage = 100;
-                attack = ATTACK_CIRCLE;
-                break;
-
-            case 'star':
-                baseDamage = 120;
-                attack = ATTACK_STAR;
-                break;
-        }
-
-        damage = ~~(baseDamage * res.Score);
-
-        this.DealDamage(attack, damage, baseDamage);
-        
-        this.drawing = false;
-        this.drawnPoints = [];
+        this.mode.PointerUp(e);
     }
 
     PointerMove(e)
     {
         let pos = Utils.MousePos(e, this.canvas);
 
-        if(this.mode == ATTACK || this.mode == OWN_ATTACK)
+        if(this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -432,16 +338,12 @@ class Battle
                 pos.y = this.bounds.y2 - this.soul.h;
         }
         else
-            this.canvas.style.cursor = '';
+            this.canvas.style.cursor = 'none';
 
         this.soul.x = pos.x;
         this.soul.y = pos.y;
 
-        if(!this.ownAttackPending && this.mode == OWN_ATTACK && this.drawing)
-        {
-            if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
-                this.drawnPoints.push(pos);
-        }
+        this.mode.PointerMove(e);
     }
 
     Hurt(_damage)
@@ -460,18 +362,11 @@ class Battle
         }
     }
 
-    DealDamage(_attack, _damage, _baseDamage)
+    DealDamage(_damage)
     {
         this.enemyHP -= _damage;
         if(this.enemyHP < 0)
             this.enemyHP = 0;
-        
-        this.ownAttackPending = true;
-        this.ownAttackType = _attack;
-        this.ownAttackDamage = _damage;
-        this.ownAttackStrength = _damage / _baseDamage;
-
-        this.ownAttackPendingTimer = this.ownAttackPendingTime;
     }
 }
 
@@ -488,18 +383,18 @@ class Entity
         this.rotation = 0;
     }
 
-    Render(_ctx)
+    Render(_ctx, _dt)
     {
         _ctx.save();
         _ctx.translate(this.x + this.pivot.x, this.y + this.pivot.y);
         _ctx.rotate(this.rotation);
 
-        this.Draw(_ctx);
+        this.Draw(_ctx, _dt);
 
         _ctx.restore();
     }
 
-    Draw(_ctx)
+    Draw(_ctx, _dt)
     {
         _ctx.fillStyle = 'green';
         _ctx.fillRect(-this.pivot.x, -this.pivot.y, this.w, this.h);
@@ -529,7 +424,7 @@ class Soul extends Entity
         this.invinsible = true;
     }
 
-    Update()
+    GameLoop()
     {
         if(this.invinsibleTimer > 0)
         {
@@ -540,7 +435,7 @@ class Soul extends Entity
         }
     }
 
-    Render(_ctx)
+    Render(_ctx, _dt)
     {
         if(this.invinsible && this.invinsibleTimer % 10 < 4)
         {
@@ -630,4 +525,5 @@ class Utils
 window.addEventListener('load', () =>
 {
     battle = new Battle();
+    battle.Start();
 });
