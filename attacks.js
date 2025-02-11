@@ -5,13 +5,24 @@ class Attack
         this.tickCount = 0;
         this.projectileTime = _projectileTime;
         this.attackTime = _attackTime;
+
+        this.startTime = 20;
+        this.endTime = 20;
     }
 
     Start()
     {
         this.tickCount = 0;
+
         this.projectileTimer = 0;
         this.attackTimer = this.attackTime;
+        this.startTimer = this.startTime;
+        this.endTimer = this.endTime;
+    }
+
+    End()
+    {
+        battle.Idle();
     }
 
     Render(_ctx, _dt)
@@ -21,10 +32,29 @@ class Attack
 
     GameLoop()
     {
-        this.attackTimer--;
-        if(this.attackTimer == 0)
+        if(!battle.boundsReady)
+            return;
+
+        if(this.startTimer > 0)
         {
-            battle.Idle();
+            this.startTimer--;
+            if(this.startTimer > 0)
+                return;
+        }
+
+        this.attackTimer--;
+        if(this.attackTimer <= 0)
+        {
+            if(this.attackTimer == 0)
+                this.OnTimeOut();
+
+            if(battle.projectiles.length == 0)
+            {
+                this.endTimer--;
+                if(this.endTimer <= 0)
+                    this.End();
+            }
+
             return;
         }
 
@@ -39,6 +69,10 @@ class Attack
         this.OnGameLoop();
     }
 
+
+    OnTimeOut()
+    {
+    }
     OnGameLoop()
     {
     }
@@ -58,6 +92,8 @@ class Projectile extends Entity
 
         this.honingTime = 0;
         this.honingTimer = 0;
+
+        this.toDestroy = false;
     }
 
     Start()
@@ -107,6 +143,12 @@ class FallAttack extends Attack
     constructor()
     {
         super(30, 200);
+    }
+
+    Start()
+    {
+        super.Start();
+        //battle.SetBounds(100, 1180, 0, 720);
     }
 
     SpawnProjectile(_tickCount)
@@ -191,6 +233,8 @@ class CockAttack extends Attack
     Start()
     {
         super.Start();
+
+        battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
         
         this.speed = 5;
         this.drawer = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2};
@@ -232,11 +276,48 @@ class CockAttack extends Attack
 
         if(Utils.Distance(this.drawer, this.lastPos) >= 12)
         {
-            let projectile = new Projectile(this.drawer.x, this.drawer.y, 25, 25, 10, 0);
+            let projectile = new CockProjectile(this.drawer.x, this.drawer.y);
             battle.AddProjectile(projectile);
 
             this.lastPos.x = this.drawer.x;
             this.lastPos.y = this.drawer.y;
+        }
+    }
+
+    OnTimeOut()
+    {
+        for(let i in battle.projectiles)
+        {
+            battle.projectiles[i].lifeTimer = i;
+        }
+    }
+}
+class CockProjectile extends Projectile
+{
+    constructor(_x, _y)
+    {
+        super(_x, _y, 25, 25, 10, 0);
+
+        this.lifeTime = 150;
+    }
+
+    Start()
+    {
+        super.Start();
+        this.lifeTimer = this.lifeTime;
+    }
+
+    GameLoop()
+    {
+        super.GameLoop();
+
+        if(this.honingTimer > 0)
+            return;
+
+        this.lifeTimer--;
+        if(this.lifeTimer <= 0)
+        {
+            this.toDestroy = true;
         }
     }
 }

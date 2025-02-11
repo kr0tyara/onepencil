@@ -61,12 +61,15 @@ class IdleMode extends BattleMode
 
     Render(_ctx, _dt)
     {
+        if(!battle.boundsReady)
+            return;
+
         _ctx.font = '36px Arial';
         _ctx.fillStyle = '#000';
         _ctx.textBaseline = 'top';
         _ctx.textAlign = 'left';
 
-        Utils.MultiLineText(_ctx, this.checkText, battle.bounds.x1 + 25, battle.bounds.y1 + 25);
+        Utils.MultiLineText(_ctx, this.checkText, battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
     }
 
     Click(e)
@@ -131,20 +134,20 @@ class OwnAttackMode extends BattleMode
             // пуля летит
             if(this.pendingTimer >= this.pendingAnimationTime)
             {
-                let x = ((battle.bounds.x2 - battle.bounds.x1) / 2) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
+                let x = ((battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
                 let sprite = this.attackSprites[this.attackType];
-                _ctx.drawImage(sprite, battle.bounds.x2 - x + sprite.width / 2, battle.bounds.y1 - 150 - sprite.height);
+                _ctx.drawImage(sprite, battle.defaultBounds.x2 - x + sprite.width / 2, battle.defaultBounds.y1 - 150 - sprite.height);
             }
             // пуля прилетела
             else
             {
-                battle.enemySprite.SetAnimation(true, this.pendingTimer / this.pendingAnimationTime);
+                battle.enemySprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
 
                 _ctx.fillStyle = this.attackStrength > .7 ? '#FF0000' : this.attackStrength > .4 ? '#FF9F00' : '#808080';
                 _ctx.textAlign = 'right';
                 _ctx.textBaseline = 'bottom';
 
-                _ctx.fillText(`-${this.attackDamage}`, battle.bounds.x2, battle.bounds.y1 - 40);
+                _ctx.fillText(`-${this.attackDamage}`, battle.defaultBounds.x2, battle.defaultBounds.y1 - 40);
             }
         }
 
@@ -170,7 +173,7 @@ class OwnAttackMode extends BattleMode
             if(this.pendingTimer <= 0)
             {
                 this.pending = false;
-                battle.enemySprite.SetAnimation(false, 0);
+                battle.enemySprite.SetAnimation(STATE_NORMAL, 0);
                 
                 if(battle.enemyHP > 0)
                     battle.Attack();
@@ -211,7 +214,7 @@ class OwnAttackMode extends BattleMode
     }
     PointerMove(e)
     {
-        let pos = Utils.MousePos(e, battle.canvas);
+        let pos = {x: battle.soul.x, y: battle.soul.y};
 
         if(!this.pending && this.drawing)
         {

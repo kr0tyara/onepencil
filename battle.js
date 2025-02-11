@@ -8,7 +8,11 @@ const   IDLE = 0,
         ATTACK_NONE = 0,
         ATTACK_CIRCLE = 1,
         ATTACK_TRIANGLE = 2,
-        ATTACK_STAR = 3;
+        ATTACK_STAR = 3,
+        
+        STATE_NORMAL = 0,
+        STATE_HURT = 1,
+        STATE_ATTACKING = 2;
 
 class EnemySprite
 {
@@ -27,26 +31,28 @@ class EnemySprite
             this.sprites.push(img);
         }
 
-        this.attacked = false;
-        this.shakeDistance = 0;
+        this.state = STATE_NORMAL;
+        this.animationTime = 0;
     }
 
-    SetAnimation(_attacked, _time)
+    SetAnimation(_state, _time)
     {
-        this.attacked = _attacked;
-
-        if(_attacked)
-            this.shakeDistance = 20 * _time;
-        else
-            this.shakeDistance = 0;
+        this.state = _state;
+        this.animationTime = _time;
     }
 
     Render(_ctx, _dt)
     {
-        let shake = Math.sin(_dt / 20) * this.shakeDistance;
+        let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
+
+        if(this.state == STATE_ATTACKING)
+            _ctx.globalAlpha = .5;
 
         // утка
-        _ctx.drawImage(this.sprites[this.attacked ? 1 : 0], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - 300 / 2 + shake, 0, 300, 300);
+        _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 300 / 2 + shake, 0, 300, 300);
+
+        if(this.state == STATE_ATTACKING)
+            _ctx.globalAlpha = 1;
     }
 }
 
@@ -62,10 +68,10 @@ class BattleUI
             {name: 'АТАКА', action: battle.OwnAttack.bind(battle)},
         ];
 
-        let w = (battle.bounds.x2 - battle.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
+        let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
         for(let i in this.buttons)
         {
-            this.buttons[i].x = battle.bounds.x1 + i * (w + 20);
+            this.buttons[i].x = battle.defaultBounds.x1 + i * (w + 20);
             this.buttons[i].w = w;
         }
     }
@@ -74,7 +80,7 @@ class BattleUI
     {
         let pos = Utils.MousePos(e, battle.canvas);
 
-        if(pos.y >= battle.bounds.y2 + 70 && pos.y <= battle.bounds.y2 + 70 + 50)
+        if(pos.y >= battle.defaultBounds.y2 + 70 && pos.y <= battle.defaultBounds.y2 + 70 + 50)
         {
             for(let i in this.buttons)
             {
@@ -107,8 +113,8 @@ class BattleUI
         _ctx.textAlign = 'center';
         for(let i in this.buttons)
         {
-            _ctx.strokeRect(this.buttons[i].x, battle.bounds.y2 + 70, this.buttons[i].w, 50);
-            _ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, battle.bounds.y2 + 70 + 25);
+            _ctx.strokeRect(this.buttons[i].x, battle.defaultBounds.y2 + 70, this.buttons[i].w, 50);
+            _ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, battle.defaultBounds.y2 + 70 + 25);
         }
     }
 }
@@ -134,13 +140,17 @@ class Battle
         window.addEventListener('pointermove', this.PointerMove.bind(this));
         window.addEventListener('pointerup', this.PointerUp.bind(this));
 
-        this.bounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
+        this.defaultBounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
+        this.bounds = {...this.defaultBounds};
+        this.targetBounds = {...this.bounds};
+        this.boundsReady = true;
+        
         this.ui = new BattleUI();
 
         this.enemySprite = new EnemySprite();
         this.enemyHP = 500;
 
-        this.soul = new Soul(this.bounds.x1, this.bounds.y1);
+        this.soul = new Soul(this.defaultBounds.x1, this.defaultBounds.y1);
         this.hp = 100;
 
         this.attacks = [new FallAttack(), new AssAttack(), new CockAttack()];
@@ -156,6 +166,16 @@ class Battle
     Start()
     {
         this.ui.Start();
+    }
+
+    SetBounds(_bounds)
+    {
+        this.targetBounds = {..._bounds};
+        this.boundsReady = false;
+    }
+    ResetBounds()
+    {
+        this.SetBounds({...this.defaultBounds});
     }
 
     Render(_dt)
@@ -198,11 +218,11 @@ class Battle
 
         this.ctx.textBaseline = 'top';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.hp}/100`, this.bounds.x1, this.bounds.y2 + 10);
+        this.ctx.fillText(`${this.hp}/100`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
 
         this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(`${this.enemyHP}/500`, this.bounds.x2, this.bounds.y1 - 10);
+        this.ctx.fillText(`${this.enemyHP}/500`, this.defaultBounds.x2, this.defaultBounds.y1 - 10);
         
         // текущий режим
         this.mode.Render(this.ctx, _dt);
@@ -226,6 +246,20 @@ class Battle
         if(this.mode.id == GAME_OVER)
             return;
 
+        if(!this.boundsReady)
+        {
+            this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, 0.2);
+            this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, 0.2);
+            this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, 0.2);
+            this.bounds.y2 = Utils.Lerp(this.bounds.y2, this.targetBounds.y2, 0.2);
+
+            if(Utils.BoundsDistance(this.bounds, this.targetBounds) <= 1)
+            {
+                this.bounds = {...this.targetBounds};
+                this.boundsReady = true;
+            }
+        }
+
         this.mode.GameLoop();
 
         if(this.attack != null)
@@ -240,18 +274,27 @@ class Battle
             for(let i = this.projectiles.length - 1; i >= 0; i--)
             {
                 let projectile = this.projectiles[i];
-                if(projectile.Collision(this.soul))
+
+                if(!projectile.toDestroy)
                 {
-                    this.Hurt(projectile.damage);                    
+                    if(projectile.Collision(this.soul))
+                    {
+                        this.Hurt(projectile.damage);
+                        projectile.toDestroy = true;
+                    }
+                    else if(
+                        projectile.x + projectile.w < 0 ||
+                        projectile.y + projectile.h < 0 ||
+                        projectile.x - projectile.w > this.canvas.width ||
+                        projectile.y - projectile.h > this.canvas.height
+                    )
+                        projectile.toDestroy = true;
+                }
+
+                if(projectile.toDestroy)
+                {
                     this.projectiles.splice(i, 1);
                 }
-                else if(
-                    projectile.x + projectile.w < 0 ||
-                    projectile.y + projectile.h < 0 ||
-                    projectile.x - projectile.w > this.canvas.width ||
-                    projectile.y - projectile.h > this.canvas.height
-                )
-                    this.projectiles.splice(i, 1);
             }
         }
 
@@ -264,6 +307,7 @@ class Battle
             return;
 
         this.SetMode(ATTACK);
+        this.ResetBounds();
 
         this.attackCounter++;
         this.attack = this.attacks[this.attackCounter % this.attacks.length];
@@ -275,6 +319,7 @@ class Battle
             return;
 
         this.SetMode(OWN_ATTACK);
+        this.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
     }
     Idle()
     {
@@ -282,6 +327,7 @@ class Battle
             return;
         
         this.SetMode(IDLE);
+        this.ResetBounds();
     }
     GameOver()
     {
@@ -295,6 +341,11 @@ class Battle
 
         this.mode = this.modes[_id];
         this.mode.Start();
+        
+        if(_id == ATTACK)
+            this.enemySprite.SetAnimation(STATE_ATTACKING, 0);
+        else
+            this.enemySprite.SetAnimation(STATE_NORMAL, 0);
     }
 
     AddProjectile(_projectile)
@@ -324,22 +375,22 @@ class Battle
         if(this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
         {
             if(
-                pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
-                pos.y >= this.bounds.y1 && pos.y <= this.bounds.y2
+                pos.x >= this.targetBounds.x1 && pos.x <= this.targetBounds.x2 &&
+                pos.y >= this.targetBounds.y1 && pos.y <= this.targetBounds.y2
             )
                 this.canvas.style.cursor = 'none';
             else
                 this.canvas.style.cursor = '';
 
-            if(pos.x < this.bounds.x1)
-                pos.x = this.bounds.x1;
-            if(pos.x > this.bounds.x2 - this.soul.w)
-                pos.x = this.bounds.x2 - this.soul.w;
+            if(pos.x < this.targetBounds.x1)
+                pos.x = this.targetBounds.x1;
+            if(pos.x > this.targetBounds.x2 - this.soul.w)
+                pos.x = this.targetBounds.x2 - this.soul.w;
 
-            if(pos.y < this.bounds.y1)
-                pos.y = this.bounds.y1;
-            if(pos.y > this.bounds.y2 - this.soul.h)
-                pos.y = this.bounds.y2 - this.soul.h;
+            if(pos.y < this.targetBounds.y1)
+                pos.y = this.targetBounds.y1;
+            if(pos.y > this.targetBounds.y2 - this.soul.h)
+                pos.y = this.targetBounds.y2 - this.soul.h;
         }
         else
             this.canvas.style.cursor = 'none';
@@ -496,10 +547,18 @@ class Utils
         };
     }
 
+    static Lerp(_a, _b, i)
+    {
+        return (1 - i) * _a + i * _b;
+    }
     static Distance(_a, _b)
     {
         let d = {x: _a.x - _b.x, y: _a.y - _b.y};
         return Math.sqrt(d.x * d.x + d.y * d.y);
+    }
+    static BoundsDistance(_a, _b)
+    {
+        return this.Distance({x: _a.x1, y: _a.y1}, {x: _b.x1, y: _b.y1});
     }
     static RotatePoint(_point, _center, _angle)
     {
