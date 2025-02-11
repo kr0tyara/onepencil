@@ -38,12 +38,20 @@ class Battle
             this.enemySprites.push(img);
         }
         this.enemyHP = 500;
-        this.checkText = '* PromoDuck appears!';
+        
+        /*this.checkText = '* PromoDuck appears!';
         this.flavourText = [
             '* PromoDuck cleans his feathers.\n* He finds a bald spot.',
             '* 9/30000 Tooners recommend!',
             '* PromoDuck is drooling over your Pencil.',
-            '* PromoDuck uses a toothpick.\n* After that, he swallows it.',
+            '* PromoDuck uses a toothpick.\n* Oh, wait. \n* He swallows it.',
+        ];*/
+        this.checkText = '* А вот и ПромоУтка!';
+        this.flavourText = [
+            '* ПромоУтка чистит пёрышки.\n* Он нашёл залысину.',
+            '* 9 из 30000 Тунеров рекомендуют!',
+            '* ПромоУтка пускает слюни на Карандаш.',
+            '* ПромоУтка использует зубочистку.\n* А, стоп... \n* Он грызёт её...',
         ];
 
         this.hp = 100;
@@ -82,7 +90,7 @@ class Battle
         }
 
         this.buttons = [
-            {name: 'ATTACK', action: this.OwnAttack.bind(this)},
+            {name: 'АТАКА', action: this.OwnAttack.bind(this)},
         ];
 
         let w = (this.bounds.x2 - this.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
@@ -106,6 +114,13 @@ class Battle
         
         if(this.mode == GAME_OVER)
         {
+            this.ctx.font = '36px Arial';
+            this.ctx.fillStyle = '#000';
+    
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(`Всё!`, this.canvas.width / 2, this.canvas.height / 2);
+
             return;
         }
 
@@ -198,7 +213,7 @@ class Battle
                 if(this.drawing)
                     this.ctx.fillText(`${this.ownAttackCastTimer}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
                 else
-                    this.ctx.fillText('DRAW!!!', this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
+                    this.ctx.fillText('РИСУЙ!!!', this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
             }
 
             this.ctx.strokeStyle = '#000';
@@ -232,7 +247,14 @@ class Battle
             if(this.ownAttackPendingTimer <= 0)
             {
                 this.ownAttackPending = false;
-                this.Attack();
+                
+                if(this.enemyHP > 0)
+                    this.Attack();
+                else
+                {
+                    alert('ТЫ ВЫИГРАЛ!');
+                    this.GameOver();
+                }
             }
         }
 
@@ -361,18 +383,18 @@ class Battle
         let attack = ATTACK_NONE;
         switch(res.Name)
         {
-            case 'circle':
-                baseDamage = 70;
-                attack = ATTACK_CIRCLE;
-                break;
-            
             case 'triangle':
-                baseDamage = 40;
+                baseDamage = 50;
                 attack = ATTACK_TRIANGLE;
                 break;
 
-            case 'star':
+            case 'circle':
                 baseDamage = 100;
+                attack = ATTACK_CIRCLE;
+                break;
+
+            case 'star':
+                baseDamage = 120;
                 attack = ATTACK_STAR;
                 break;
         }
@@ -433,7 +455,7 @@ class Battle
         if(this.hp <= 0)
         {
             this.hp = 0;
-            alert('YOU LOST!');
+            alert('ТЫ ПРОСРАЛ!');
             this.GameOver();
         }
     }
@@ -441,14 +463,8 @@ class Battle
     DealDamage(_attack, _damage, _baseDamage)
     {
         this.enemyHP -= _damage;
-        if(this.enemyHP <= 0)
-        {
+        if(this.enemyHP < 0)
             this.enemyHP = 0;
-            alert('YOU WON!');
-            this.GameOver();
-
-            return;
-        }
         
         this.ownAttackPending = true;
         this.ownAttackType = _attack;

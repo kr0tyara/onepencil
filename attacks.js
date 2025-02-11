@@ -46,7 +46,7 @@ class Attack
 
     SpawnProjectile(_tickCount)
     {
-        let projectile = new Projectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150), 25, 25, 10, 7);
+        let projectile = new Projectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150), 50, 75, 10, 7);
         battle.AddProjectile(projectile);
     }
 }
@@ -89,6 +89,7 @@ class Projectile extends Entity
     Update()
     {
         this.y += this.speed;
+        this.rotation += Math.PI / 60;
     }
 }
 
@@ -96,7 +97,7 @@ class AssAttack extends Attack
 {
     constructor()
     {
-        super(30, 300);
+        super(20, 300);
     }
     
     SpawnProjectile(_tickCount)
@@ -112,7 +113,7 @@ class AssProjectile extends Projectile
 {
     constructor(_x, _y)
     {
-        super(_x, _y, 25, 80, 10, 30);
+        super(_x, _y, 25, 80, 10, 50);
 
         this.honingTime = 50;
         this.honingTimer = this.honingTime;
