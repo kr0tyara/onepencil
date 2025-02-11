@@ -143,7 +143,7 @@ class Battle
         this.soul = new Soul(this.bounds.x1, this.bounds.y1);
         this.hp = 100;
 
-        this.attacks = [new Attack(30, 200), new AssAttack(), new CockAttack()];
+        this.attacks = [new FallAttack(), new AssAttack(), new CockAttack()];
         this.attack = null;
         this.attackCounter = -1;
 
@@ -299,6 +299,7 @@ class Battle
 
     AddProjectile(_projectile)
     {
+        _projectile.Start();
         this.projectiles.push(_projectile);
     }
 

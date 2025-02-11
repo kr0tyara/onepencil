@@ -41,26 +41,35 @@ class Attack
 
     OnGameLoop()
     {
-
     }
 
     SpawnProjectile(_tickCount)
     {
-        let projectile = new Projectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150), 50, 75, 10, 7);
-        battle.AddProjectile(projectile);
     }
 }
 class Projectile extends Entity
 {
-    constructor(_x, _y, _w, _h, _damage, _speed)
+    constructor(_x, _y, _w, _h, _damage)
     {
         super(_x, _y, _w, _h);
         this.damage = _damage;
-        this.speed = _speed;
+
+        this.speed = 5;
+
+        this.honingTime = 0;
+        this.honingTimer = 0;
+    }
+
+    Start()
+    {
+        this.honingTimer = this.honingTime;
     }
 
     Collision(_point)
     {
+        if(this.honingTimer > 0)
+            return false;
+
         let rotatedPoint = Utils.RotatePoint(_point, {x: this.x + this.pivot.x, y: this.y + this.pivot.y}, -this.rotation);
         this.rot = rotatedPoint;
 
@@ -88,8 +97,43 @@ class Projectile extends Entity
 
     GameLoop()
     {
-        this.y += this.speed;
+        if(this.honingTimer > 0)
+            this.honingTimer--;
+    }
+}
+
+class FallAttack extends Attack
+{
+    constructor()
+    {
+        super(30, 200);
+    }
+
+    SpawnProjectile(_tickCount)
+    {
+        let projectile = new FallProjectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150));
+        battle.AddProjectile(projectile);
+    }
+}
+class FallProjectile extends Projectile
+{
+    constructor(_x, _y)
+    {
+        super(_x, _y, 50, 75, 10);
+
+        this.speed = 7;
+        this.honingTime = 50;
+    }
+
+    GameLoop()
+    {
+        super.GameLoop();
+
+        if(this.honingTimer > 0)
+            return;
+        
         this.rotation += Math.PI / 60;
+        this.y += this.speed;
     }
 }
 
@@ -113,10 +157,10 @@ class AssProjectile extends Projectile
 {
     constructor(_x, _y)
     {
-        super(_x, _y, 25, 80, 10, 40);
+        super(_x, _y, 25, 80, 10);
 
+        this.speed = 40;
         this.honingTime = 50;
-        this.honingTimer = this.honingTime;
 
         this.pivot.y = this.h;
 
@@ -125,22 +169,13 @@ class AssProjectile extends Projectile
         this.rotation = this.angle - Math.PI / 2;
     }
 
-    Collision(_point)
-    {
-        if(this.honingTimer > 0)
-            return;
-
-        return super.Collision(_point);
-    }
-
     GameLoop()
     {
-        if(this.honingTimer > 0)
-        {
-            this.honingTimer--;
-            return;
-        }
+        super.GameLoop();
 
+        if(this.honingTimer > 0)
+            return;
+        
         this.x += Math.cos(this.angle) * this.speed;
         this.y += Math.sin(this.angle) * this.speed;
     }
