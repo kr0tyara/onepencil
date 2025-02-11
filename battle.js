@@ -37,6 +37,8 @@ class Battle
         this.drawing = false;
         this.drawnPoints = [];
         
+        this.ownAttackCastTime = 50;
+        this.ownAttackCastTimer = 0;
         this.ownAttackPending = false;
         this.ownAttackTime = 100;
         this.ownAttackTimer = 0;
@@ -92,14 +94,17 @@ class Battle
         this.ctx.fillStyle = '#000';
 
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.hp}/100 ${this.attack ? this.attack.attackTimer : ''}`, this.bounds.x1, this.bounds.y2 + 10);
+        this.ctx.fillText(`${this.hp}/100`, this.bounds.x1, this.bounds.y2 + 10);
+
+        this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(`${this.enemyHP}/500`, this.bounds.x2, this.bounds.y2 + 10);
+        this.ctx.fillText(`${this.enemyHP}/500`, this.bounds.x2, this.bounds.y1 - 10);
 
         if(this.ownAttackPending)
         {
             this.ctx.fillStyle = '#ff0000';
             this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'top';
             this.ctx.fillText(`${this.ownAttackDamage}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 - 100);
             
             let sprite = this.ownAttackSprites[this.ownAttackType];
@@ -129,6 +134,13 @@ class Battle
 
         if(this.mode == OWN_ATTACK)
         {
+            if(this.drawing)
+            {
+                this.ctx.fillStyle = '#ff0000';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(`${this.ownAttackCastTimer}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
+            }
+
             this.ctx.strokeStyle = '#000';
             this.ctx.beginPath();
             for(let i in this.drawnPoints)
@@ -158,6 +170,16 @@ class Battle
             {
                 this.ownAttackPending = false;
                 this.Attack();
+            }
+        }
+
+        if(this.drawing)
+        {
+            this.ownAttackCastTimer--;
+
+            if(this.ownAttackCastTimer <= 0)
+            {
+                this.FinishOwnAttack();
             }
         }
 
@@ -239,42 +261,51 @@ class Battle
     {
         if(!this.ownAttackPending && this.mode == OWN_ATTACK)
         {
+            this.ownAttackCastTimer = this.ownAttackCastTime;
+
             this.drawing = true;
             this.drawnPoints = [];
         }
     }
     PointerUp(e)
     {
-        if(!this.ownAttackPending && this.mode == OWN_ATTACK && this.drawing && this.drawnPoints.length > 0)
+        if(!this.ownAttackPending && this.mode == OWN_ATTACK && this.drawing)
         {
-            let res = this.dollar.Recognize(this.drawnPoints, false);
-            
-            let damage = 0;
-            let attack = ATTACK_NONE;
-            switch(res.Name)
-            {
-                case 'circle':
-                    damage = 70;
-                    attack = ATTACK_CIRCLE;
-                    break;
-                
-                case 'triangle':
-                    damage = 40;
-                    attack = ATTACK_TRIANGLE;
-                    break;
-
-                case 'star':
-                    damage = 100;
-                    attack = ATTACK_STAR;
-                    break;
-            }
-
-            damage *= res.Score;
-            damage = ~~damage;
-
-            this.DealDamage(attack, damage);
+            this.FinishOwnAttack();
         }
 
+        this.drawing = false;
+        this.drawnPoints = [];
+    }
+    FinishOwnAttack()
+    {
+        let res = this.dollar.Recognize(this.drawnPoints, false);
+            
+        let damage = 0;
+        let attack = ATTACK_NONE;
+        switch(res.Name)
+        {
+            case 'circle':
+                damage = 70;
+                attack = ATTACK_CIRCLE;
+                break;
+            
+            case 'triangle':
+                damage = 40;
+                attack = ATTACK_TRIANGLE;
+                break;
+
+            case 'star':
+                damage = 100;
+                attack = ATTACK_STAR;
+                break;
+        }
+
+        damage *= res.Score;
+        damage = ~~damage;
+
+        this.DealDamage(attack, damage);
+        
         this.drawing = false;
         this.drawnPoints = [];
     }

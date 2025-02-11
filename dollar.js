@@ -164,6 +164,9 @@ class DollarRecognizer // constructor
 	//
 	Recognize(points, useProtractor)
 	{
+		if(points.length == 0)
+			return new Result("No match.", 0.0, 0);
+
 		var t0 = Date.now();
 		var candidate = new Unistroke("", points);
 
