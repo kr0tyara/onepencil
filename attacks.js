@@ -101,10 +101,10 @@ class AssAttack extends Attack
     
     SpawnProjectile(_tickCount)
     {
-        let angle = Utils.Random(0, Math.PI * 2);
         let center = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2};
 
-        let projectile = new AssProjectile(center.x + Math.cos(angle) * 700, center.y + Math.sin(angle) * 400);
+        let angle = Utils.Random(0, Math.PI * 2);
+        let projectile = new AssProjectile(center.x + Math.cos(angle) * 500, center.y + Math.sin(angle) * 200);
         battle.AddProjectile(projectile);
     }
 }

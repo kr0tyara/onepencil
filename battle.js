@@ -3,6 +3,7 @@ var battle;
 const   IDLE = 0,
         ATTACK = 1,
         OWN_ATTACK = 2,
+        GAME_OVER = 3,
         
         ATTACK_NONE = 0,
         ATTACK_CIRCLE = 1,
@@ -37,7 +38,7 @@ class Battle
         this.drawing = false;
         this.drawnPoints = [];
         
-        this.ownAttackCastTime = 50;
+        this.ownAttackCastTime = 40;
         this.ownAttackCastTimer = 0;
         this.ownAttackPending = false;
         this.ownAttackTime = 100;
@@ -81,6 +82,11 @@ class Battle
         this.render = requestAnimationFrame(this.Render.bind(this));
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        if(this.mode == GAME_OVER)
+        {
+            return;
+        }
 
         this.ctx.strokeStyle = '#000';
         this.ctx.lineWidth = 1;
@@ -124,21 +130,26 @@ class Battle
             this.ctx.fillStyle = '#aaa';
         }
 
-        this.ctx.textBaseline = 'top';
-        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.textAlign = 'center';
         for(let i in this.buttons)
         {
             this.ctx.strokeRect(this.buttons[i].x, this.bounds.y2 + 70, this.buttons[i].w, 50);
-            this.ctx.fillText(this.buttons[i].name, this.buttons[i].x, this.bounds.y2 + 70);
+            this.ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, this.bounds.y2 + 70 + 25);
         }
 
         if(this.mode == OWN_ATTACK)
         {
-            if(this.drawing)
+            if(!this.ownAttackPending)
             {
                 this.ctx.fillStyle = '#ff0000';
                 this.ctx.textAlign = 'center';
-                this.ctx.fillText(`${this.ownAttackCastTimer}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
+                this.ctx.textBaseline = 'top';
+
+                if(this.drawing)
+                    this.ctx.fillText(`${this.ownAttackCastTimer}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
+                else
+                    this.ctx.fillText('DRAW!!!', this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 + 15);
             }
 
             this.ctx.strokeStyle = '#000';
@@ -162,6 +173,9 @@ class Battle
     }
     GameLoop()
     {
+        if(this.mode == GAME_OVER)
+            return;
+
         if(this.ownAttackPending)
         {
             this.ownAttackTimer--;
@@ -197,12 +211,7 @@ class Battle
                 let projectile = this.projectiles[i];
                 if(projectile.Collision(this.soul))
                 {
-                    if(!this.soul.invinsible)
-                    {
-                        this.soul.Hurt();
-                        this.hp -= projectile.damage;
-                    }
-                    
+                    this.Hurt(projectile.damage);                    
                     this.projectiles.splice(i, 1);
                 }
                 else if(projectile.x + projectile.w < 0 || projectile.y + projectile.h < 0 || projectile.x - projectile.w > this.canvas.width || projectile.y - projectile.h > this.canvas.height)
@@ -217,17 +226,32 @@ class Battle
 
     Attack()
     {
+        if(this.mode == GAME_OVER)
+            return;
+
         this.mode = ATTACK;
         this.attack = Utils.RandomArray(this.attacks);
         this.attack.Start();
     }
     OwnAttack()
     {
+        if(this.mode == GAME_OVER)
+            return;
+
         this.mode = OWN_ATTACK;
     }
     Idle()
     {
+        if(this.mode == GAME_OVER)
+            return;
+        
         this.mode = IDLE;
+        this.attack = null;
+        this.projectiles = [];
+    }
+    GameOver()
+    {
+        this.mode = GAME_OVER;
         this.attack = null;
         this.projectiles = [];
     }
@@ -334,6 +358,8 @@ class Battle
             if(pos.y > this.bounds.y2 - this.soul.h)
                 pos.y = this.bounds.y2 - this.soul.h;
         }
+        else
+            this.canvas.style.cursor = '';
 
         this.soul.x = pos.x;
         this.soul.y = pos.y;
@@ -345,9 +371,31 @@ class Battle
         }
     }
 
+    Hurt(_damage)
+    {
+        if(this.soul.invinsible)
+            return;
+        
+        this.soul.Hurt();
+        this.hp -= _damage;
+        
+        if(this.hp <= 0)
+        {
+            this.hp = 0;
+            alert('YOU LOST!');
+            this.GameOver();
+        }
+    }
+
     DealDamage(_attack, _damage)
     {
         this.enemyHP -= _damage;
+        if(this.enemyHP <= 0)
+        {
+            this.enemyHP = 0;
+            alert('YOU WON!');
+            this.GameOver();
+        }
         
         this.ownAttackPending = true;
         this.ownAttackType = _attack;
