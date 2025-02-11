@@ -26,9 +26,20 @@ class Battle
 
         this.bounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
 
-        this.hp = 100;
+        let spr = [
+            './img/duck.png',
+            './img/duck2.png',
+        ];
+        this.enemySprites = [];
+        for(let i in spr)
+        {
+            let img = new Image();
+            img.src = spr[i];
+            this.enemySprites.push(img);
+        }
         this.enemyHP = 500;
 
+        this.hp = 100;
         this.soul = new Soul(this.bounds.x1, this.bounds.y1);
 
         this.attacks = [new Attack(30, 200), new AssAttack(), new CockAttack()];
@@ -41,8 +52,9 @@ class Battle
         this.ownAttackCastTime = 40;
         this.ownAttackCastTimer = 0;
         this.ownAttackPending = false;
-        this.ownAttackTime = 100;
-        this.ownAttackTimer = 0;
+        this.pendingAnimationTime = 50;
+        this.ownAttackPendingTime = 60;
+        this.ownAttackPendingTimer = 0;
         this.ownAttackType = ATTACK_NONE;
         this.ownAttackDamage = 0;
 
@@ -88,12 +100,27 @@ class Battle
             return;
         }
 
+        let shake = 0;
+        
+        if(this.ownAttackPending && this.ownAttackPendingTimer < this.pendingAnimationTime)
+        {
+            let dist = 20 * (this.ownAttackPendingTimer / this.pendingAnimationTime);
+            shake = Math.sin(_dt / 20) * dist;
+        }
+
+        this.ctx.drawImage(this.enemySprites[this.ownAttackPending ? 1 : 0], this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2 - 300 / 2 + shake, 0, 300, 300);
+
         this.ctx.strokeStyle = '#000';
+        this.ctx.fillStyle = '#fff';
         this.ctx.lineWidth = 1;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
 
-        this.ctx.strokeRect(this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1);
+        this.ctx.beginPath();
+        this.ctx.rect(this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1);
+        this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.closePath();
         
         this.ctx.font = '36px serif';
         this.ctx.textBaseline = 'top';
@@ -108,13 +135,20 @@ class Battle
 
         if(this.ownAttackPending)
         {
-            this.ctx.fillStyle = '#ff0000';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'top';
-            this.ctx.fillText(`${this.ownAttackDamage}`, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2, this.bounds.y1 - 100);
-            
-            let sprite = this.ownAttackSprites[this.ownAttackType];
-            this.ctx.drawImage(sprite, this.bounds.x1 + (this.bounds.x2 - this.bounds.x1) / 2 - sprite.width / 2, this.bounds.y1 - 150 - sprite.height);
+            if(this.ownAttackPendingTimer >= this.pendingAnimationTime)
+            {
+                let x = ((this.bounds.x2 - this.bounds.x1) / 2) * (1 - (this.ownAttackPendingTimer - this.pendingAnimationTime) / (this.ownAttackPendingTime - this.pendingAnimationTime));
+                let sprite = this.ownAttackSprites[this.ownAttackType];
+                this.ctx.drawImage(sprite, this.bounds.x2 - x + sprite.width / 2, this.bounds.y1 - 150 - sprite.height);
+            }
+            else
+            {
+                this.ctx.fillStyle = '#ff0000';
+                this.ctx.textAlign = 'right';
+                this.ctx.textBaseline = 'bottom';
+
+                this.ctx.fillText(`-${this.ownAttackDamage}`, this.bounds.x2, this.bounds.y1 - 40);
+            }
         }
 
         this.ctx.lineWidth = 5;
@@ -178,9 +212,9 @@ class Battle
 
         if(this.ownAttackPending)
         {
-            this.ownAttackTimer--;
+            this.ownAttackPendingTimer--;
 
-            if(this.ownAttackTimer <= 0)
+            if(this.ownAttackPendingTimer <= 0)
             {
                 this.ownAttackPending = false;
                 this.Attack();
@@ -395,13 +429,15 @@ class Battle
             this.enemyHP = 0;
             alert('YOU WON!');
             this.GameOver();
+
+            return;
         }
         
         this.ownAttackPending = true;
         this.ownAttackType = _attack;
         this.ownAttackDamage = _damage;
 
-        this.ownAttackTimer = this.ownAttackTime;
+        this.ownAttackPendingTimer = this.ownAttackPendingTime;
     }
 }
 
