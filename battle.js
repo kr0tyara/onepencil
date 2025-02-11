@@ -1,5 +1,9 @@
 var battle;
 
+const   IDLE = 0,
+        ATTACK = 1,
+        OWN_ATTACK = 2;
+
 class Battle
 {
     constructor()
@@ -7,18 +11,35 @@ class Battle
         this.canvas = document.querySelector('#battle');
         this.ctx    = this.canvas.getContext('2d');
 
+        this.mode = IDLE;
+
+        window.addEventListener('click', this.Click.bind(this));
         window.addEventListener('pointermove', this.PointerMove.bind(this));
 
-        this.bounds = {x1: 200, y1: 300, x2: 1080, y2: 600};
+        this.bounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
 
         this.hp = 100;
 
         this.soul = new Soul(this.bounds.x1, this.bounds.y1);
 
-        this.projectiles = [];
+        this.attacks = [new Attack(30, 200), new AssAttack()];
+        this.attack = null;
 
-        this.attacks = [new AssAttack()];
-        this.attack = this.attacks[0];
+        this.buttons = [
+            {name: 'die', action: this.Attack.bind(this)},
+            {name: 'die', action: this.Attack.bind(this)},
+            {name: 'die', action: this.Attack.bind(this)},
+            {name: 'own', action: this.OwnAttack.bind(this)},
+        ];
+
+        let w = (this.bounds.x2 - this.bounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
+        for(let i in this.buttons)
+        {
+            this.buttons[i].x = this.bounds.x1 + i * (w + 20);
+            this.buttons[i].w = w;
+        }
+
+        this.projectiles = [];
 
         this.render = requestAnimationFrame(this.Render.bind(this));
         this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
@@ -30,13 +51,33 @@ class Battle
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.ctx.lineStyle = '#000';
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 1;
         this.ctx.strokeRect(this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1);
         
         this.ctx.font = '36px serif';
         this.ctx.textBaseline = 'top';
         this.ctx.fillStyle = '#000';
-        this.ctx.fillText(`${this.hp}/100`, this.bounds.x1, this.bounds.y2 + 10);
+        this.ctx.fillText(`${this.hp}/100 ${this.attack ? this.attack.attackTimer : ''}`, this.bounds.x1, this.bounds.y2 + 10);
+
+        this.ctx.lineWidth = 5;
+
+        if(this.mode == IDLE)
+        {
+            this.ctx.strokeStyle = '#000';
+            this.ctx.fillStyle = '#000';
+        }
+        else
+        {
+            this.ctx.strokeStyle = '#AAA';
+            this.ctx.fillStyle = '#AAA';
+        }
+
+        for(let i in this.buttons)
+        {
+            this.ctx.strokeRect(this.buttons[i].x, this.bounds.y2 + 70, this.buttons[i].w, 50);
+            this.ctx.fillText(this.buttons[i].name, this.buttons[i].x, this.bounds.y2 + 70);
+        }
 
         this.soul.Render(this.ctx);
 
@@ -47,33 +88,53 @@ class Battle
     }
     GameLoop()
     {
-        this.attack.GameLoop();
-
-        for(let i in this.projectiles)
+        if(this.attack != null)
         {
-            this.projectiles[i].Update();
-        }
+            this.attack.GameLoop();
 
-        for(let i = this.projectiles.length - 1; i >= 0; i--)
-        {
-            let projectile = this.projectiles[i];
-            if(projectile.Collision(this.soul))
+            for(let i in this.projectiles)
             {
-                if(!this.soul.invinsible)
-                {
-                    this.soul.Hurt();
-                    this.hp -= projectile.damage;
-                }
-                
-                this.projectiles.splice(i, 1);
+                this.projectiles[i].Update();
             }
-            else if(projectile.x + projectile.w < 0 || projectile.y + projectile.h < 0 || projectile.x - projectile.w > this.canvas.width || projectile.y - projectile.h > this.canvas.height)
+
+            for(let i = this.projectiles.length - 1; i >= 0; i--)
             {
-                this.projectiles.splice(i, 1);
+                let projectile = this.projectiles[i];
+                if(projectile.Collision(this.soul))
+                {
+                    if(!this.soul.invinsible)
+                    {
+                        this.soul.Hurt();
+                        this.hp -= projectile.damage;
+                    }
+                    
+                    this.projectiles.splice(i, 1);
+                }
+                else if(projectile.x + projectile.w < 0 || projectile.y + projectile.h < 0 || projectile.x - projectile.w > this.canvas.width || projectile.y - projectile.h > this.canvas.height)
+                {
+                    this.projectiles.splice(i, 1);
+                }
             }
         }
 
         this.soul.Update();
+    }
+
+    Attack()
+    {
+        this.mode = ATTACK;
+        this.attack = Utils.RandomArray(this.attacks);
+        this.attack.Start();
+    }
+    OwnAttack()
+    {
+        this.mode = OWN_ATTACK;
+    }
+    Idle()
+    {
+        this.mode = IDLE;
+        this.attack = null;
+        this.projectiles = [];
     }
 
     AddProjectile(_projectile)
@@ -81,27 +142,50 @@ class Battle
         this.projectiles.push(_projectile);
     }
 
+    Click(e)
+    {
+        if(this.mode != IDLE)
+            return;
+
+        let pos = Utils.MousePos(e, this.canvas);
+        if(pos.y >= this.bounds.y2 + 70 && pos.y <= this.bounds.y2 + 70 + 50)
+        {
+            for(let i in this.buttons)
+            {
+                if(pos.x >= this.buttons[i].x && pos.x <= this.buttons[i].x + this.buttons[i].w)
+                {
+                    this.buttons[i].action();
+                    this.PointerMove(e);
+                    return;
+                }
+            }
+        }
+    }
+
     PointerMove(e)
     {
         let pos = Utils.MousePos(e, this.canvas);
 
-        if(
-            pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
-            pos.y >= this.bounds.y1 && pos.y <= this.bounds.y2
-        )
-            this.canvas.style.cursor = 'none';
-        else
-            this.canvas.style.cursor = '';
+        if(this.mode == ATTACK)
+        {
+            if(
+                pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
+                pos.y >= this.bounds.y1 && pos.y <= this.bounds.y2
+            )
+                this.canvas.style.cursor = 'none';
+            else
+                this.canvas.style.cursor = '';
 
-        if(pos.x < this.bounds.x1)
-            pos.x = this.bounds.x1;
-        if(pos.x > this.bounds.x2 - this.soul.w)
-            pos.x = this.bounds.x2 - this.soul.w;
+            if(pos.x < this.bounds.x1)
+                pos.x = this.bounds.x1;
+            if(pos.x > this.bounds.x2 - this.soul.w)
+                pos.x = this.bounds.x2 - this.soul.w;
 
-        if(pos.y < this.bounds.y1)
-            pos.y = this.bounds.y1;
-        if(pos.y > this.bounds.y2 - this.soul.h)
-            pos.y = this.bounds.y2 - this.soul.h;
+            if(pos.y < this.bounds.y1)
+                pos.y = this.bounds.y1;
+            if(pos.y > this.bounds.y2 - this.soul.h)
+                pos.y = this.bounds.y2 - this.soul.h;
+        }
 
         this.soul.x = pos.x;
         this.soul.y = pos.y;
@@ -112,16 +196,33 @@ class Entity
 {
     constructor(_x, _y, _w, _h)
     {
-        this.x = _x - _w / 2;
+        this.x = _x;
         this.y = _y;
         this.w = _w;
         this.h = _h;
+
+        this.pivot = {x: this.w / 2, y: this.h / 2};
+        this.rotation = 0;
     }
 
     Render(_ctx)
     {
-        _ctx.fillStyle = '#000';
-        _ctx.fillRect(this.x, this.y, this.w, this.h);
+        _ctx.save();
+        _ctx.translate(this.x + this.pivot.x, this.y + this.pivot.y);
+        _ctx.rotate(this.rotation);
+
+        this.Draw(_ctx);
+
+        _ctx.restore();
+    }
+
+    Draw(_ctx)
+    {
+        _ctx.fillStyle = 'green';
+        _ctx.fillRect(-this.pivot.x, -this.pivot.y, this.w, this.h);
+
+        /*_ctx.fillStyle = 'blue';
+        _ctx.fillRect(-5, -5, 10, 10);*/
     }
 }
 
@@ -181,6 +282,11 @@ class Utils
     static RandomRound(_min, _max)
     {
         return ~~(Math.random() * (_max - _min) + _min);
+    }
+    static RandomArray(_array)
+    {
+        let len = _array.length;
+        return _array[this.RandomRound(0, len)];
     }
 
     static Clamp(_i, _min, _max)

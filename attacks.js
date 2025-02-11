@@ -1,14 +1,27 @@
 class Attack
 {
-    constructor(_projectileTime)
+    constructor(_projectileTime, _attackTime)
     {
         this.projectileTime = _projectileTime;
+        this.attackTime = _attackTime;
+    }
+
+    Start()
+    {
         this.projectileTimer = 0;
+        this.attackTimer = this.attackTime;
     }
 
     GameLoop()
     {
-        this.projectileTimer -= 1;
+        this.attackTimer--;
+        if(this.attackTimer == 0)
+        {
+            battle.Idle();
+            return;
+        }
+
+        this.projectileTimer--;
         if(this.projectileTimer <= 0)
         {
             this.SpawnProjectile();
@@ -18,7 +31,7 @@ class Attack
 
     SpawnProjectile()
     {
-        let projectile = new Projectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150), 25, 25, 10, 2);
+        let projectile = new Projectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150), 25, 25, 10, 7);
         battle.AddProjectile(projectile);
     }
 }
@@ -29,13 +42,12 @@ class Projectile extends Entity
         super(_x, _y, _w, _h);
         this.damage = _damage;
         this.speed = _speed;
-
-        this.rotation = 0;
     }
 
     Collision(_point)
     {
-        let rotatedPoint = Utils.RotatePoint(_point, {x: this.x, y: this.y}, -this.rotation);
+        let rotatedPoint = Utils.RotatePoint(_point, {x: this.x + this.pivot.x, y: this.y + this.pivot.y}, -this.rotation);
+        this.rot = rotatedPoint;
 
         if(
             rotatedPoint.x < this.x + this.w &&
@@ -50,19 +62,13 @@ class Projectile extends Entity
         return false;
     }
 
-    Render(_ctx)
+    Draw(_ctx)
     {
-        /*_ctx.fillStyle = '#ff0000';
-        _ctx.fillRect(this.x, this.y, this.w, this.h);*/
-
-        _ctx.save();
-        _ctx.translate(this.x, this.y);
-        _ctx.rotate(this.rotation);
-
         _ctx.fillStyle = 'green';
-        _ctx.fillRect(0, 0, this.w, this.h);
+        _ctx.fillRect(-this.pivot.x, -this.pivot.y, this.w, this.h);
 
-        _ctx.restore();
+        /*_ctx.fillStyle = 'blue';
+        _ctx.fillRect(-5, -5, 10, 10);*/
     }
 
     Update()
@@ -75,7 +81,7 @@ class AssAttack extends Attack
 {
     constructor()
     {
-        super(30);
+        super(30, 300);
     }
     
     SpawnProjectile()
@@ -91,12 +97,14 @@ class AssProjectile extends Projectile
 {
     constructor(_x, _y)
     {
-        super(_x, _y, 25, 250, 10, 30);
+        super(_x, _y, 25, 80, 10, 30);
 
         this.honingTime = 50;
         this.honingTimer = this.honingTime;
 
-        let delta = {x: battle.soul.x - this.x - this.w / 2, y: battle.soul.y - this.y};
+        this.pivot.y = this.h;
+
+        let delta = {x: battle.soul.x - this.x - this.pivot.x, y: battle.soul.y - this.y - this.pivot.y};
         this.angle = Math.atan2(delta.y, delta.x);
         this.rotation = this.angle - Math.PI / 2;
     }
