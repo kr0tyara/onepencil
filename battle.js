@@ -150,7 +150,8 @@ class Battle
         this.enemySprite = new EnemySprite();
         this.enemyHP = 500;
 
-        this.soul = new Soul(this.defaultBounds.x1, this.defaultBounds.y1);
+        this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
+        this.soul = new Soul(this.mousePos.x, this.mousePos.y);
         this.hp = 100;
         this.tp = 0;
 
@@ -253,6 +254,8 @@ class Battle
     {
         if(this.mode.id == GAME_OVER)
             return;
+
+        this.MoveSoul();
 
         if(!this.boundsReady)
         {
@@ -369,32 +372,51 @@ class Battle
 
     Click(e)
     {
+        this.UpdateMousePos(e);
         this.mode.Click(e);
     }
 
     PointerDown(e)
     {
+        this.UpdateMousePos(e);
         this.mode.PointerDown(e);
     }
     PointerUp(e)
     {
+        this.UpdateMousePos(e);
         this.mode.PointerUp(e);
     }
-
     PointerMove(e)
     {
+        this.UpdateMousePos(e);
+        this.mode.PointerMove(e);
+    }
+
+    UpdateMousePos(e)
+    {
         let pos = Utils.MousePos(e, this.canvas);
+        this.mousePos = pos;
 
         if(this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
         {
             if(
-                pos.x >= this.targetBounds.x1 && pos.x <= this.targetBounds.x2 &&
-                pos.y >= this.targetBounds.y1 && pos.y <= this.targetBounds.y2
+                pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
+                pos.y >= this.bounds.y1 && pos.y <= this.bounds.y2
             )
                 this.canvas.style.cursor = 'none';
-            else
+            else if(this.canvas.style.cursor != '')
                 this.canvas.style.cursor = '';
+        }
+        else if(this.canvas.style.cursor != 'none')
+            this.canvas.style.cursor = 'none';
+    }
 
+    MoveSoul()
+    {
+        let pos = {...this.mousePos};
+
+        if(this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
+        {
             if(pos.x < this.targetBounds.x1)
                 pos.x = this.targetBounds.x1;
             if(pos.x > this.targetBounds.x2 - this.soul.w)
@@ -404,16 +426,9 @@ class Battle
                 pos.y = this.targetBounds.y1;
             if(pos.y > this.targetBounds.y2 - this.soul.h)
                 pos.y = this.targetBounds.y2 - this.soul.h;
-
-        }
-        else
-        {
-            this.canvas.style.cursor = 'none';
         }
 
-        this.soul.targetPos = {...pos};
-
-        this.mode.PointerMove(e);
+        this.soul.targetPos = pos;
     }
 
     Graze(_projectile)
