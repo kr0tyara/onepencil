@@ -101,23 +101,20 @@ class Projectile extends Entity
         this.honingTimer = this.honingTime;
     }
 
-    Collision(_point)
+    Collision(_graze)
     {
         if(this.honingTimer > 0)
             return false;
 
-        let rotatedPoint = Utils.RotatePoint(_point, {x: this.x + this.pivot.x, y: this.y + this.pivot.y}, -this.rotation);
-        this.rot = rotatedPoint;
-
-        if(
-            rotatedPoint.x < this.x + this.w &&
-            rotatedPoint.x > this.x &&
-            rotatedPoint.y < this.y + this.h &&
-            rotatedPoint.y > this.y
-        )
+        let rotatedPoint = Utils.RotatePoint({x: battle.soul.x + battle.soul.pivot.x, y: battle.soul.y + battle.soul.pivot.y}, {x: this.x + this.pivot.x, y: this.y + this.pivot.y}, -this.rotation);
+        let pos = 
         {
+            x: Math.max(this.x, Math.min(rotatedPoint.x, this.x + this.w)),
+            y: Math.max(this.y, Math.min(rotatedPoint.y, this.y + this.h))
+        };
+      
+        if (Utils.Distance(pos, rotatedPoint) < (_graze ? battle.soul.grazeRadius : battle.soul.radius))
             return true;
-        }
 
         return false;
     }
@@ -138,16 +135,32 @@ class Projectile extends Entity
     }
 }
 
-class FallAttack extends Attack
+class TestAttack extends Attack
 {
     constructor()
     {
         super(30, 200);
     }
 
-    Start()
+    SpawnProjectile(_tickCount)
     {
-        super.Start();
+        let projectile = new TestProjectile(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
+        battle.AddProjectile(projectile);
+    }
+}
+class TestProjectile extends Projectile
+{
+    constructor(_x, _y)
+    {
+        super(_x, _y, 100, 100, 10);
+    }
+}
+
+class FallAttack extends Attack
+{
+    constructor()
+    {
+        super(30, 200);
     }
 
     SpawnProjectile(_tickCount)

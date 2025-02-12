@@ -152,6 +152,7 @@ class Battle
 
         this.soul = new Soul(this.defaultBounds.x1, this.defaultBounds.y1);
         this.hp = 100;
+        this.tp = 0;
 
         this.attacks = [new FallAttack(), new AssAttack(), new CockAttack()];
         this.attack = null;
@@ -225,7 +226,7 @@ class Battle
 
         this.ctx.textBaseline = 'top';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.hp}/100`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
+        this.ctx.fillText(`${this.hp}/100 ${this.tp}`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
 
         this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
@@ -282,26 +283,28 @@ class Battle
             {
                 let projectile = this.projectiles[i];
 
-                if(!projectile.toDestroy)
-                {
-                    if(projectile.Collision(this.soul))
-                    {
-                        this.Hurt(projectile.damage);
-                        projectile.toDestroy = true;
-                    }
-                    else if(
-                        projectile.x + projectile.w < 0 ||
-                        projectile.y + projectile.h < 0 ||
-                        projectile.x - projectile.w > this.canvas.width ||
-                        projectile.y - projectile.h > this.canvas.height
-                    )
-                        projectile.toDestroy = true;
-                }
-
                 if(projectile.toDestroy)
                 {
-                    this.projectiles.splice(i, 1);
+                    this.DestroyProjectile(i);
+                    continue;
                 }
+
+                if(projectile.Collision(false))
+                {
+                    this.Hurt(projectile.damage);
+                    projectile.toDestroy = true;
+                }
+                else if(projectile.Collision(true))
+                {
+                    this.Graze(projectile);
+                }
+                else if(
+                    projectile.x + projectile.w < 0 ||
+                    projectile.y + projectile.h < 0 ||
+                    projectile.x - projectile.w > this.canvas.width ||
+                    projectile.y - projectile.h > this.canvas.height
+                )
+                    projectile.toDestroy = true;
             }
         }
 
@@ -359,6 +362,10 @@ class Battle
         _projectile.Start();
         this.projectiles.push(_projectile);
     }
+    DestroyProjectile(i)
+    {
+        this.projectiles.splice(i, 1);
+    }
 
     Click(e)
     {
@@ -407,6 +414,10 @@ class Battle
         this.mode.PointerMove(e);
     }
 
+    Graze(_projectile)
+    {
+        this.tp++;
+    }
     Hurt(_damage)
     {
         if(this.soul.invinsible)
@@ -471,6 +482,10 @@ class Soul extends Entity
     {
         super(_x, _y, 0, 0);
 
+        this.radius = 10;
+        this.grazeRadius = 20;
+        this.pivot = {x: this.radius, y: this.radius};
+
         this.sprite = new Image();
         this.sprite.src = './img/soul.png';
 
@@ -498,17 +513,26 @@ class Soul extends Entity
 
     Render(_ctx, _dt)
     {
+        /*
+        _ctx.beginPath();
+        _ctx.fillStyle = 'orange';
+        _ctx.arc(this.x + this.pivot.x, this.y + this.pivot.y, this.grazeRadius, 0, Math.PI * 2, true);
+        _ctx.fill();
+        _ctx.closePath();
+
+        _ctx.beginPath();
+        _ctx.fillStyle = 'green';
+        _ctx.arc(this.x + this.pivot.x, this.y + this.pivot.y, this.radius, 0, Math.PI * 2, true);
+        _ctx.fill();
+        _ctx.closePath();*/
+
         if(this.invinsible && this.invinsibleTimer % 10 < 4)
-        {
             _ctx.globalAlpha = 0.5;
-        }
 
         _ctx.drawImage(this.sprite, this.x, this.y);
 
         if(this.invinsible)
-        {
             _ctx.globalAlpha = 1;
-        }
     }
 }
 
