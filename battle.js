@@ -136,6 +136,7 @@ class Battle
 
         this.canvas.addEventListener('click', this.Click.bind(this));
         this.canvas.addEventListener('pointerdown', this.PointerDown.bind(this));
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
         window.addEventListener('pointermove', this.PointerMove.bind(this));
         window.addEventListener('pointerup', this.PointerUp.bind(this));
 

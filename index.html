@@ -14,11 +14,17 @@
             }
             #battle
             {
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
-
                 background-color: #fff;
+                touch-action: none;
+
+                position: fixed; 
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                
+                aspect-ratio: 16 / 9;
+                width: min(calc(100vh * (16 / 9)), 100vw, 1280px);
+                height: auto; 
             }
         </style>
     </head>
