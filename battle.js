@@ -3,7 +3,8 @@ var battle;
 const   IDLE = 0,
         ATTACK = 1,
         OWN_ATTACK = 2,
-        GAME_OVER = 3,
+        ACT = 3,
+        GAME_OVER = 4,
         
         ATTACK_NONE = 0,
         ATTACK_CIRCLE = 1,
@@ -56,6 +57,72 @@ class EnemySprite
     }
 }
 
+class TypeWriter
+{
+    constructor()
+    {
+        this.text = '* Пора проснуться и почувствовать запах БОЛИ.';
+
+        this.value = 0;
+        this.timer = 0;
+        this.finished = false;
+
+        this.speed = 3;
+        this.speedPunctuation = 10;
+        this.speedNextLine = 25;
+    }
+
+    SetText(_text)
+    {
+        this.text = _text;
+        
+        this.value = 0;
+        this.timer = 0;
+        this.finished = false;
+    }
+    GetText()
+    {
+        return this.text.slice(0, this.value);
+    }
+
+    GameLoop()
+    {
+        if(this.finished)
+            return;
+        
+        this.timer--;
+
+        if(this.timer <= 0)
+        {
+            if(this.value >= this.text.length)
+            {
+                this.finished = true;
+                return;
+            }
+
+            let lastSymbol = this.text.charAt(this.value);
+            switch(lastSymbol)
+            {
+                case ',':
+                case '.':
+                case '!':
+                    this.timer = this.speedPunctuation;
+                    break;
+
+                case '\n':
+                    this.timer = this.speedNextLine;
+                    break;
+
+                default:
+                    this.timer = this.speed;
+                    break;
+            }
+
+            this.value++;
+        }
+    }
+}
+
 class BattleUI
 {
     constructor()
@@ -64,8 +131,10 @@ class BattleUI
 
     Start()
     {
+        this.clickTarget = null;
         this.buttons = [
-            {name: 'АТАКА', action: battle.OwnAttack.bind(battle)},
+            {name: 'АТАКА', mode: OWN_ATTACK, action: battle.OwnAttack.bind(battle)},
+            {name: 'ДЕЙСТВИЕ', mode: ACT, action: battle.Act.bind(battle)},
         ];
 
         let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
@@ -76,43 +145,57 @@ class BattleUI
         }
     }
 
-    Click(e)
+    TargetButton()
     {
-        let pos = Utils.MousePos(e, battle.canvas);
+        if(battle.mode.id != IDLE)
+            return null;
 
-        if(pos.y >= battle.defaultBounds.y2 + 70 && pos.y <= battle.defaultBounds.y2 + 70 + 50)
+        if(battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 50)
+            return null;
+
+        for(let i in this.buttons)
         {
-            for(let i in this.buttons)
-            {
-                if(pos.x >= this.buttons[i].x && pos.x <= this.buttons[i].x + this.buttons[i].w)
-                {
-                    this.buttons[i].action();
-                    battle.PointerMove(e);
-                    return;
-                }
-            }
+            if(battle.mousePos.x >= this.buttons[i].x && battle.mousePos.x <= this.buttons[i].x + this.buttons[i].w)
+                return this.buttons[i];
         }
+
+        return null;
+    }
+
+    PointerDown(e)
+    {
+        this.clickTarget = this.TargetButton();
+    }
+    PointerUp(e)
+    {
+        let target = this.TargetButton();
+
+        if(target && target == this.clickTarget)
+        {
+            target.action();
+        }
+
+        this.clickTarget = null;
     }
 
     Render(_ctx, _dt)
     {
         _ctx.lineWidth = 5;
-        if(battle.mode.id == IDLE)
-        {
-            _ctx.strokeStyle = '#000';
-            _ctx.fillStyle = '#000';
-        }
-        else
-        {
-            _ctx.strokeStyle = '#aaa';
-            _ctx.fillStyle = '#aaa';
-        }
+
+        let target = this.TargetButton();
 
         _ctx.font = '36px Arial';
         _ctx.textBaseline = 'middle';
         _ctx.textAlign = 'center';
         for(let i in this.buttons)
         {
+            if(target == this.buttons[i] || battle.mode.id == this.buttons[i].mode)
+                _ctx.fillStyle = _ctx.strokeStyle = '#000';
+            else if(battle.mode.id == IDLE)
+                _ctx.fillStyle = _ctx.strokeStyle = '#666';
+            else
+                _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
+
             _ctx.strokeRect(this.buttons[i].x, battle.defaultBounds.y2 + 70, this.buttons[i].w, 50);
             _ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, battle.defaultBounds.y2 + 70 + 25);
         }
@@ -131,6 +214,7 @@ class Battle
             new IdleMode(),
             new AttackMode(),
             new OwnAttackMode(),
+            new ActMode(),
             new GameOverMode()
         ];
 
@@ -209,9 +293,10 @@ class Battle
         this.enemySprite.Render(this.ctx, _dt);
 
         // поле боя
-        this.ctx.lineWidth = 5;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
+        
+        this.ctx.lineWidth = 5;
         this.ctx.strokeStyle = '#000';
         this.ctx.fillStyle = '#fff';
 
@@ -333,6 +418,13 @@ class Battle
 
         this.SetMode(OWN_ATTACK);
     }
+    Act()
+    {
+        if(this.mode.id == GAME_OVER)
+            return;
+
+        this.SetMode(ACT);
+    }
     Idle()
     {
         if(this.mode.id == GAME_OVER)
@@ -411,6 +503,15 @@ class Battle
             this.canvas.style.cursor = 'none';
     }
 
+    TeleportSoulToCursor(e)
+    {
+        this.UpdateMousePos(e);
+        this.MoveSoul();
+
+        this.soul.x = this.soul.targetPos.x;
+        this.soul.y = this.soul.targetPos.y;
+    }
+
     MoveSoul()
     {
         let pos = {...this.mousePos};
@@ -419,13 +520,13 @@ class Battle
         {
             if(pos.x < this.targetBounds.x1)
                 pos.x = this.targetBounds.x1;
-            if(pos.x > this.targetBounds.x2 - this.soul.w)
-                pos.x = this.targetBounds.x2 - this.soul.w;
+            if(pos.x > this.targetBounds.x2 - this.soul.w - this.soul.pivot.x - this.soul.radius)
+                pos.x = this.targetBounds.x2 - this.soul.w - this.soul.pivot.x - this.soul.radius;
 
             if(pos.y < this.targetBounds.y1)
                 pos.y = this.targetBounds.y1;
-            if(pos.y > this.targetBounds.y2 - this.soul.h)
-                pos.y = this.targetBounds.y2 - this.soul.h;
+            if(pos.y > this.targetBounds.y2 - this.soul.h - this.soul.pivot.y - this.soul.radius)
+                pos.y = this.targetBounds.y2 - this.soul.h - this.soul.pivot.y - this.soul.radius;
         }
 
         this.soul.targetPos = pos;
@@ -532,8 +633,14 @@ class Soul extends Entity
                 this.invinsible = false;
         }
 
-        this.x = ~~Utils.Lerp(this.x, this.targetPos.x, 0.5);
-        this.y = ~~Utils.Lerp(this.y, this.targetPos.y, 0.5);
+        this.x = Utils.Lerp(this.x, this.targetPos.x, 0.5);
+        this.y = Utils.Lerp(this.y, this.targetPos.y, 0.5);
+
+        if(Utils.Distance({x: this.x, y: this.y}, this.targetPos) <= 1)
+        {
+            this.x = this.targetPos.x;
+            this.y = this.targetPos.y;
+        }
     }
 
     Render(_ctx, _dt)

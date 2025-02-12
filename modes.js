@@ -54,47 +54,18 @@ class IdleMode extends BattleMode
             '* ПромоУтка ковыряется в зубах.\n* Но, скорее, просто грызёт зубочистку...',
         ];
 
-        this.typeWriter = 0;
-        this.typeTimer = 0;
-
-        this.typeSpeed = 3;
-        this.typeSpeedPunctuation = 10;
-        this.typeSpeedNextLine = 25;
+        this.typeWriter = new TypeWriter();
     }
 
     Start()
     {
         this.checkText  = Utils.RandomArray(this.flavourText);
-        this.typeWriter = 0;
-        this.typeTimer = 0;
+        this.typeWriter.SetText(this.checkText);
     }
 
     GameLoop()
     {
-        this.typeTimer--;
-
-        if(this.typeTimer <= 0 && this.typeWriter < this.checkText.length)
-        {
-            let lastSymbol = this.checkText.charAt(this.typeWriter);
-            switch(lastSymbol)
-            {
-                case ',':
-                case '.':
-                case '!':
-                    this.typeTimer = this.typeSpeedPunctuation;
-                    break;
-
-                case '\n':
-                    this.typeTimer = this.typeSpeedNextLine;
-                    break;
-
-                default:
-                    this.typeTimer = this.typeSpeed;
-                    break;
-            }
-
-            this.typeWriter++;
-        }
+        this.typeWriter.GameLoop();
     }
 
     Render(_ctx, _dt)
@@ -107,12 +78,16 @@ class IdleMode extends BattleMode
         _ctx.textBaseline = 'top';
         _ctx.textAlign = 'left';
 
-        Utils.MultiLineText(_ctx, this.checkText.slice(0, this.typeWriter), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+        Utils.MultiLineText(_ctx, this.typeWriter.GetText(), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
     }
 
-    Click(e)
+    PointerDown(e)
     {
-        battle.ui.Click(e);
+        battle.ui.PointerDown(e);
+    }
+    PointerUp(e)
+    {
+        battle.ui.PointerUp(e);
     }
 }
 class OwnAttackMode extends BattleMode
@@ -154,7 +129,7 @@ class OwnAttackMode extends BattleMode
     
     Start()
     {
-        battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
+        battle.SetBounds({x1: 500, y1: 250, x2: 780, y2: 500});
     }
 
     Render(_ctx, _dt)
@@ -245,10 +220,16 @@ class OwnAttackMode extends BattleMode
 
             this.drawing = true;
             this.drawnPoints = [];
+
+            // фикс рисования с мобилы
+            battle.TeleportSoulToCursor(e);
+
+            this.AddPoint();
         }
     }
     PointerUp(e)
     {
+        this.AddPoint();
         if(!this.pending && this.drawing)
             this.FinishOwnAttack();
 
@@ -257,13 +238,16 @@ class OwnAttackMode extends BattleMode
     }
     PointerMove(e)
     {
-        let pos = {x: battle.soul.x, y: battle.soul.y};
+        this.AddPoint();
+    }
+    AddPoint()
+    {
+        if(this.pending || !this.drawing)
+            return;
 
-        if(!this.pending && this.drawing)
-        {
-            if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
-                this.drawnPoints.push(pos);
-        }
+        let pos = {x: battle.soul.x, y: battle.soul.y};
+        if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
+            this.drawnPoints.push(pos);
     }
 
     FinishOwnAttack()
@@ -310,6 +294,151 @@ class AttackMode extends BattleMode
     constructor()
     {
         super(ATTACK);
+    }
+}
+class ActMode extends BattleMode
+{
+    constructor()
+    {
+        super(ACT);
+
+        this.spriteSheet = new Image();
+        this.spriteSheet.src = './img/actions.png';
+
+        this.clickTarget = null;
+        this.actionsPrepared = false;
+        this.actions = [
+            {name: 'Проверка', text: '* ПромоУтка - ЗЩТ 10 АТК 10\n* Рекламный бизнесмен.'},
+            {name: 'Сделка', text: '* Ты предлагаешь ПромоУтке сделку.\n* Он слишком занят карандашом.'},
+            {name: 'Помощь', text: '* Ты зовёшь Туни.\n* Но никто не пришёл.'},
+            {name: 'Флирт', text: '* Эй красавчик!'}
+        ];
+
+        this.selectedAction = null;
+
+        this.typeWriter = new TypeWriter();
+    }
+
+    Start()
+    {
+        this.selectedAction = null;
+
+        if(!this.actionsPrepared)
+        {
+            let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2;
+            let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2;
+
+            for(let i in this.actions)
+            {
+                let action = this.actions[i];
+
+                let x = i % 2;
+                let y = ~~(i / 2);
+                action.index = {x, y};
+
+                action.x = battle.defaultBounds.x1 + x * w;
+                action.y = battle.defaultBounds.y1 + y * h;
+                action.w = w;
+                action.h = h;
+            }
+
+            this.actionsPrepared = true;
+        }
+    }
+
+    TargetButton()
+    {
+        if(
+            battle.mousePos.x < battle.defaultBounds.x1 || battle.mousePos.x > battle.defaultBounds.x2 ||
+            battle.mousePos.y < battle.defaultBounds.y1 || battle.mousePos.y > battle.defaultBounds.y2
+        )
+            return null;
+        
+        for(let i in this.actions)
+        {
+            if(
+                battle.mousePos.x >= this.actions[i].x && battle.mousePos.x <= this.actions[i].x + this.actions[i].w &&
+                battle.mousePos.y >= this.actions[i].y && battle.mousePos.y <= this.actions[i].y + this.actions[i].h
+            )
+                return this.actions[i];
+        }
+
+        return null;
+    }
+
+    GameLoop()
+    {
+        if(this.selectedAction != null)
+        {
+            this.typeWriter.GameLoop();
+
+            if(this.typeWriter.finished)
+            {
+                this.selectedAction = null;
+
+                battle.Attack();
+            }
+        }
+    }
+
+    PointerDown(e)
+    {
+        if(this.selectedAction != null)
+            return;
+
+        this.clickTarget = this.TargetButton();
+    }
+    PointerUp(e)
+    {
+        if(this.selectedAction != null)
+            return;
+
+        let target = this.TargetButton();
+
+        if(target && target == this.clickTarget)
+        {
+            this.selectedAction = target;
+            this.typeWriter.SetText(this.selectedAction.text);
+        }
+
+        this.clickTarget = null;
+    }
+
+    Render(_ctx, _dt)
+    {
+        if(this.selectedAction == null)
+        {
+            _ctx.strokeStyle = '#000';
+            _ctx.fillStyle = '#000';
+            _ctx.font = '36px Arial';
+            _ctx.textBaseline = 'middle';
+            _ctx.textAlign = 'left';
+
+            let target = this.TargetButton();
+
+            for(let i in this.actions)
+            {
+                let action = this.actions[i];
+
+                if(action == target)
+                    _ctx.lineWidth = 5;
+                else
+                    _ctx.lineWidth = 2;
+
+                _ctx.strokeRect(action.x, action.y, action.w, action.h);
+                _ctx.drawImage(this.spriteSheet, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 50 + action.h / 2, 100, 100);
+                _ctx.fillText(action.name, action.x + 150, action.y + action.h / 2);
+            }
+        }
+        else
+        {
+            _ctx.font = '36px Arial';
+            _ctx.fillStyle = '#000';
+            _ctx.textBaseline = 'top';
+            _ctx.textAlign = 'left';
+    
+            Utils.MultiLineText(_ctx, this.typeWriter.GetText(), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+        }
     }
 }
 class GameOverMode extends BattleMode

@@ -163,6 +163,12 @@ class FallAttack extends Attack
         super(30, 200);
     }
 
+    Start()
+    {
+        super.Start();
+        battle.SetBounds({x1: 400, y1: 300, x2: 880, y2: 550});
+    }
+
     SpawnProjectile(_tickCount)
     {
         let projectile = new FallProjectile(Utils.Random(battle.soul.x - 10, battle.soul.x + 10), Utils.Random(battle.soul.y - 300, battle.soul.y - 150));
@@ -196,6 +202,12 @@ class AssAttack extends Attack
     constructor()
     {
         super(40, 300);
+    }
+
+    Start()
+    {
+        super.Start();
+        battle.SetBounds({x1: 400, y1: 300, x2: 880, y2: 550});
     }
     
     SpawnProjectile(_tickCount)
