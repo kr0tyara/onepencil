@@ -48,15 +48,53 @@ class IdleMode extends BattleMode
         this.checkText = '* А вот и ПромоУтка!';
         this.flavourText = [
             '* ПромоУтка чистит пёрышки.\n* Он нашёл залысину.',
-            '* 9 из 30000 Тунеров рекомендуют!',
-            '* ПромоУтка пускает слюни на Карандаш.',
-            '* ПромоУтка использует зубочистку.\n* А, стоп... \n* Он грызёт её...',
+            '* 9 из 36 538 Тунеров рекомендуют!',
+            '* Пахнет грифелем.',
+            '* ПромоУтка считает свою прибыль.\n* Без калькулятора.',
+            '* ПромоУтка ковыряется в зубах.\n* Но, скорее, просто грызёт зубочистку...',
         ];
+
+        this.typeWriter = 0;
+        this.typeTimer = 0;
+
+        this.typeSpeed = 3;
+        this.typeSpeedPunctuation = 10;
+        this.typeSpeedNextLine = 25;
     }
 
     Start()
     {
-        this.checkText = Utils.RandomArray(this.flavourText);
+        this.checkText  = Utils.RandomArray(this.flavourText);
+        this.typeWriter = 0;
+        this.typeTimer = 0;
+    }
+
+    GameLoop()
+    {
+        this.typeTimer--;
+
+        if(this.typeTimer <= 0 && this.typeWriter < this.checkText.length)
+        {
+            let lastSymbol = this.checkText.charAt(this.typeWriter);
+            switch(lastSymbol)
+            {
+                case ',':
+                case '.':
+                case '!':
+                    this.typeTimer = this.typeSpeedPunctuation;
+                    break;
+
+                case '\n':
+                    this.typeTimer = this.typeSpeedNextLine;
+                    break;
+
+                default:
+                    this.typeTimer = this.typeSpeed;
+                    break;
+            }
+
+            this.typeWriter++;
+        }
     }
 
     Render(_ctx, _dt)
@@ -69,7 +107,7 @@ class IdleMode extends BattleMode
         _ctx.textBaseline = 'top';
         _ctx.textAlign = 'left';
 
-        Utils.MultiLineText(_ctx, this.checkText, battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+        Utils.MultiLineText(_ctx, this.checkText.slice(0, this.typeWriter), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
     }
 
     Click(e)
@@ -112,6 +150,11 @@ class OwnAttackMode extends BattleMode
             img.src = sprites[i];
             this.attackSprites.push(img);
         }
+    }
+    
+    Start()
+    {
+        battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
     }
 
     Render(_ctx, _dt)

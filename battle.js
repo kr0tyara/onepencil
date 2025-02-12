@@ -133,7 +133,6 @@ class Battle
             new OwnAttackMode(),
             new GameOverMode()
         ];
-        this.mode = this.modes[IDLE];
 
         this.canvas.addEventListener('click', this.Click.bind(this));
         this.canvas.addEventListener('pointerdown', this.PointerDown.bind(this));
@@ -159,6 +158,7 @@ class Battle
 
         this.projectiles = [];
 
+        this.SetMode(IDLE);
         this.render = requestAnimationFrame(this.Render.bind(this));
         this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
     }
@@ -172,6 +172,12 @@ class Battle
     {
         this.targetBounds = {..._bounds};
         this.boundsReady = false;
+
+        if(Utils.BoundsEqual(this.bounds, this.targetBounds))
+        {
+            this.bounds = {...this.targetBounds};
+            this.boundsReady = true;
+        }
     }
     ResetBounds()
     {
@@ -248,12 +254,12 @@ class Battle
 
         if(!this.boundsReady)
         {
-            this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, 0.2);
-            this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, 0.2);
-            this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, 0.2);
-            this.bounds.y2 = Utils.Lerp(this.bounds.y2, this.targetBounds.y2, 0.2);
+            this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, 0.3);
+            this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, 0.3);
+            this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, 0.3);
+            this.bounds.y2 = Utils.Lerp(this.bounds.y2, this.targetBounds.y2, 0.3);
 
-            if(Utils.BoundsDistance(this.bounds, this.targetBounds) <= 1)
+            if(Utils.BoundsEqual(this.bounds, this.targetBounds))
             {
                 this.bounds = {...this.targetBounds};
                 this.boundsReady = true;
@@ -319,7 +325,6 @@ class Battle
             return;
 
         this.SetMode(OWN_ATTACK);
-        this.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
     }
     Idle()
     {
@@ -556,9 +561,10 @@ class Utils
         let d = {x: _a.x - _b.x, y: _a.y - _b.y};
         return Math.sqrt(d.x * d.x + d.y * d.y);
     }
-    static BoundsDistance(_a, _b)
+    static BoundsEqual(_a, _b)
     {
-        return this.Distance({x: _a.x1, y: _a.y1}, {x: _b.x1, y: _b.y1});
+        return  this.Distance({x: _a.x1, y: _a.y1}, {x: _b.x1, y: _b.y1}) <= 1 &&
+                this.Distance({x: _a.x2, y: _a.y2}, {x: _b.x2, y: _b.y2}) <= 1;
     }
     static RotatePoint(_point, _center, _angle)
     {

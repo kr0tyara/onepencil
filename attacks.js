@@ -148,7 +148,6 @@ class FallAttack extends Attack
     Start()
     {
         super.Start();
-        //battle.SetBounds(100, 1180, 0, 720);
     }
 
     SpawnProjectile(_tickCount)
