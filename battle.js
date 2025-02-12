@@ -404,18 +404,23 @@ class Battle
                 pos.y = this.targetBounds.y1;
             if(pos.y > this.targetBounds.y2 - this.soul.h)
                 pos.y = this.targetBounds.y2 - this.soul.h;
+
         }
         else
+        {
             this.canvas.style.cursor = 'none';
+        }
 
-        this.soul.x = pos.x;
-        this.soul.y = pos.y;
+        this.soul.targetPos = {...pos};
 
         this.mode.PointerMove(e);
     }
 
     Graze(_projectile)
     {
+        if(this.soul.invinsible)
+            return;
+
         this.tp++;
     }
     Hurt(_damage)
@@ -482,6 +487,8 @@ class Soul extends Entity
     {
         super(_x, _y, 0, 0);
 
+        this.targetPos = {x: this.x, y: this.y};
+
         this.radius = 10;
         this.grazeRadius = 20;
         this.pivot = {x: this.radius, y: this.radius};
@@ -509,6 +516,9 @@ class Soul extends Entity
             if(this.invinsibleTimer <= 0)
                 this.invinsible = false;
         }
+
+        this.x = ~~Utils.Lerp(this.x, this.targetPos.x, 0.5);
+        this.y = ~~Utils.Lerp(this.y, this.targetPos.y, 0.5);
     }
 
     Render(_ctx, _dt)
