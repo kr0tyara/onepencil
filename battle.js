@@ -59,12 +59,21 @@ class EnemySprite
 
 class TypeWriter
 {
-    constructor()
+    constructor(_showClickToContinueTip = true)
     {
-        this.text = '* Пора проснуться и почувствовать запах БОЛИ.';
+        this.text = ['* Пора проснуться и почувствовать запах БОЛИ.'];
 
+        this.index = 0;
         this.value = 0;
         this.timer = 0;
+
+        this.showClickToContinueTip = _showClickToContinueTip;
+        this.clickedAtLeastOnce = false;
+
+        this.stuckTime = 100;
+        this.stuckTimer = this.stuckTime;
+        
+        this.lineFinished = false;
         this.finished = false;
 
         this.speed = 3;
@@ -74,33 +83,93 @@ class TypeWriter
 
     SetText(_text)
     {
-        this.text = _text;
+        this.text = [..._text];
         
+        this.index = 0;
         this.value = 0;
         this.timer = 0;
+        
+        this.stuckTimer = this.stuckTime;
+        
+        this.lineFinished = false;
         this.finished = false;
     }
     GetText()
     {
-        return this.text.slice(0, this.value);
+        return this.text[this.index].slice(0, this.value);
+    }
+
+    Click(e)
+    {
+        this.clickedAtLeastOnce = true;
+
+        if(!this.lineFinished)
+        {
+            this.value = this.text[this.index].length;
+            this.FinishLine();
+            return;
+        }
+
+        if(this.lineFinished && this.index + 1 < this.text.length)
+        {
+            this.index++;
+
+            this.lineFinished = false;
+            this.stuckTimer = this.stuckTime;
+            
+            this.value = 0;
+            this.timer = 0;
+        }
+        else
+        {
+            this.finished = true;
+        }
+    }
+    FinishLine()
+    {
+        this.lineFinished = true;
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.font = '36px Arial';
+        _ctx.fillStyle = '#000';
+        _ctx.textBaseline = 'top';
+        _ctx.textAlign = 'left';
+
+        Utils.MultiLineText(_ctx, this.GetText(), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+
+        if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
+        {
+            _ctx.font = '24px Arial';
+            _ctx.fillStyle = '#777';
+            _ctx.textBaseline = 'bottom';
+            _ctx.textAlign = 'right';
+            _ctx.fillText('Кликни, чтобы продолжить!', battle.defaultBounds.x2 - 25, battle.defaultBounds.y2 - 25);
+        }
     }
 
     GameLoop()
     {
-        if(this.finished)
+        if(this.finished || this.lineFinished)
+        {
+            if(this.stuckTimer > 0)
+                this.stuckTimer--;
+            
             return;
+        }
         
         this.timer--;
 
         if(this.timer <= 0)
         {
-            if(this.value >= this.text.length)
+            if(this.value >= this.text[this.index].length)
             {
-                this.finished = true;
+                this.FinishLine();
                 return;
             }
 
-            let lastSymbol = this.text.charAt(this.value);
+            let lastSymbol = this.text[this.index].charAt(this.value);
             switch(lastSymbol)
             {
                 case ',':

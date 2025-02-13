@@ -54,13 +54,13 @@ class IdleMode extends BattleMode
             '* ПромоУтка ковыряется в зубах.\n* Но, скорее, просто грызёт зубочистку...',
         ];
 
-        this.typeWriter = new TypeWriter();
+        this.typeWriter = new TypeWriter(false);
     }
 
     Start()
     {
         this.checkText  = Utils.RandomArray(this.flavourText);
-        this.typeWriter.SetText(this.checkText);
+        this.typeWriter.SetText([this.checkText]);
     }
 
     GameLoop()
@@ -73,16 +73,18 @@ class IdleMode extends BattleMode
         if(!battle.boundsReady)
             return;
 
-        _ctx.font = '36px Arial';
-        _ctx.fillStyle = '#000';
-        _ctx.textBaseline = 'top';
-        _ctx.textAlign = 'left';
-
-        Utils.MultiLineText(_ctx, this.typeWriter.GetText(), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+        this.typeWriter.Render(_ctx, _dt);
     }
 
     PointerDown(e)
     {
+        // todo: это не очень красиво!!
+        if(
+            battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 50
+            || battle.mousePos.x < battle.defaultBounds.x1 || battle.mousePos.x > battle.defaultBounds.x2
+        )
+            this.typeWriter.Click(e);
+
         battle.ui.PointerDown(e);
     }
     PointerUp(e)
@@ -308,10 +310,10 @@ class ActMode extends BattleMode
         this.clickTarget = null;
         this.actionsPrepared = false;
         this.actions = [
-            {name: 'Проверка', text: '* ПромоУтка - ЗЩТ 10 АТК 10\n* Рекламный бизнесмен.'},
-            {name: 'Сделка', text: '* Ты предлагаешь ПромоУтке сделку.\n* Он слишком занят карандашом.'},
-            {name: 'Помощь', text: '* Ты зовёшь Туни.\n* Но никто не пришёл.'},
-            {name: 'Флирт', text: '* Эй красавчик!'}
+            {name: 'Проверка', text: ['* ПромоУтка - ЗЩТ 10 АТК 10\n* Рекламный бизнесмен.', '* Хочу какать', '* Жёлтый лист осений)']},
+            {name: 'Сделка', text: ['* Ты предлагаешь ПромоУтке сделку.\n* Он слишком занят карандашом.']},
+            {name: 'Помощь', text: ['* Ты зовёшь Туни.\n* Но никто не пришёл.']},
+            {name: 'Флирт', text: ['* Эй красавчик!']}
         ];
 
         this.selectedAction = null;
@@ -391,7 +393,10 @@ class ActMode extends BattleMode
     PointerUp(e)
     {
         if(this.selectedAction != null)
+        {
+            this.typeWriter.Click(e);
             return;
+        }
 
         let target = this.TargetButton();
 
@@ -432,12 +437,7 @@ class ActMode extends BattleMode
         }
         else
         {
-            _ctx.font = '36px Arial';
-            _ctx.fillStyle = '#000';
-            _ctx.textBaseline = 'top';
-            _ctx.textAlign = 'left';
-    
-            Utils.MultiLineText(_ctx, this.typeWriter.GetText(), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+            this.typeWriter.Render(_ctx, _dt);
         }
     }
 }
