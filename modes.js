@@ -83,7 +83,10 @@ class IdleMode extends BattleMode
             battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 50
             || battle.mousePos.x < battle.defaultBounds.x1 || battle.mousePos.x > battle.defaultBounds.x2
         )
-            this.typeWriter.Click(e);
+        {
+            this.typeWriter.PointerUp(e);
+            return;
+        }
 
         battle.ui.PointerDown(e);
     }
@@ -313,7 +316,8 @@ class ActMode extends BattleMode
             {name: 'Проверка', text: ['* ПромоУтка - ЗЩТ 10 АТК 10\n* Рекламный бизнесмен.', '* Хочу какать', '* Жёлтый лист осений)']},
             {name: 'Сделка', text: ['* Ты предлагаешь ПромоУтке сделку.\n* Он слишком занят карандашом.']},
             {name: 'Помощь', text: ['* Ты зовёшь Туни.\n* Но никто не пришёл.']},
-            {name: 'Флирт', text: ['* Эй красавчик!']}
+            {name: 'Флирт', text: ['* Эй красавчик!']},
+            {name: 'Пися', text: ['* Эй красавчик!']},
         ];
 
         this.selectedAction = null;
@@ -328,7 +332,7 @@ class ActMode extends BattleMode
         if(!this.actionsPrepared)
         {
             let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2;
-            let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2;
+            let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2);
 
             for(let i in this.actions)
             {
@@ -394,7 +398,7 @@ class ActMode extends BattleMode
     {
         if(this.selectedAction != null)
         {
-            this.typeWriter.Click(e);
+            this.typeWriter.PointerUp(e);
             return;
         }
 

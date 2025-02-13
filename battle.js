@@ -99,7 +99,7 @@ class TypeWriter
         return this.text[this.index].slice(0, this.value);
     }
 
-    Click(e)
+    PointerUp(e)
     {
         this.clickedAtLeastOnce = true;
 
