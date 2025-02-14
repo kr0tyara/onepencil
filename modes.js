@@ -165,23 +165,13 @@ class IdleMode extends BattleMode
     constructor()
     {
         super(IDLE);
-
-        this.checkText = '* А вот и ПромоУтка!';
-        this.flavourText = [
-            '* ПромоУтка чистит пёрышки.\n* Залысину видно за километр.',
-            '* 9 из 36 538 Тунеров рекомендуют!',
-            '* Пахнет грифелем.',
-            '* ПромоУтка считает свою прибыль.\n* Для этого не нужен калькулятор.',
-            '* ПромоУтка ковыряется в зубах.\n* Но, скорее, просто грызёт зубочистку...',
-        ];
-
         this.typeWriter = new TypeWriter(false);
     }
 
     Start()
     {
-        this.checkText  = Utils.RandomArray(this.flavourText);
-        this.typeWriter.SetText([this.checkText]);
+        let result = battle.enemies[0].Idle();
+        this.typeWriter.SetText(result.text);
     }
 
     GameLoop()
@@ -410,6 +400,9 @@ class OwnAttackMode extends TargettedBattleMode
         let damage = ~~(attack.damage * res.Score);
         battle.DealDamage(damage);
         
+        let result = battle.enemies[0].Attack();
+        battle.lastActionResult = result;
+        
         this.pending = true;
         this.currentAttack = attack;
         this.attackDamage = damage;
@@ -430,7 +423,9 @@ class PreAttackMode extends BattleMode
     Start()
     {
         this.locked = true;
-        //battle.enemySprite.SetSpeechBubble(['Люблю какащьке', 'А ведь ам ням\n...\nахался']);
+
+        if(battle.lastActionResult.speech)
+            battle.enemySprite.SetSpeechBubble(battle.lastActionResult.speech);
     }
     PointerUp(e)
     {
@@ -592,13 +587,14 @@ class ActMode extends TargettedBattleMode
         {
             this.selectedAction = target;
             let result = this.selectedAction.action();
-
-            if(!result)
+            if(!result || !result.text)
             {
                 console.error('всё поехало в жопу!!!', this.selectedAction);
             }
 
-            this.typeWriter.SetText(result);
+            this.typeWriter.SetText(result.text);
+            battle.lastActionResult = result;
+
             this.locked = true;
         }
         else

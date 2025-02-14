@@ -165,7 +165,7 @@ class TypeWriter
                     this.timer = this.speedPunctuation;
                     break;
 
-                case '\n':
+                case '%':
                     this.timer = this.speedNextLine;
                     break;
 
@@ -277,57 +277,6 @@ class BattleUI
     }
 }
 
-class EnemyData
-{
-    constructor()
-    {
-        this.name = 'Никто';
-        this.index = {x: 0, y: 0};
-        this.hp = 0;
-        this.maxHP = 0;
-
-        this.actions = [
-            {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
-        ];
-    }
-
-    Check()
-    {
-        return ['* Никто - АТК 1000 ЗЩТ -999.\n* Я ем любовь.'];
-    }
-}
-class PromoDuck extends EnemyData
-{
-    constructor()
-    {
-        super();
-
-        this.name = 'ПромоУтка';
-        this.index = {x: 0, y: 0};
-        this.hp = 500;
-        this.maxHP = 500;
-
-        this.actions = [
-            {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
-            {name: 'Сделка', index: {x: 0, y: 1}, action: this.Deal.bind(this)},
-            {name: 'Крик', index: {x: 1, y: 0}, action: this.Scream.bind(this)},
-        ];
-    }
-
-    Check()
-    {
-        return ['* ПромоУтка - АТК 10 ЗЩТ 0\n* Рекламный бизнесмен.\n* Древесный сомелье.'];
-    }
-    Deal()
-    {
-        return ['* Ты предлагаешь ПромоУтке сделку.\n* Но у тебя лишь один карандаш.'];
-    }
-    Scream()
-    {
-        return ['* Ты позвал Туни...', '* Но никто не пришёл.'];
-    }
-}
-
 class Battle
 {
     constructor()
@@ -362,6 +311,7 @@ class Battle
         this.enemies = [
             new PromoDuck(),
         ];
+        this.lastActionResult = null;
 
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
         this.soul = new Soul(this.mousePos.x, this.mousePos.y);
@@ -374,13 +324,13 @@ class Battle
 
         this.projectiles = [];
 
-        this.SetMode(IDLE);
         this.render = requestAnimationFrame(this.Render.bind(this));
         this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
     }
 
     Start()
     {
+        this.SetMode(IDLE);
         this.ui.Start();
     }
 
@@ -544,7 +494,10 @@ class Battle
         if(this.mode.id == GAME_OVER)
             return;
 
-        this.SetMode(PRE_ATTACK);
+        if(battle.lastActionResult && battle.lastActionResult.speech)
+            this.SetMode(PRE_ATTACK);
+        else
+            this.Attack();
     }
     Attack()
     {
@@ -557,6 +510,8 @@ class Battle
         this.attackCounter++;
         this.attack = this.attacks[this.attackCounter % this.attacks.length];
         this.attack.Start();
+
+        battle.lastActionResult = null;
     }
     OwnAttack()
     {
@@ -959,7 +914,7 @@ class Utils
 
     static MultiLineText(_ctx, _text, _x, _y)
     {
-        let lines = _text.split('\n');
+        let lines = _text.split(/\%|\n/);
 
         let metrics = _ctx.measureText(_text);
         let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
