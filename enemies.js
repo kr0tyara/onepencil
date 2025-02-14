@@ -12,10 +12,15 @@ class EnemyData
         ];
     }
 
+    Start()
+    {
+        this.hp = this.maxHP;
+    }
+
     Idle()
     {
         return {
-            text: '* Где я?'
+            text: ['* Где я?']
         }
     }
 
@@ -59,6 +64,12 @@ class PromoDuck extends EnemyData
         ];
     }
 
+    Start()
+    {
+        super.Start();
+        this.scream = 0;
+    }
+
     Idle()
     {
         return {
@@ -76,7 +87,8 @@ class PromoDuck extends EnemyData
     Check()
     {
         return {
-            text: ['* ПромоУтка - АТК 10 ЗЩТ 0\n* Рекламный бизнесмен.\n* Древесный сомелье.']
+            text: ['* ПромоУтка - АТК 10 ЗЩТ 0\n* Рекламный бизнесмен.%* Древесный сомелье.'],
+            speech: ['Кря!']
         };
     }
     Deal()

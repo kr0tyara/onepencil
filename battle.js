@@ -106,7 +106,11 @@ class TypeWriter
         let x = battle.enemySprite.x + battle.enemySprite.w + 15;
         let y = battle.enemySprite.y + 55;
         let w = battle.defaultBounds.x2 - x;
-        let h = 150;
+        
+        _ctx.font = '24px Arial';
+        _ctx.textBaseline = 'top';
+        _ctx.textAlign = 'left';
+        let h = Utils.MultiLineTextHeight(_ctx, this.text[this.index]) + 20;
 
         _ctx.fillStyle = '#fff';
         _ctx.strokeStyle = '#000';
@@ -122,9 +126,6 @@ class TypeWriter
         _ctx.fill();
         _ctx.stroke();
 
-        _ctx.font = '24px Arial';
-        _ctx.textBaseline = 'top';
-        _ctx.textAlign = 'left';
         _ctx.fillStyle = '#000';
         Utils.MultiLineText(_ctx, this.GetText(), x + 10, y + 10);
 
@@ -132,7 +133,7 @@ class TypeWriter
         {
             _ctx.font = '16px Arial';
             _ctx.fillStyle = '#666';
-            _ctx.fillText('Кликни, чтобы продолжить!', x, y + 150 + 10);
+            _ctx.fillText('Кликни, чтобы продолжить!', x, y + h + 10);
         }
     }
 
@@ -308,9 +309,13 @@ class Battle
         this.ui = new BattleUI();
 
         this.enemySprite = new EnemySprite(this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 300 / 2, 0);
+
         this.enemies = [
             new PromoDuck(),
         ];
+        for(let i in this.enemies)
+            this.enemies[i].Start();
+
         this.lastActionResult = null;
 
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
@@ -910,6 +915,16 @@ class Utils
             x: _center.x + (_point.x - _center.x) * cos - (_point.y - _center.y) * sin, 
             y: _center.y + (_point.x - _center.x) * sin + (_point.y - _center.y) * cos 
         };
+    }
+
+    static MultiLineTextHeight(_ctx, _text)
+    {
+        let lines = _text.split(/\%|\n/);
+
+        let metrics = _ctx.measureText(_text);
+        let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+
+        return h * lines.length;
     }
 
     static MultiLineText(_ctx, _text, _x, _y)
