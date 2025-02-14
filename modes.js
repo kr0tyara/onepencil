@@ -49,9 +49,7 @@ class TargettedBattleMode extends BattleMode
         this.iconsSheet.src = './img/icons.png';
         
         this.enemiesPrepared = false;
-        this.enemies = [
-            {name: 'ПромоУтка', index: {x: 0, y: 0}},
-        ];
+        this.enemies = [];
         this.targetEnemy = null;
         this.targetClickTarget = null;
         this.enemySelection = true;
@@ -66,6 +64,14 @@ class TargettedBattleMode extends BattleMode
         {
             let w = 280;
             let h = 100;
+
+            this.enemies = [];
+            for(let i in battle.enemies)
+            {
+                let enemyData = battle.enemies[i];
+                let enemy = {data: enemyData};
+                this.enemies.push(enemy);
+            }
 
             for(let i in this.enemies)
             {
@@ -148,8 +154,8 @@ class TargettedBattleMode extends BattleMode
                 _ctx.lineWidth = 2;
 
             _ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
-            _ctx.fillText(enemy.name, enemy.x + 75, enemy.y + enemy.h / 2);
-            _ctx.drawImage(this.iconsSheet, 100 * enemy.index.x, 100 * enemy.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
+            _ctx.fillText(enemy.data.name, enemy.x + 75, enemy.y + enemy.h / 2);
+            _ctx.drawImage(this.iconsSheet, 100 * enemy.data.index.x, 100 * enemy.data.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
         }
     }
 }
@@ -251,7 +257,7 @@ class OwnAttackMode extends TargettedBattleMode
         super.SelectTarget(_target);
         battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
     }
-    
+
     Render(_ctx, _dt)
     {
         // выбор цели
@@ -322,7 +328,7 @@ class OwnAttackMode extends TargettedBattleMode
                 this.pending = false;
                 battle.enemySprite.SetAnimation(STATE_NORMAL, 0);
                 
-                if(battle.enemyHP > 0)
+                if(battle.enemies[0].hp > 0)
                     battle.PreAttack();
                 else
                 {
@@ -462,13 +468,7 @@ class ActMode extends TargettedBattleMode
         this.spriteSheet.src = './img/actions.png';
 
         this.clickTarget = null;
-        this.actionsPrepared = false;
-        this.actions = [
-            {name: 'Проверка', text: ['* ПромоУтка - ЗЩТ 10 АТК 10\n* Рекламный бизнесмен.', '* Хочу какать', '* Жёлтый лист осений)']},
-            {name: 'Сделка', text: ['* Ты предлагаешь ПромоУтке сделку.\n* Он слишком занят карандашом.']},
-            {name: 'Помощь', text: ['* Ты зовёшь Туни.\n* Но никто не пришёл.']},
-            {name: 'Флирт', text: ['* Эй красавчик!']},
-        ];
+        this.actions = [];
 
         this.selectedAction = null;
 
@@ -480,33 +480,37 @@ class ActMode extends TargettedBattleMode
         super.Start();
 
         this.selectedAction = null;
-
-        if(!this.actionsPrepared)
-        {
-            let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2;
-            let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2);
-
-            for(let i in this.actions)
-            {
-                let action = this.actions[i];
-
-                let x = i % 2;
-                let y = ~~(i / 2);
-                action.index = {x, y};
-
-                action.x = battle.defaultBounds.x1 + x * w;
-                action.y = battle.defaultBounds.y1 + y * h;
-                action.w = w;
-                action.h = h;
-            }
-
-            this.actionsPrepared = true;
-        }
     }
     SelectTarget(_target)
     {
         super.SelectTarget(_target);
         this.locked = false;
+        
+        this.actions = [];
+        
+        for(let i in this.targetEnemy.data.actions)
+        {
+            let actionData = this.targetEnemy.data.actions[i];
+            let action = {...actionData};
+            this.actions.push(action);
+        }
+
+        let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2;
+        let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2);
+
+        for(let i in this.actions)
+        {
+            let action = this.actions[i];
+
+            let x = i % 2;
+            let y = ~~(i / 2);
+            action.index = {x, y};
+
+            action.x = battle.defaultBounds.x1 + x * w;
+            action.y = battle.defaultBounds.y1 + y * h;
+            action.w = w;
+            action.h = h;
+        }
     }
     Back()
     {
@@ -587,7 +591,14 @@ class ActMode extends TargettedBattleMode
         if(target && target == this.clickTarget)
         {
             this.selectedAction = target;
-            this.typeWriter.SetText(this.selectedAction.text);
+            let result = this.selectedAction.action();
+
+            if(!result)
+            {
+                console.error('всё поехало в жопу!!!', this.selectedAction);
+            }
+
+            this.typeWriter.SetText(result);
             this.locked = true;
         }
         else

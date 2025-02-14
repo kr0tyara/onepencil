@@ -277,6 +277,57 @@ class BattleUI
     }
 }
 
+class EnemyData
+{
+    constructor()
+    {
+        this.name = 'Никто';
+        this.index = {x: 0, y: 0};
+        this.hp = 0;
+        this.maxHP = 0;
+
+        this.actions = [
+            {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
+        ];
+    }
+
+    Check()
+    {
+        return ['* Никто - АТК 1000 ЗЩТ -999.\n* Я ем любовь.'];
+    }
+}
+class PromoDuck extends EnemyData
+{
+    constructor()
+    {
+        super();
+
+        this.name = 'ПромоУтка';
+        this.index = {x: 0, y: 0};
+        this.hp = 500;
+        this.maxHP = 500;
+
+        this.actions = [
+            {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
+            {name: 'Сделка', index: {x: 0, y: 1}, action: this.Deal.bind(this)},
+            {name: 'Крик', index: {x: 1, y: 0}, action: this.Scream.bind(this)},
+        ];
+    }
+
+    Check()
+    {
+        return ['* ПромоУтка - АТК 10 ЗЩТ 0\n* Рекламный бизнесмен.\n* Древесный сомелье.'];
+    }
+    Deal()
+    {
+        return ['* Ты предлагаешь ПромоУтке сделку.\n* Но у тебя лишь один карандаш.'];
+    }
+    Scream()
+    {
+        return ['* Ты позвал Туни...', '* Но никто не пришёл.'];
+    }
+}
+
 class Battle
 {
     constructor()
@@ -308,7 +359,9 @@ class Battle
         this.ui = new BattleUI();
 
         this.enemySprite = new EnemySprite(this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 300 / 2, 0);
-        this.enemyHP = 500;
+        this.enemies = [
+            new PromoDuck(),
+        ];
 
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
         this.soul = new Soul(this.mousePos.x, this.mousePos.y);
@@ -392,7 +445,7 @@ class Battle
 
         this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(`${this.enemyHP}/500`, this.defaultBounds.x2, this.defaultBounds.y1 - 10);
+        this.ctx.fillText(`${this.enemies[0].hp}/${this.enemies[0].maxHP}`, this.defaultBounds.x2, this.defaultBounds.y1 - 10);
         
         // текущий режим
         this.mode.Render(this.ctx, _dt);
@@ -483,7 +536,7 @@ class Battle
 
         if(!this.mode.Back)
             return;
-        
+
         this.mode.Back();
     }
     PreAttack()
@@ -657,9 +710,9 @@ class Battle
 
     DealDamage(_damage)
     {
-        this.enemyHP -= _damage;
-        if(this.enemyHP < 0)
-            this.enemyHP = 0;
+        this.enemies[0].hp -= _damage;
+        if(this.enemies[0].hp < 0)
+            this.enemies[0].hp = 0;
     }
 }
 
