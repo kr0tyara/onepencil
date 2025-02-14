@@ -134,7 +134,7 @@ class OwnAttackMode extends BattleMode
     
     Start()
     {
-        battle.SetBounds({x1: 500, y1: 250, x2: 780, y2: 500});
+        battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
     }
 
     Render(_ctx, _dt)
@@ -199,7 +199,7 @@ class OwnAttackMode extends BattleMode
                 battle.enemySprite.SetAnimation(STATE_NORMAL, 0);
                 
                 if(battle.enemyHP > 0)
-                    battle.Attack();
+                    battle.PreAttack();
                 else
                 {
                     alert('ТЫ ВЫИГРАЛ!');
@@ -294,6 +294,30 @@ class OwnAttackMode extends BattleMode
         this.drawnPoints = [];
     }
 }
+class PreAttackMode extends BattleMode
+{
+    constructor()
+    {
+        super(PRE_ATTACK);
+    }
+
+    Start()
+    {
+        battle.enemySprite.SetSpeechBubble(['Люблю какащьке', 'А ведь ам ням\n...\nахался']);
+    }
+    PointerUp(e)
+    {
+        battle.enemySprite.typeWriter.PointerUp(e);
+    }
+
+    GameLoop()
+    {
+        if(!battle.enemySprite.speaking)
+        {
+            battle.Attack();
+        }
+    }
+}
 class AttackMode extends BattleMode
 {
     constructor()
@@ -317,7 +341,6 @@ class ActMode extends BattleMode
             {name: 'Сделка', text: ['* Ты предлагаешь ПромоУтке сделку.\n* Он слишком занят карандашом.']},
             {name: 'Помощь', text: ['* Ты зовёшь Туни.\n* Но никто не пришёл.']},
             {name: 'Флирт', text: ['* Эй красавчик!']},
-            {name: 'Пися', text: ['* Эй красавчик!']},
         ];
 
         this.selectedAction = null;
@@ -382,7 +405,7 @@ class ActMode extends BattleMode
             {
                 this.selectedAction = null;
 
-                battle.Attack();
+                battle.PreAttack();
             }
         }
     }

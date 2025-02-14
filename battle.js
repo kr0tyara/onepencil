@@ -1,10 +1,11 @@
 var battle;
 
 const   IDLE = 0,
-        ATTACK = 1,
-        OWN_ATTACK = 2,
-        ACT = 3,
-        GAME_OVER = 4,
+        PRE_ATTACK = 1,
+        ATTACK = 2,
+        OWN_ATTACK = 3,
+        ACT = 4,
+        GAME_OVER = 5,
         
         ATTACK_NONE = 0,
         ATTACK_CIRCLE = 1,
@@ -15,53 +16,11 @@ const   IDLE = 0,
         STATE_HURT = 1,
         STATE_ATTACKING = 2;
 
-class EnemySprite
-{
-    constructor()
-    {
-        let spr = [
-            './img/duck.png',
-            './img/duck2.png',
-        ];
-
-        this.sprites = [];
-        for(let i in spr)
-        {
-            let img = new Image();
-            img.src = spr[i];
-            this.sprites.push(img);
-        }
-
-        this.state = STATE_NORMAL;
-        this.animationTime = 0;
-    }
-
-    SetAnimation(_state, _time)
-    {
-        this.state = _state;
-        this.animationTime = _time;
-    }
-
-    Render(_ctx, _dt)
-    {
-        let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
-
-        if(this.state == STATE_ATTACKING)
-            _ctx.globalAlpha = .5;
-
-        // утка
-        _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 300 / 2 + shake, 0, 300, 300);
-
-        if(this.state == STATE_ATTACKING)
-            _ctx.globalAlpha = 1;
-    }
-}
-
 class TypeWriter
 {
     constructor(_showClickToContinueTip = true)
     {
-        this.text = ['* Пора проснуться и почувствовать запах БОЛИ.'];
+        this.text = ['Пора проснуться\nи почувствовать\nзапах БОЛИ.'];
 
         this.index = 0;
         this.value = 0;
@@ -101,8 +60,6 @@ class TypeWriter
 
     PointerUp(e)
     {
-        this.clickedAtLeastOnce = true;
-
         if(!this.lineFinished)
         {
             this.value = this.text[this.index].length;
@@ -110,6 +67,7 @@ class TypeWriter
             return;
         }
 
+        this.clickedAtLeastOnce = true;
         if(this.lineFinished && this.index + 1 < this.text.length)
         {
             this.index++;
@@ -142,10 +100,44 @@ class TypeWriter
         if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
         {
             _ctx.font = '24px Arial';
-            _ctx.fillStyle = '#777';
+            _ctx.fillStyle = '#666';
             _ctx.textBaseline = 'bottom';
             _ctx.textAlign = 'right';
             _ctx.fillText('Кликни, чтобы продолжить!', battle.defaultBounds.x2 - 25, battle.defaultBounds.y2 - 25);
+        }
+    }
+    RenderSpeechBubble(_ctx, _dt)
+    {
+        let x = battle.enemySprite.x + battle.enemySprite.w + 15;
+        let y = battle.enemySprite.y + 55;
+        let w = battle.defaultBounds.x2 - x;
+        let h = 150;
+
+        _ctx.fillStyle = '#fff';
+        _ctx.strokeStyle = '#000';
+        _ctx.beginPath();
+        _ctx.moveTo(x - 20, y + h / 2);
+        _ctx.lineTo(x, y + h / 2 - 10);
+        _ctx.lineTo(x, y);
+        _ctx.lineTo(x + w, y);
+        _ctx.lineTo(x + w, y + h);
+        _ctx.lineTo(x, y + h);
+        _ctx.lineTo(x, y + h / 2 + 10);
+        _ctx.lineTo(x - 20, y + h / 2);
+        _ctx.fill();
+        _ctx.stroke();
+
+        _ctx.font = '24px Arial';
+        _ctx.textBaseline = 'top';
+        _ctx.textAlign = 'left';
+        _ctx.fillStyle = '#000';
+        Utils.MultiLineText(_ctx, this.GetText(), x + 10, y + 10);
+
+        if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
+        {
+            _ctx.font = '16px Arial';
+            _ctx.fillStyle = '#666';
+            _ctx.fillText('Кликни, чтобы продолжить!', x, y + 150 + 10);
         }
     }
 
@@ -281,6 +273,7 @@ class Battle
         this.modes =
         [
             new IdleMode(),
+            new PreAttackMode(),
             new AttackMode(),
             new OwnAttackMode(),
             new ActMode(),
@@ -300,7 +293,7 @@ class Battle
         
         this.ui = new BattleUI();
 
-        this.enemySprite = new EnemySprite();
+        this.enemySprite = new EnemySprite(this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 300 / 2, 0);
         this.enemyHP = 500;
 
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
@@ -425,6 +418,7 @@ class Battle
             }
         }
 
+        this.enemySprite.GameLoop();
         this.mode.GameLoop();
 
         if(this.attack != null)
@@ -468,6 +462,13 @@ class Battle
         this.soul.GameLoop();
     }
 
+    PreAttack()
+    {
+        if(this.mode.id == GAME_OVER)
+            return;
+
+        this.SetMode(PRE_ATTACK);
+    }
     Attack()
     {
         if(this.mode.id == GAME_OVER)
@@ -558,7 +559,7 @@ class Battle
         let pos = Utils.MousePos(e, this.canvas);
         this.mousePos = pos;
 
-        if(this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -585,7 +586,7 @@ class Battle
     {
         let pos = {...this.mousePos};
 
-        if(this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
         {
             if(pos.x < this.targetBounds.x1)
                 pos.x = this.targetBounds.x1;
@@ -663,6 +664,76 @@ class Entity
 
         /*_ctx.fillStyle = 'blue';
         _ctx.fillRect(-5, -5, 10, 10);*/
+    }
+}
+
+class EnemySprite extends Entity
+{
+    constructor(_x, _y)
+    {
+        super(_x, _y, 300, 300);
+
+        let spr = [
+            './img/duck.png',
+            './img/duck2.png',
+        ];
+
+        this.sprites = [];
+        for(let i in spr)
+        {
+            let img = new Image();
+            img.src = spr[i];
+            this.sprites.push(img);
+        }
+
+        this.state = STATE_NORMAL;
+        this.animationTime = 0;
+
+        this.speaking = false;
+        this.typeWriter = new TypeWriter();
+    }
+
+    SetAnimation(_state, _time)
+    {
+        this.state = _state;
+        this.animationTime = _time;
+    }
+
+    SetSpeechBubble(_text)
+    {
+        this.speaking = true;
+        this.typeWriter.SetText(_text);
+    }
+
+    GameLoop()
+    {
+        if(this.speaking)
+        {
+            this.typeWriter.GameLoop();
+
+            if(this.typeWriter.finished)
+                this.speaking = false;
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
+
+        if(this.state == STATE_ATTACKING)
+            _ctx.globalAlpha = .5;
+
+        // утка
+        _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], this.x + shake, this.y, this.w, this.h);
+
+        if(this.state == STATE_ATTACKING)
+            _ctx.globalAlpha = 1;
+
+        // спичбабол
+        if(this.speaking)
+        {
+            this.typeWriter.RenderSpeechBubble(_ctx, _dt);
+        }
     }
 }
 
