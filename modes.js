@@ -39,6 +39,116 @@ class BattleMode
 
     }
 }
+class TargettedBattleMode extends BattleMode
+{
+    constructor(_mode)
+    {
+        super(_mode);
+        
+        this.iconsSheet = new Image();
+        this.iconsSheet.src = './img/icons.png';
+        
+        this.enemiesPrepared = false;
+        this.enemies = [
+            {name: 'ПромоУтка', index: {x: 0, y: 0}},
+        ];
+        this.targetEnemy = null;
+        this.targetClickTarget = null;
+        this.enemySelection = true;
+    }
+
+    Start()
+    {
+        this.locked = false;
+        this.enemySelection = true;
+
+        if(!this.enemiesPrepared)
+        {
+            let w = 280;
+            let h = 100;
+
+            for(let i in this.enemies)
+            {
+                let enemy = this.enemies[i];
+                enemy.x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - w / 2;
+                enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 + i * h - h / 2;
+                enemy.w = w;
+                enemy.h = h;
+            }
+
+            this.enemiesPrepared = true;
+        }
+    }
+    SelectTarget(_target)
+    {
+        this.locked = true;
+        this.targetEnemy = _target;
+        this.enemySelection = false;
+    }
+
+    TargetEnemy()
+    {
+        for(let i in this.enemies)
+        {
+            if(
+                battle.mousePos.x >= this.enemies[i].x && battle.mousePos.x <= this.enemies[i].x + this.enemies[i].w &&
+                battle.mousePos.y >= this.enemies[i].y && battle.mousePos.y <= this.enemies[i].y + this.enemies[i].h
+            )
+                return this.enemies[i];
+        }
+
+        return null;
+    }
+    PointerDown(e)
+    {
+        this.targetClickTarget = this.TargetEnemy();
+        if(this.targetClickTarget == null)
+            battle.ui.PointerDown(e);
+    }
+    PointerUp(e)
+    {
+        let target = this.TargetEnemy();
+        if(target == this.targetClickTarget && target != null)
+            this.SelectTarget(target);
+        else
+            battle.ui.PointerUp(e);
+
+        this.targetClickTarget = null;
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.font = '36px Arial';
+        _ctx.textBaseline = 'middle';
+        
+        _ctx.font = '36px Arial';
+        _ctx.fillStyle = '#000';
+        _ctx.textAlign = 'center';
+        _ctx.textBaseline = 'top';
+
+        _ctx.fillText(this.id == OWN_ATTACK ? 'Атака' : 'Действие', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
+
+        _ctx.strokeStyle = '#000';
+        _ctx.textAlign = 'left';
+        _ctx.textBaseline = 'middle';
+
+        let target = this.TargetEnemy();
+
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+
+            if(enemy == target)
+                _ctx.lineWidth = 5;
+            else
+                _ctx.lineWidth = 2;
+
+            _ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
+            _ctx.fillText(enemy.name, enemy.x + 75, enemy.y + enemy.h / 2);
+            _ctx.drawImage(this.iconsSheet, 100 * enemy.index.x, 100 * enemy.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
+        }
+    }
+}
 
 class IdleMode extends BattleMode
 {
@@ -96,7 +206,7 @@ class IdleMode extends BattleMode
         battle.ui.PointerUp(e);
     }
 }
-class OwnAttackMode extends BattleMode
+class OwnAttackMode extends TargettedBattleMode
 {
     constructor()
     {
@@ -125,93 +235,29 @@ class OwnAttackMode extends BattleMode
         };
         this.currentAttack = null;
         this.attackDamage = 0;
-        
-        this.enemiesPrepared = false;
-        this.iconsSheet = new Image();
-        this.iconsSheet.src = './img/icons.png';
-        this.enemies = [
-            {name: 'ПромоУтка', index: {x: 0, y: 0}},
-        ];
-        this.targetEnemy = null;
-        this.clickTarget = null;
-        this.enemySelection = true;
     }
     
     Start()
     {
+        super.Start();
         this.locked = false;
-        this.enemySelection = true;
-
-        if(!this.enemiesPrepared)
-        {
-            let w = 280;
-            let h = 100;
-
-            for(let i in this.enemies)
-            {
-                let enemy = this.enemies[i];
-                enemy.x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - w / 2;
-                enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - h / 2;
-                enemy.w = w;
-                enemy.h = h;
-            }
-        }
     }
     SelectTarget(_target)
     {
-        this.locked = true;
-        this.targetEnemy = _target;
-        this.enemySelection = false;
+        super.SelectTarget(_target);
         battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
-    }
-    TargetEnemy()
-    {
-        for(let i in this.enemies)
-        {
-            if(
-                battle.mousePos.x >= this.enemies[i].x && battle.mousePos.x <= this.enemies[i].x + this.enemies[i].w &&
-                battle.mousePos.y >= this.enemies[i].y && battle.mousePos.y <= this.enemies[i].y + this.enemies[i].h
-            )
-                return this.enemies[i];
-        }
-
-        return null;
     }
 
     Render(_ctx, _dt)
     {
-        _ctx.font = '36px Arial';
-        _ctx.textBaseline = 'middle';
-        _ctx.textAlign = 'left';
-        
         // выбор цели
         if(this.enemySelection)
         {
-            _ctx.strokeStyle = '#000';
-            _ctx.fillStyle = '#000';
-            _ctx.font = '36px Arial';
-            _ctx.textBaseline = 'middle';
-            _ctx.textAlign = 'left';
-
-            let target = this.TargetEnemy();
-
-            for(let i in this.enemies)
-            {
-                let enemy = this.enemies[i];
-
-                if(enemy == target)
-                    _ctx.lineWidth = 5;
-                else
-                    _ctx.lineWidth = 2;
-
-                _ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
-                _ctx.drawImage(this.iconsSheet, 100 * enemy.index.x, 100 * enemy.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
-                _ctx.fillText(enemy.name, enemy.x + 75, enemy.y + enemy.h / 2);
-            }
-
+            super.Render(_ctx, _dt);
             return;
         }
 
+        _ctx.font = '36px Arial';
         // рисуем
         if(!this.pending)
         {
@@ -297,10 +343,7 @@ class OwnAttackMode extends BattleMode
     {
         if(this.enemySelection)
         {
-            this.clickTarget = this.TargetEnemy();
-            if(this.clickTarget == null)
-                battle.ui.PointerDown(e);
-            
+            super.PointerDown(e);
             return;
         }
 
@@ -321,16 +364,7 @@ class OwnAttackMode extends BattleMode
     {
         if(this.enemySelection)
         {
-            let target = this.TargetEnemy();
-            if(target == this.clickTarget && target != null)
-            {
-                this.SelectTarget(target);
-            }
-            else
-                battle.ui.PointerUp(e);
-
-            this.clickTarget = null;
-
+            super.PointerUp(e);
             return;
         }
 
@@ -414,7 +448,7 @@ class AttackMode extends BattleMode
         this.locked = true;
     }
 }
-class ActMode extends BattleMode
+class ActMode extends TargettedBattleMode
 {
     constructor()
     {
@@ -439,7 +473,8 @@ class ActMode extends BattleMode
 
     Start()
     {
-        this.locked = false;
+        super.Start();
+
         this.selectedAction = null;
 
         if(!this.actionsPrepared)
@@ -463,6 +498,11 @@ class ActMode extends BattleMode
 
             this.actionsPrepared = true;
         }
+    }
+    SelectTarget(_target)
+    {
+        super.SelectTarget(_target);
+        this.locked = false;
     }
 
     TargetAction()
@@ -502,6 +542,12 @@ class ActMode extends BattleMode
 
     PointerDown(e)
     {
+        if(this.enemySelection)
+        {
+            super.PointerDown(e);
+            return;
+        }
+
         if(this.selectedAction != null)
             return;
 
@@ -511,6 +557,12 @@ class ActMode extends BattleMode
     }
     PointerUp(e)
     {
+        if(this.enemySelection)
+        {
+            super.PointerUp(e);
+            return;
+        }
+
         if(this.selectedAction != null)
         {
             this.typeWriter.PointerUp(e);
@@ -532,6 +584,12 @@ class ActMode extends BattleMode
 
     Render(_ctx, _dt)
     {
+        if(this.enemySelection)
+        {
+            super.Render(_ctx, _dt);
+            return;
+        }
+
         if(this.selectedAction == null)
         {
             _ctx.strokeStyle = '#000';

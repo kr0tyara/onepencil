@@ -183,21 +183,36 @@ class BattleUI
 {
     constructor()
     {
+        this.clickTarget = null;
+        this.buttonsPrepared = false;
     }
 
     Start()
     {
-        this.clickTarget = null;
-        this.buttons = [
-            {name: 'АТАКА', mode: OWN_ATTACK, action: battle.OwnAttack.bind(battle)},
-            {name: 'ДЕЙСТВИЕ', mode: ACT, action: battle.Act.bind(battle)},
-        ];
-
-        let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 1) * 20) / this.buttons.length;
-        for(let i in this.buttons)
+        if(!this.buttonsPrepared)
         {
-            this.buttons[i].x = battle.defaultBounds.x1 + i * (w + 20);
-            this.buttons[i].w = w;
+            this.buttons = [
+                {name: '<', mode: IDLE, action: battle.Idle.bind(battle), back: true},
+                {name: 'АТАКА', mode: OWN_ATTACK, action: battle.OwnAttack.bind(battle)},
+                {name: 'ДЕЙСТВИЕ', mode: ACT, action: battle.Act.bind(battle)},
+            ];
+
+            let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 2) * 20) / (this.buttons.length - 1);
+            for(let i in this.buttons)
+            {
+                let button = this.buttons[i];
+                if(button.back)
+                {
+                    button.x = battle.defaultBounds.x1 - 50 - 20;
+                    button.w = 50;
+                    continue;
+                }
+
+                button.x = battle.defaultBounds.x1 + (i - 1) * (w + 20);
+                button.w = w;
+            }
+
+            this.buttonsPrepared = true;
         }
     }
 
@@ -245,15 +260,19 @@ class BattleUI
         _ctx.textAlign = 'center';
         for(let i in this.buttons)
         {
-            if(target == this.buttons[i] || battle.mode.id == this.buttons[i].mode)
+            let button = this.buttons[i];
+            if(button.back && (battle.mode.locked || battle.mode.id == IDLE))
+                continue;
+
+            if(target == button || battle.mode.id == button.mode)
                 _ctx.fillStyle = _ctx.strokeStyle = '#000';
             else if(battle.mode.id == IDLE || !battle.mode.locked)
                 _ctx.fillStyle = _ctx.strokeStyle = '#666';
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
 
-            _ctx.strokeRect(this.buttons[i].x, battle.defaultBounds.y2 + 70, this.buttons[i].w, 50);
-            _ctx.fillText(this.buttons[i].name, this.buttons[i].x + this.buttons[i].w / 2, battle.defaultBounds.y2 + 70 + 25);
+            _ctx.strokeRect(button.x, battle.defaultBounds.y2 + 70, button.w, 50);
+            _ctx.fillText(button.name, button.x + button.w / 2, battle.defaultBounds.y2 + 70 + 25);
         }
     }
 }
@@ -481,14 +500,20 @@ class Battle
         if(this.mode.id == GAME_OVER)
             return;
 
-        this.SetMode(OWN_ATTACK);
+        if(this.mode.id == OWN_ATTACK)
+            this.Idle();
+        else
+            this.SetMode(OWN_ATTACK);
     }
     Act()
     {
         if(this.mode.id == GAME_OVER)
             return;
 
-        this.SetMode(ACT);
+        if(this.mode.id == ACT)
+            this.Idle();
+        else
+            this.SetMode(ACT);
     }
     Idle()
     {
