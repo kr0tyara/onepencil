@@ -4,6 +4,7 @@ class BattleMode
     constructor(_mode)
     {
         this.id = _mode;
+        this.locked = false;
     }
 
     Start()
@@ -113,32 +114,104 @@ class OwnAttackMode extends BattleMode
         this.pendingAnimationTime = 50;
         this.pending = false;
 
-        this.attackType = ATTACK_NONE;
-        this.attackDamage = 0;
-        this.attackStrength = 0;
-
-        let sprites = [
-            './img/miss.png',
-            './img/circle.png',
-            './img/triangle.png',
-            './img/star.png',
-        ];
-        this.attackSprites = [];
-        for(let i in sprites)
+        this.attacksSheet = new Image();
+        this.attacksSheet.src = './img/own_attacks.png';
+        this.ownAttacks = 
         {
-            let img = new Image();
-            img.src = sprites[i];
-            this.attackSprites.push(img);
-        }
+            '':         {id: '', damage: 0, index: {x: 0, y: 0}},
+            'triangle': {id: 'triangle', damage: 50, index: {x: 1, y: 0}},
+            'circle':   {id: 'circle', damage: 100, index: {x: 0, y: 1}},
+            'star':     {id: 'star', damage: 120, index: {x: 1, y: 1}},
+        };
+        this.currentAttack = null;
+        this.attackDamage = 0;
+        
+        this.enemiesPrepared = false;
+        this.iconsSheet = new Image();
+        this.iconsSheet.src = './img/icons.png';
+        this.enemies = [
+            {name: 'ПромоУтка', index: {x: 0, y: 0}},
+        ];
+        this.targetEnemy = null;
+        this.clickTarget = null;
+        this.enemySelection = true;
     }
     
     Start()
     {
+        this.locked = false;
+        this.enemySelection = true;
+
+        if(!this.enemiesPrepared)
+        {
+            let w = 280;
+            let h = 100;
+
+            for(let i in this.enemies)
+            {
+                let enemy = this.enemies[i];
+                enemy.x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - w / 2;
+                enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - h / 2;
+                enemy.w = w;
+                enemy.h = h;
+            }
+        }
+    }
+    SelectTarget(_target)
+    {
+        this.locked = true;
+        this.targetEnemy = _target;
+        this.enemySelection = false;
         battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
+    }
+    TargetEnemy()
+    {
+        for(let i in this.enemies)
+        {
+            if(
+                battle.mousePos.x >= this.enemies[i].x && battle.mousePos.x <= this.enemies[i].x + this.enemies[i].w &&
+                battle.mousePos.y >= this.enemies[i].y && battle.mousePos.y <= this.enemies[i].y + this.enemies[i].h
+            )
+                return this.enemies[i];
+        }
+
+        return null;
     }
 
     Render(_ctx, _dt)
     {
+        _ctx.font = '36px Arial';
+        _ctx.textBaseline = 'middle';
+        _ctx.textAlign = 'left';
+        
+        // выбор цели
+        if(this.enemySelection)
+        {
+            _ctx.strokeStyle = '#000';
+            _ctx.fillStyle = '#000';
+            _ctx.font = '36px Arial';
+            _ctx.textBaseline = 'middle';
+            _ctx.textAlign = 'left';
+
+            let target = this.TargetEnemy();
+
+            for(let i in this.enemies)
+            {
+                let enemy = this.enemies[i];
+
+                if(enemy == target)
+                    _ctx.lineWidth = 5;
+                else
+                    _ctx.lineWidth = 2;
+
+                _ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
+                _ctx.drawImage(this.iconsSheet, 100 * enemy.index.x, 100 * enemy.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
+                _ctx.fillText(enemy.name, enemy.x + 75, enemy.y + enemy.h / 2);
+            }
+
+            return;
+        }
+
         // рисуем
         if(!this.pending)
         {
@@ -158,15 +231,16 @@ class OwnAttackMode extends BattleMode
             if(this.pendingTimer >= this.pendingAnimationTime)
             {
                 let x = ((battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
-                let sprite = this.attackSprites[this.attackType];
-                _ctx.drawImage(sprite, battle.defaultBounds.x2 - x + sprite.width / 2, battle.defaultBounds.y1 - 150 - sprite.height);
+                
+                _ctx.drawImage(this.attacksSheet, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x2 - x + 100 / 2, battle.defaultBounds.y1 - 150 - 100, 100, 100);
             }
             // пуля прилетела
             else
             {
                 battle.enemySprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
 
-                _ctx.fillStyle = this.attackStrength > .7 ? '#FF0000' : this.attackStrength > .4 ? '#FF9F00' : '#808080';
+                let strength = this.attackDamage / this.currentAttack.damage;
+                _ctx.fillStyle = strength > .7 ? '#FF0000' : strength > .4 ? '#FF9F00' : '#808080';
                 _ctx.textAlign = 'right';
                 _ctx.textBaseline = 'bottom';
 
@@ -205,6 +279,8 @@ class OwnAttackMode extends BattleMode
                     alert('ТЫ ВЫИГРАЛ!');
                     battle.GameOver();
                 }
+
+                this.currentAttack = null;
             }
         }
 
@@ -219,6 +295,15 @@ class OwnAttackMode extends BattleMode
 
     PointerDown(e)
     {
+        if(this.enemySelection)
+        {
+            this.clickTarget = this.TargetEnemy();
+            if(this.clickTarget == null)
+                battle.ui.PointerDown(e);
+            
+            return;
+        }
+
         if(!this.pending)
         {
             this.castTimer = this.castTime;
@@ -234,6 +319,21 @@ class OwnAttackMode extends BattleMode
     }
     PointerUp(e)
     {
+        if(this.enemySelection)
+        {
+            let target = this.TargetEnemy();
+            if(target == this.clickTarget && target != null)
+            {
+                this.SelectTarget(target);
+            }
+            else
+                battle.ui.PointerUp(e);
+
+            this.clickTarget = null;
+
+            return;
+        }
+
         this.AddPoint();
         if(!this.pending && this.drawing)
             this.FinishOwnAttack();
@@ -259,34 +359,16 @@ class OwnAttackMode extends BattleMode
     {
         let res = this.dollar.Recognize(this.drawnPoints, false);
             
-        let damage = 0;
-        let baseDamage = 0;
-        let attack = ATTACK_NONE;
-        switch(res.Name)
-        {
-            case 'triangle':
-                baseDamage = 50;
-                attack = ATTACK_TRIANGLE;
-                break;
+        let attack = this.ownAttacks[res.Name];
+        if(!attack)
+            attack = this.ownAttacks[''];
 
-            case 'circle':
-                baseDamage = 100;
-                attack = ATTACK_CIRCLE;
-                break;
-
-            case 'star':
-                baseDamage = 120;
-                attack = ATTACK_STAR;
-                break;
-        }
-
-        damage = ~~(baseDamage * res.Score);
+        let damage = ~~(attack.damage * res.Score);
         battle.DealDamage(damage);
         
         this.pending = true;
-        this.attackType = attack;
+        this.currentAttack = attack;
         this.attackDamage = damage;
-        this.attackStrength = damage / baseDamage;
 
         this.pendingTimer = this.pendingTime;
         
@@ -303,7 +385,8 @@ class PreAttackMode extends BattleMode
 
     Start()
     {
-        battle.enemySprite.SetSpeechBubble(['Люблю какащьке', 'А ведь ам ням\n...\nахался']);
+        this.locked = true;
+        //battle.enemySprite.SetSpeechBubble(['Люблю какащьке', 'А ведь ам ням\n...\nахался']);
     }
     PointerUp(e)
     {
@@ -312,6 +395,7 @@ class PreAttackMode extends BattleMode
 
     GameLoop()
     {
+        // todo: тут мы просираем целый тик, если диалога нет
         if(!battle.enemySprite.speaking)
         {
             battle.Attack();
@@ -323,6 +407,11 @@ class AttackMode extends BattleMode
     constructor()
     {
         super(ATTACK);
+    }
+
+    Start()
+    {
+        this.locked = true;
     }
 }
 class ActMode extends BattleMode
@@ -350,6 +439,7 @@ class ActMode extends BattleMode
 
     Start()
     {
+        this.locked = false;
         this.selectedAction = null;
 
         if(!this.actionsPrepared)
@@ -375,7 +465,7 @@ class ActMode extends BattleMode
         }
     }
 
-    TargetButton()
+    TargetAction()
     {
         if(
             battle.mousePos.x < battle.defaultBounds.x1 || battle.mousePos.x > battle.defaultBounds.x2 ||
@@ -415,7 +505,9 @@ class ActMode extends BattleMode
         if(this.selectedAction != null)
             return;
 
-        this.clickTarget = this.TargetButton();
+        this.clickTarget = this.TargetAction();
+        if(this.clickTarget == null)
+            battle.ui.PointerDown(e);
     }
     PointerUp(e)
     {
@@ -425,13 +517,15 @@ class ActMode extends BattleMode
             return;
         }
 
-        let target = this.TargetButton();
-
+        let target = this.TargetAction();
         if(target && target == this.clickTarget)
         {
             this.selectedAction = target;
             this.typeWriter.SetText(this.selectedAction.text);
+            this.locked = true;
         }
+        else
+            battle.ui.PointerUp(e);
 
         this.clickTarget = null;
     }
@@ -446,7 +540,7 @@ class ActMode extends BattleMode
             _ctx.textBaseline = 'middle';
             _ctx.textAlign = 'left';
 
-            let target = this.TargetButton();
+            let target = this.TargetAction();
 
             for(let i in this.actions)
             {

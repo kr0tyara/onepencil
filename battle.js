@@ -7,11 +7,6 @@ const   IDLE = 0,
         ACT = 4,
         GAME_OVER = 5,
         
-        ATTACK_NONE = 0,
-        ATTACK_CIRCLE = 1,
-        ATTACK_TRIANGLE = 2,
-        ATTACK_STAR = 3,
-        
         STATE_NORMAL = 0,
         STATE_HURT = 1,
         STATE_ATTACKING = 2;
@@ -208,7 +203,7 @@ class BattleUI
 
     TargetButton()
     {
-        if(battle.mode.id != IDLE)
+        if(battle.mode.id != IDLE && battle.mode.locked)
             return null;
 
         if(battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 50)
@@ -252,7 +247,7 @@ class BattleUI
         {
             if(target == this.buttons[i] || battle.mode.id == this.buttons[i].mode)
                 _ctx.fillStyle = _ctx.strokeStyle = '#000';
-            else if(battle.mode.id == IDLE)
+            else if(battle.mode.id == IDLE || !battle.mode.locked)
                 _ctx.fillStyle = _ctx.strokeStyle = '#666';
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
@@ -559,7 +554,7 @@ class Battle
         let pos = Utils.MousePos(e, this.canvas);
         this.mousePos = pos;
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked))
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -586,7 +581,7 @@ class Battle
     {
         let pos = {...this.mousePos};
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.id == OWN_ATTACK)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked))
         {
             if(pos.x < this.targetBounds.x1)
                 pos.x = this.targetBounds.x1;

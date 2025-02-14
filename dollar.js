@@ -165,7 +165,7 @@ class DollarRecognizer // constructor
 	Recognize(points, useProtractor)
 	{
 		if(points.length == 0)
-			return new Result("No match.", 0.0, 0);
+			return new Result("", 0.0, 0);
 
 		var t0 = Date.now();
 		var candidate = new Unistroke("", points);
@@ -185,7 +185,7 @@ class DollarRecognizer // constructor
 			}
 		}
 		var t1 = Date.now();
-		return (u == -1) ? new Result("No match.", 0.0, t1-t0) : new Result(this.Unistrokes[u].Name, useProtractor ? (1.0 - b) : (1.0 - b / HalfDiagonal), t1-t0);
+		return (u == -1) ? new Result("", 0.0, t1-t0) : new Result(this.Unistrokes[u].Name, useProtractor ? (1.0 - b) : (1.0 - b / HalfDiagonal), t1-t0);
 	}
 	AddGesture(name, points)
 	{
