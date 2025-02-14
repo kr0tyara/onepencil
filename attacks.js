@@ -30,27 +30,27 @@ class Attack
 
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
         if(!battle.boundsReady)
             return;
 
         if(this.startTimer > 0)
         {
-            this.startTimer--;
+            this.startTimer -= 1 * _delta;
             if(this.startTimer > 0)
                 return;
         }
 
-        this.attackTimer--;
+        this.attackTimer -= 1 * _delta;
         if(this.attackTimer <= 0)
         {
-            if(this.attackTimer == 0)
+            if(this.attackTimer <= 0)
                 this.OnTimeOut();
 
             if(battle.projectiles.length == 0)
             {
-                this.endTimer--;
+                this.endTimer -= 1 * _delta;
                 if(this.endTimer <= 0)
                     this.End();
             }
@@ -58,7 +58,7 @@ class Attack
             return;
         }
 
-        this.projectileTimer--;
+        this.projectileTimer -= 1 * _delta;
         if(this.projectileTimer <= 0)
         {
             this.tickCount++;
@@ -66,14 +66,14 @@ class Attack
             this.projectileTimer = this.projectileTime;
         }
 
-        this.OnGameLoop();
+        this.OnGameLoop(_delta);
     }
 
 
     OnTimeOut()
     {
     }
-    OnGameLoop()
+    OnGameLoop(_delta)
     {
     }
 
@@ -128,10 +128,10 @@ class Projectile extends Entity
         _ctx.fillRect(-5, -5, 10, 10);*/
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.honingTimer > 0)
-            this.honingTimer--;
+            this.honingTimer -= 1 * _delta;
     }
 }
 
@@ -185,15 +185,15 @@ class FallProjectile extends Projectile
         this.honingTime = 50;
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
-        super.GameLoop();
+        super.GameLoop(_delta);
 
         if(this.honingTimer > 0)
             return;
         
-        this.rotation += Math.PI / 60;
-        this.y += this.speed;
+        this.rotation += Math.PI / 60 * _delta;
+        this.y += this.speed * _delta;
     }
 }
 
@@ -235,15 +235,15 @@ class AssProjectile extends Projectile
         this.rotation = this.angle - Math.PI / 2;
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
-        super.GameLoop();
+        super.GameLoop(_delta);
 
         if(this.honingTimer > 0)
             return;
         
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed;
+        this.x += Math.cos(this.angle) * this.speed * _delta;
+        this.y += Math.sin(this.angle) * this.speed * _delta;
     }
 }
 
@@ -293,10 +293,10 @@ class CockAttack extends Attack
         _ctx.restore();
     }
 
-    OnGameLoop()
+    OnGameLoop(_delta)
     {
-        this.drawer.x += Math.cos(this.angle) * this.speed;
-        this.drawer.y += Math.sin(this.angle) * this.speed;
+        this.drawer.x += Math.cos(this.angle) * this.speed * _delta;
+        this.drawer.y += Math.sin(this.angle) * this.speed * _delta;
 
         if(Utils.Distance(this.drawer, this.lastPos) >= 12)
         {
@@ -331,14 +331,14 @@ class CockProjectile extends Projectile
         this.lifeTimer = this.lifeTime;
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
-        super.GameLoop();
+        super.GameLoop(_delta);
 
         if(this.honingTimer > 0)
             return;
 
-        this.lifeTimer--;
+        this.lifeTimer -= 1 * _delta;
         if(this.lifeTimer <= 0)
         {
             this.toDestroy = true;

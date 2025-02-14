@@ -12,7 +12,7 @@ class BattleMode
 
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
 
     }
@@ -174,9 +174,9 @@ class IdleMode extends BattleMode
         this.typeWriter.SetText(result.text);
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
-        this.typeWriter.GameLoop();
+        this.typeWriter.GameLoop(_delta);
     }
 
     Render(_ctx, _dt)
@@ -266,7 +266,7 @@ class OwnAttackMode extends TargettedBattleMode
             _ctx.textBaseline = 'top';
 
             if(this.drawing)
-                _ctx.fillText(`${this.castTimer}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
+                _ctx.fillText(`${~~this.castTimer}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
             else
                 _ctx.fillText('РИСУЙ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
         }
@@ -307,11 +307,11 @@ class OwnAttackMode extends TargettedBattleMode
 
         _ctx.stroke();
     }
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.pending)
         {
-            this.pendingTimer--;
+            this.pendingTimer -= 1 * _delta;
 
             if(this.pendingTimer <= 0)
             {
@@ -332,7 +332,7 @@ class OwnAttackMode extends TargettedBattleMode
 
         if(this.drawing)
         {
-            this.castTimer--;
+            this.castTimer -= 1 * _delta;
 
             if(this.castTimer <= 0)
                 this.FinishOwnAttack();
@@ -432,9 +432,8 @@ class PreAttackMode extends BattleMode
         battle.enemySprite.typeWriter.PointerUp(e);
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
-        // todo: тут мы просираем целый тик, если диалога нет
         if(!battle.enemySprite.speaking)
         {
             battle.Attack();
@@ -538,11 +537,11 @@ class ActMode extends TargettedBattleMode
         return null;
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.selectedAction != null)
         {
-            this.typeWriter.GameLoop();
+            this.typeWriter.GameLoop(_delta);
 
             if(this.typeWriter.finished)
             {

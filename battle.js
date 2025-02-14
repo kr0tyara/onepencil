@@ -137,17 +137,17 @@ class TypeWriter
         }
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.finished || this.lineFinished)
         {
             if(this.stuckTimer > 0)
-                this.stuckTimer--;
+                this.stuckTimer -= 1 * _delta;
             
             return;
         }
         
-        this.timer--;
+        this.timer -= 1 * _delta;
 
         if(this.timer <= 0)
         {
@@ -329,8 +329,9 @@ class Battle
 
         this.projectiles = [];
 
+        this.lastRender = 0;
         this.render = requestAnimationFrame(this.Render.bind(this));
-        this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
+        //this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
     }
 
     Start()
@@ -357,6 +358,10 @@ class Battle
 
     Render(_dt)
     {
+        let delta = (_dt - this.lastRender) / 16.67; // 1000 / 60
+        this.lastRender = _dt;
+        this.GameLoop(delta);
+        
         this.render = requestAnimationFrame(this.Render.bind(this));
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -419,7 +424,7 @@ class Battle
         if(this.attack != null)
             this.attack.Render(this.ctx, _dt);
     }
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.mode.id == GAME_OVER)
             return;
@@ -440,21 +445,24 @@ class Battle
             }
         }
 
-        this.enemySprite.GameLoop();
-        this.mode.GameLoop();
+        this.enemySprite.GameLoop(_delta);
+        this.mode.GameLoop(_delta);
 
         if(this.attack != null)
         {
-            this.attack.GameLoop();
+            this.attack.GameLoop(_delta);
 
             for(let i in this.projectiles)
             {
-                this.projectiles[i].GameLoop();
+                this.projectiles[i].GameLoop(_delta);
             }
 
             for(let i = this.projectiles.length - 1; i >= 0; i--)
             {
                 let projectile = this.projectiles[i];
+                
+                if(!projectile)
+                    continue;
 
                 if(projectile.toDestroy)
                 {
@@ -481,7 +489,7 @@ class Battle
             }
         }
 
-        this.soul.GameLoop();
+        this.soul.GameLoop(_delta);
     }
 
     Back()
@@ -748,11 +756,11 @@ class EnemySprite extends Entity
         this.typeWriter.SetText(_text);
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.speaking)
         {
-            this.typeWriter.GameLoop();
+            this.typeWriter.GameLoop(_delta);
 
             if(this.typeWriter.finished)
                 this.speaking = false;
@@ -806,18 +814,18 @@ class Soul extends Entity
         this.invinsible = true;
     }
 
-    GameLoop()
+    GameLoop(_delta)
     {
         if(this.invinsibleTimer > 0)
         {
-            this.invinsibleTimer--;
+            this.invinsibleTimer -= 1 * _delta;
 
             if(this.invinsibleTimer <= 0)
                 this.invinsible = false;
         }
 
-        this.x = Utils.Lerp(this.x, this.targetPos.x, 0.5);
-        this.y = Utils.Lerp(this.y, this.targetPos.y, 0.5);
+        this.x = Utils.Lerp(this.x, this.targetPos.x, 0.5 * _delta);
+        this.y = Utils.Lerp(this.y, this.targetPos.y, 0.5 * _delta);
 
         if(Utils.Distance({x: this.x, y: this.y}, this.targetPos) <= 1)
         {
