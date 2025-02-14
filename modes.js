@@ -85,6 +85,10 @@ class TargettedBattleMode extends BattleMode
         this.targetEnemy = _target;
         this.enemySelection = false;
     }
+    Back()
+    {
+        battle.Idle();
+    }
 
     TargetEnemy()
     {
@@ -247,7 +251,7 @@ class OwnAttackMode extends TargettedBattleMode
         super.SelectTarget(_target);
         battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
     }
-
+    
     Render(_ctx, _dt)
     {
         // выбор цели
@@ -503,6 +507,16 @@ class ActMode extends TargettedBattleMode
     {
         super.SelectTarget(_target);
         this.locked = false;
+    }
+    Back()
+    {
+        if(this.enemySelection)
+            super.Back();
+        else
+        {
+            this.enemySelection = true;
+            this.targetEnemy = null;
+        }
     }
 
     TargetAction()

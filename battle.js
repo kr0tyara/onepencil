@@ -192,7 +192,7 @@ class BattleUI
         if(!this.buttonsPrepared)
         {
             this.buttons = [
-                {name: '<', mode: IDLE, action: battle.Idle.bind(battle), back: true},
+                {name: '<', mode: IDLE, action: battle.Back.bind(battle), back: true},
                 {name: 'АТАКА', mode: OWN_ATTACK, action: battle.OwnAttack.bind(battle)},
                 {name: 'ДЕЙСТВИЕ', mode: ACT, action: battle.Act.bind(battle)},
             ];
@@ -476,6 +476,16 @@ class Battle
         this.soul.GameLoop();
     }
 
+    Back()
+    {
+        if(this.mode.id == GAME_OVER)
+            return;
+
+        if(!this.mode.Back)
+            return;
+        
+        this.mode.Back();
+    }
     PreAttack()
     {
         if(this.mode.id == GAME_OVER)
