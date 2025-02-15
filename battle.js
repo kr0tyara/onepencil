@@ -9,13 +9,18 @@ const   IDLE = 0,
         
         STATE_NORMAL = 0,
         STATE_HURT = 1,
-        STATE_ATTACKING = 2;
+        STATE_ATTACKING = 2,
+        STATE_HANGING = 3;
 
 class TypeWriter
 {
     constructor(_showClickToContinueTip = true)
     {
         this.text = ['Пора проснуться\nи почувствовать\nзапах БОЛИ.'];
+        this.actions = [];
+        
+        this.textTriggers = [];
+        this.currentAction = null;
 
         this.index = 0;
         this.value = 0;
@@ -38,7 +43,21 @@ class TypeWriter
     SetText(_text)
     {
         this.text = [..._text];
-        
+        this.actions = [];
+
+        this.textTriggers = new Array(this.text.length);
+        this.currentAction = null;
+        for(let i in this.text)
+        {
+            let text = this.text[i];
+
+            let regex = /&\d+/.exec(text);
+            if(regex)
+                this.textTriggers[i] = regex[0].split('&')[1] * 1;
+
+            this.text[i] = text.replaceAll(/&\d+/g, '');
+        }
+
         this.index = 0;
         this.value = 0;
         this.timer = 0;
@@ -52,9 +71,20 @@ class TypeWriter
     {
         return this.text[this.index].slice(0, this.value);
     }
+    SetActions(_actions)
+    {
+        this.actions = [..._actions];
+    }
 
     PointerUp(e)
     {
+        if(this.currentAction != null)
+        {
+            this.currentAction.Finish();
+            this.currentAction = null;
+            return;
+        }
+
         if(!this.lineFinished)
         {
             this.value = this.text[this.index].length;
@@ -63,6 +93,21 @@ class TypeWriter
         }
 
         this.clickedAtLeastOnce = true;
+        this.NextLine();
+    }
+    FinishLine()
+    {
+        this.lineFinished = true;
+
+        let trigger = this.textTriggers[this.index];
+        if(trigger != null && this.actions[trigger] != null)
+        {
+            this.currentAction = this.actions[trigger]();
+            this.currentAction.Start();
+        }
+    }
+    NextLine()
+    {
         if(this.lineFinished && this.index + 1 < this.text.length)
         {
             this.index++;
@@ -78,13 +123,12 @@ class TypeWriter
             this.finished = true;
         }
     }
-    FinishLine()
-    {
-        this.lineFinished = true;
-    }
 
     Render(_ctx, _dt)
     {
+        if(this.currentAction != null)
+            this.currentAction.Render(_ctx, _dt);
+
         _ctx.font = '36px Arial';
         _ctx.fillStyle = '#000';
         _ctx.textBaseline = 'top';
@@ -103,6 +147,9 @@ class TypeWriter
     }
     RenderSpeechBubble(_ctx, _dt)
     {
+        if(this.currentAction != null)
+            this.currentAction.Render(_ctx, _dt);
+
         let x = battle.enemySprite.x + battle.enemySprite.w + 15;
         let y = battle.enemySprite.y + 55;
         let w = battle.defaultBounds.x2 - x;
@@ -139,6 +186,16 @@ class TypeWriter
 
     GameLoop(_delta)
     {
+        if(this.currentAction != null)
+        {
+            this.currentAction.GameLoop(_delta);
+
+            if(this.currentAction.finished)
+                this.currentAction = null;
+            else
+                return;
+        }
+
         if(this.finished || this.lineFinished)
         {
             if(this.stuckTimer > 0)
@@ -727,6 +784,7 @@ class EnemySprite extends Entity
         let spr = [
             './img/duck.png',
             './img/duck2.png',
+            './img/promote.png',
         ];
 
         this.sprites = [];
@@ -742,6 +800,8 @@ class EnemySprite extends Entity
 
         this.speaking = false;
         this.typeWriter = new TypeWriter();
+
+        this.stakeShown = false;
     }
 
     SetAnimation(_state, _time)
@@ -750,10 +810,11 @@ class EnemySprite extends Entity
         this.animationTime = _time;
     }
 
-    SetSpeechBubble(_text)
+    SetSpeechBubble(_text, _actions)
     {
         this.speaking = true;
         this.typeWriter.SetText(_text);
+        this.typeWriter.SetActions(_actions);
     }
 
     GameLoop(_delta)
@@ -769,10 +830,59 @@ class EnemySprite extends Entity
 
     Render(_ctx, _dt)
     {
-        let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
-
         if(this.state == STATE_ATTACKING)
             _ctx.globalAlpha = .5;
+        
+        // промотка
+        if(this.stakeShown)
+        {
+            let y = 25;
+            let h = battle.defaultBounds.y1 - 25 - 25;
+            if(this.state == STATE_HANGING)
+                y = -h + (h + 25) * this.animationTime;
+
+            _ctx.lineCap = 'round';
+            _ctx.lineJoin = 'round';
+            
+            _ctx.lineWidth = 5;
+            _ctx.strokeStyle = '#000';
+            _ctx.fillStyle = '#fff';
+
+            _ctx.beginPath();
+            _ctx.rect(battle.defaultBounds.x1, y, 250, h);
+            _ctx.fill();
+            _ctx.stroke();
+            _ctx.closePath();
+            
+            _ctx.drawImage(this.sprites[2], 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
+
+            _ctx.font = '48px Arial';
+            _ctx.fillStyle = '#000';
+    
+            let text = `324905`;
+            let w = _ctx.measureText(text).width;
+
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'bottom';
+
+            _ctx.save();
+            _ctx.translate(battle.defaultBounds.x1 + 250 / 2, y + h - 30);
+
+            _ctx.fillText(text, 0, 0);
+            _ctx.translate(w / 2 + 5, -16);
+            _ctx.rotate(Math.PI * 1.5);
+            _ctx.drawImage(battle.soul.sprite, 0, 0);
+
+            _ctx.restore();
+            
+            _ctx.font = '24px Arial';
+            _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
+        }
+
+        let shake = 0;
+
+        if(this.state == STATE_HURT)
+            shake = Math.sin(_dt / 20) * (20 * this.animationTime);
 
         // утка
         _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], this.x + shake, this.y, this.w, this.h);

@@ -425,7 +425,9 @@ class PreAttackMode extends BattleMode
         this.locked = true;
 
         if(battle.lastActionResult.speech)
-            battle.enemySprite.SetSpeechBubble(battle.lastActionResult.speech);
+        {
+            battle.enemySprite.SetSpeechBubble(battle.lastActionResult.speech, battle.lastActionResult.actions ? battle.lastActionResult.actions : []);
+        }
     }
     PointerUp(e)
     {
