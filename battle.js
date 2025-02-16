@@ -380,7 +380,7 @@ class Battle
         this.hp = 100;
         this.tp = 0;
 
-        this.attacks = [new FallAttack(), new AssAttack(), new CockAttack()];
+        this.attacks = [new FallAttack(), new AssAttack(), new CockAttack(), new WheelAttack(), new TeethAttack()].reverse();
         this.attack = null;
         this.attackCounter = -1;
 
@@ -523,14 +523,16 @@ class Battle
 
                 if(projectile.toDestroy)
                 {
-                    this.DestroyProjectile(i);
+                    this.DestroyProjectileById(i);
                     continue;
                 }
 
                 if(projectile.Collision(false))
                 {
                     this.Hurt(projectile.damage);
-                    projectile.toDestroy = true;
+
+                    if(projectile.destructible)
+                        projectile.toDestroy = true;
                 }
                 else if(projectile.Collision(true))
                 {
@@ -635,9 +637,16 @@ class Battle
         _projectile.Start();
         this.projectiles.push(_projectile);
     }
-    DestroyProjectile(i)
+    DestroyProjectileById(i)
     {
         this.projectiles.splice(i, 1);
+    }
+    DestroyProjectile(_projectile)
+    {
+        let index = this.projectiles.indexOf(_projectile);
+
+        if(index != -1)
+            this.DestroyProjectileById(index);
     }
 
     Click(e)

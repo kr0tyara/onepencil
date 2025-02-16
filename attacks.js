@@ -2,7 +2,9 @@ class Attack
 {
     constructor(_projectileTime, _attackTime)
     {
+        this.timeOut = false;
         this.tickCount = 0;
+
         this.projectileTime = _projectileTime;
         this.attackTime = _attackTime;
 
@@ -12,6 +14,7 @@ class Attack
 
     Start()
     {
+        this.timeOut = false;
         this.tickCount = 0;
 
         this.projectileTimer = 0;
@@ -45,7 +48,7 @@ class Attack
         this.attackTimer -= 1 * _delta;
         if(this.attackTimer <= 0)
         {
-            if(this.attackTimer <= 0)
+            if(!this.timeOut)
                 this.OnTimeOut();
 
             if(battle.projectiles.length == 0)
@@ -55,6 +58,7 @@ class Attack
                     this.End();
             }
 
+            this.OnGameLoop(_delta);
             return;
         }
 
@@ -72,6 +76,7 @@ class Attack
 
     OnTimeOut()
     {
+        this.timeOut = true;
     }
     OnGameLoop(_delta)
     {
@@ -93,6 +98,7 @@ class Projectile extends Entity
         this.honingTime = 0;
         this.honingTimer = 0;
 
+        this.destructible = true;
         this.toDestroy = false;
     }
 
@@ -310,6 +316,8 @@ class CockAttack extends Attack
 
     OnTimeOut()
     {
+        super.OnTimeOut();
+
         for(let i in battle.projectiles)
         {
             battle.projectiles[i].lifeTimer = i;
@@ -343,5 +351,255 @@ class CockProjectile extends Projectile
         {
             this.toDestroy = true;
         }
+    }
+}
+
+
+class WheelAttack extends Attack
+{
+    constructor()
+    {
+        super(200, 600);
+    }
+
+    Start()
+    {
+        super.Start();
+
+        battle.SetBounds({x1: 400, y1: 300, x2: 880, y2: 550});
+    }
+
+    SpawnProjectile(_tickCount)
+    {
+        let reverse = _tickCount > 2;
+            
+        let center = {x: battle.bounds.x1 - 250, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + 80 / 2};
+        
+        if(_tickCount % 2 == 0)
+            center.x = battle.bounds.x1 - 125;
+        
+        if(reverse)
+            center.x = battle.bounds.x2 + 250;
+
+        for(let i = 0; i < 360; i += 30)
+        {
+            let angle = Math.PI * i / 180;
+            let projectile = new WheelProjectile(center.x, center.y, angle);
+            if(reverse)
+                projectile.speed = -projectile.speed * 1.25;
+            battle.AddProjectile(projectile);
+        }
+    }
+}
+class WheelProjectile extends Projectile
+{
+    constructor(_x, _y, _rotation)
+    {
+        super(_x, _y, 10, 100, 5);
+
+        this.pivot.x = this.w / 2;
+        this.pivot.y = -80;
+
+        this.speed = 3;
+        
+        this.rotation = _rotation;
+    }
+
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        this.x += this.speed * _delta;
+        this.rotation += Math.sign(this.speed) * (Math.PI / 180) * _delta;
+    }
+}
+
+class TeethAttack extends Attack
+{
+    constructor()
+    {
+        super(125, 500);
+
+        this.sheet = new Image();
+        this.sheet.src = './img/teeth2.png';
+    }
+
+    Start()
+    {
+        super.Start();
+
+        this.timeOut = false;
+        this.bite = 5;
+
+        this.preBiteTime = 8;
+        this.preBiteTimer = this.preBiteTime;
+        this.biteTime = 15;
+        this.biteTimer = this.biteTime;
+
+        let bounds = {x1: 400, y1: 300, x2: 880, y2: 550};
+        battle.SetBounds(bounds);
+
+        this.x = bounds.x2 + 75;
+        this.teethA = new TeethProjectile(this.x, bounds.y2 - 100, true);
+        this.teethB = new TeethProjectile(this.x, bounds.y2 - 50, false);
+        this.teethC = new TeethMiddleProjectile(this.x + 150, this.teethA.y + this.teethA.h, this.teethB.y - this.teethB.h - this.teethA.y);
+        
+        battle.AddProjectile(this.teethA);
+        battle.AddProjectile(this.teethB);
+        battle.AddProjectile(this.teethC);
+    }
+
+    Render(_ctx, _dt)
+    {
+        if(!this.teethA || !this.teethB || !this.teethC)
+            return;
+
+        _ctx.drawImage(this.sheet, 0, 0, 235, 15, this.teethA.x - 56, this.teethA.y - 10, 235, 15);
+
+        _ctx.drawImage(this.sheet, 194, 15, 41, 102, this.teethA.x + this.teethA.w - 13, this.teethB.y + this.teethB.h, 41, (this.teethA.y - 50 - this.teethB.y));
+
+        _ctx.drawImage(this.sheet, 0, 117, 235, 36, this.teethB.x - 58, this.teethB.y + this.teethB.h, 235, 36);
+    }
+
+    OnGameLoop(_delta)
+    {
+        if(this.timeOut)
+        {
+            if(this.bite == 4)
+            {
+                this.teethA.broken = true;
+                this.teethB.broken = true;
+            }
+
+            if(this.bite == 5)
+            {
+                this.Destroy();
+                return;
+            }
+        }
+
+        // перед укусом
+        if(this.bite == 1)
+        {
+            this.teethA.y -= 2 * _delta;
+            
+            if(this.teethA.y <= battle.bounds.y1 - 30)
+            {
+                this.teethA.y = battle.bounds.y1 - 30;
+                
+                this.bite = 2;
+                this.preBiteTimer = this.biteTime;
+            }
+        }
+        // открыл рот пошире
+        else if(this.bite == 2)
+        {
+            this.preBiteTimer -= 1 * _delta;
+            if(this.preBiteTimer <= 0)
+                this.bite = 3;
+        }
+        // кусаю
+        else if(this.bite == 3)
+        {
+            this.teethA.y += 12 * _delta;
+            if(this.teethA.y >= this.teethB.y - 50)
+            {
+                this.teethA.y = this.teethB.y - 50;
+
+                this.bite = 4;
+                this.biteTimer = this.biteTime;
+            }
+        }
+        // откусил, перед открытием рта
+        else if(this.bite == 4)
+        {
+            this.biteTimer -= 1 * _delta;
+
+            if(this.biteTimer <= 0)
+            {
+                this.bite = 5;
+            }
+        }
+        // открываю рот
+        else if(this.bite == 5)
+        {
+            this.teethA.y -= 4 * _delta;
+            if(this.teethA.y <= battle.bounds.y1)
+            {
+                this.teethA.y = battle.bounds.y1;
+                this.bite = 0;
+            }
+        }
+        // бегаю за душой
+        else
+        {
+            let targetX = battle.soul.x - 75;
+            this.x += (targetX - this.x) * 0.05 * _delta;
+
+            this.teethA.x = this.x;
+            this.teethB.x = this.x;
+            this.teethC.x = this.x + 150;
+        }
+        
+        this.teethC.y = this.teethA.y + this.teethA.h;
+        this.teethC.h = this.teethB.y - this.teethB.h - this.teethA.y;
+    }
+    SpawnProjectile(_tickCount)
+    {
+        if(_tickCount > 1 && this.bite == 0)
+            this.bite = 1;
+    }
+    OnTimeOut()
+    {
+        super.OnTimeOut();
+        this.bite = 1;
+    }
+
+
+    Destroy()
+    {
+        battle.DestroyProjectile(this.teethA);
+        battle.DestroyProjectile(this.teethB);
+        battle.DestroyProjectile(this.teethC);
+        
+        this.teethA = null;
+        this.teethB = null;
+        this.teethC = null;
+    }
+}
+class TeethProjectile extends Projectile
+{
+    constructor(_x, _y, _upper)
+    {
+        super(_x, _y, 150, 50, 20);
+
+        this.pivot.x = 0;
+        this.pivot.y = 0;
+
+        this.upper = _upper;
+        this.broken = false;
+        
+        this.sheet = new Image();
+        this.sheet.src = './img/teeth.png';
+
+        this.destructible = false;
+    }
+
+    Draw(_ctx, _dt)
+    {
+        _ctx.drawImage(this.sheet, this.broken ? 180 : 0, this.upper ? 0 : 57, 180, 57, -15, 0, 180, 57);
+    }
+}
+class TeethMiddleProjectile extends Projectile
+{
+    constructor(_x, _y, _h)
+    {
+        super(_x, _y, 30, _h, 20);
+
+        this.destructible = false;
+    }
+
+    Render(_ctx, _dt)
+    {
     }
 }
