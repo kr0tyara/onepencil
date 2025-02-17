@@ -48,7 +48,6 @@ class TargettedBattleMode extends BattleMode
         this.iconsSheet = new Image();
         this.iconsSheet.src = './img/icons.png';
         
-        this.enemiesPrepared = false;
         this.enemies = [];
         this.targetEnemy = null;
         this.targetClickTarget = null;
@@ -60,29 +59,28 @@ class TargettedBattleMode extends BattleMode
         this.locked = false;
         this.enemySelection = true;
 
-        if(!this.enemiesPrepared)
+        this.enemies = [];
+        for(let i in battle.enemies)
         {
-            let w = 280;
-            let h = 100;
+            let enemyData = battle.enemies[i];
 
-            this.enemies = [];
-            for(let i in battle.enemies)
-            {
-                let enemyData = battle.enemies[i];
-                let enemy = {data: enemyData};
-                this.enemies.push(enemy);
-            }
+            if(!enemyData.alive)
+                continue;
 
-            for(let i in this.enemies)
-            {
-                let enemy = this.enemies[i];
-                enemy.x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - w / 2;
-                enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 + i * h - h / 2;
-                enemy.w = w;
-                enemy.h = h;
-            }
+            let enemy = {data: enemyData};
+            this.enemies.push(enemy);
+        }
 
-            this.enemiesPrepared = true;
+        let w = 280;
+        let h = Math.min(100, (battle.defaultBounds.y2 - battle.defaultBounds.y1 - 100 - 25 * (this.enemies.length - 1)) / this.enemies.length);
+
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+            enemy.x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - w / 2;
+            enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 + i * (h + 25) - h / 2;
+            enemy.w = w;
+            enemy.h = h;
         }
     }
     SelectTarget(_target)
@@ -165,7 +163,7 @@ class IdleMode extends BattleMode
     constructor()
     {
         super(IDLE);
-        this.typeWriter = new TypeWriter(false);
+        this.typeWriter = new TypeWriter(null, false);
     }
 
     Start()
@@ -276,14 +274,14 @@ class OwnAttackMode extends TargettedBattleMode
             // пуля летит
             if(this.pendingTimer >= this.pendingAnimationTime)
             {
-                let x = ((battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
+                let x = (battle.defaultBounds.x2 - this.targetEnemy.data.sprite.x) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
                 
                 _ctx.drawImage(this.attacksSheet, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x2 - x + 100 / 2, battle.defaultBounds.y1 - 150 - 100, 100, 100);
             }
             // пуля прилетела
             else
             {
-                battle.enemySprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
+                this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
 
                 let strength = this.attackDamage / this.currentAttack.damage;
                 _ctx.fillStyle = strength > .7 ? '#FF0000' : strength > .4 ? '#FF9F00' : '#808080';
@@ -316,15 +314,9 @@ class OwnAttackMode extends TargettedBattleMode
             if(this.pendingTimer <= 0)
             {
                 this.pending = false;
-                battle.enemySprite.SetAnimation(STATE_NORMAL, 0);
-                
-                if(battle.enemies[0].hp > 0)
-                    battle.PreAttack();
-                else
-                {
-                    alert('ТЫ ВЫИГРАЛ!');
-                    battle.GameOver();
-                }
+                this.targetEnemy.data.sprite.SetAnimation(STATE_NORMAL, 0);
+
+                battle.OnOwnAttackEnd();
 
                 this.currentAttack = null;
             }
@@ -398,9 +390,9 @@ class OwnAttackMode extends TargettedBattleMode
             attack = this.ownAttacks[''];
 
         let damage = ~~(attack.damage * res.Score);
-        battle.DealDamage(damage);
+        battle.DealDamage(this.targetEnemy, damage);
         
-        let result = battle.enemies[0].Attack();
+        let result = battle.enemies[0].Hurt();
         battle.lastActionResult = result;
         
         this.pending = true;
@@ -426,19 +418,48 @@ class PreAttackMode extends BattleMode
 
         if(battle.lastActionResult.speech)
         {
-            battle.enemySprite.SetSpeechBubble(battle.lastActionResult.speech, battle.lastActionResult.actions ? battle.lastActionResult.actions : []);
+            battle.enemies[0].sprite.SetSpeechBubble(battle.lastActionResult.speech, battle.lastActionResult.actions ? battle.lastActionResult.actions : []);
         }
     }
     PointerUp(e)
     {
-        battle.enemySprite.typeWriter.PointerUp(e);
+        battle.enemies[0].sprite.typeWriter.PointerUp(e);
     }
 
     GameLoop(_delta)
     {
-        if(!battle.enemySprite.speaking)
+        if(!battle.enemies[0].sprite.speaking)
         {
             battle.Attack();
+        }
+    }
+}
+class PostAttackMode extends BattleMode
+{
+    constructor()
+    {
+        super(POST_ATTACK);
+    }
+
+    Start()
+    {
+        this.locked = true;
+
+        if(battle.lastActionResult.speech)
+        {
+            battle.enemies[0].sprite.SetSpeechBubble(battle.lastActionResult.speech, battle.lastActionResult.actions ? battle.lastActionResult.actions : []);
+        }
+    }
+    PointerUp(e)
+    {
+        battle.enemies[0].sprite.typeWriter.PointerUp(e);
+    }
+
+    GameLoop(_delta)
+    {
+        if(!battle.enemies[0].sprite.speaking)
+        {
+            battle.Idle();
         }
     }
 }
@@ -468,7 +489,7 @@ class ActMode extends TargettedBattleMode
 
         this.selectedAction = null;
 
-        this.typeWriter = new TypeWriter();
+        this.typeWriter = new TypeWriter(null, true);
     }
 
     Start()

@@ -3,19 +3,24 @@ var battle;
 const   IDLE = 0,
         PRE_ATTACK = 1,
         ATTACK = 2,
-        OWN_ATTACK = 3,
-        ACT = 4,
-        GAME_OVER = 5,
+        POST_ATTACK = 3,
+        OWN_ATTACK = 4,
+        ACT = 5,
+        GAME_OVER = 6,
         
         STATE_NORMAL = 0,
         STATE_HURT = 1,
         STATE_ATTACKING = 2,
-        STATE_HANGING = 3;
+        STATE_HANGING = 3,
+        STATE_DEAD = 4;
 
 class TypeWriter
 {
-    constructor(_showClickToContinueTip = true)
+    constructor(_parent = null, _showClickToContinueTip = true)
     {
+        // todo: подчищать при уничтожении :)
+        this.parent = _parent;
+
         this.text = ['Пора проснуться\nи почувствовать\nзапах БОЛИ.'];
         this.actions = [];
         
@@ -150,8 +155,8 @@ class TypeWriter
         if(this.currentAction != null)
             this.currentAction.Render(_ctx, _dt);
 
-        let x = battle.enemySprite.x + battle.enemySprite.w + 15;
-        let y = battle.enemySprite.y + 55;
+        let x = this.parent.x + this.parent.w + 15;
+        let y = this.parent.y + 55;
         let w = battle.defaultBounds.x2 - x;
         
         _ctx.font = '24px Arial';
@@ -347,6 +352,7 @@ class Battle
             new IdleMode(),
             new PreAttackMode(),
             new AttackMode(),
+            new PostAttackMode(),
             new OwnAttackMode(),
             new ActMode(),
             new GameOverMode()
@@ -365,13 +371,30 @@ class Battle
         
         this.ui = new BattleUI();
 
-        this.enemySprite = new EnemySprite(this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 300 / 2, 0);
-
         this.enemies = [
             new PromoDuck(),
         ];
+
+        // расстановка врагов
+        let w = 0;
         for(let i in this.enemies)
-            this.enemies[i].Start();
+        {
+            let enemy = this.enemies[i];
+            enemy.Start();
+
+            let sprite = enemy.CreateSprite(0, 0);
+            w += sprite.w;
+            if(i + 1 < this.enemies.length)
+                w += 50;
+        }
+        let curX = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1 - w) / 2;
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+            enemy.sprite.x = curX;
+            
+            curX += enemy.sprite.w + 50;
+        }
 
         this.lastActionResult = null;
 
@@ -380,9 +403,8 @@ class Battle
         this.hp = 100;
         this.tp = 0;
 
-        this.attacks = [new FallAttack(), new AssAttack(), new CockAttack(), new WheelAttack(), new TeethAttack()].reverse();
         this.attack = null;
-        this.attackCounter = -1;
+        this.attackCounter = 0;
 
         this.projectiles = [];
 
@@ -436,7 +458,11 @@ class Battle
         }
 
         // утка
-        this.enemySprite.Render(this.ctx, _dt);
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+            enemy.sprite.Render(this.ctx, _dt);
+        }
 
         // поле боя
         this.ctx.lineCap = 'round';
@@ -502,7 +528,10 @@ class Battle
             }
         }
 
-        this.enemySprite.GameLoop(_delta);
+        for(let i in this.enemies)
+        {
+            this.enemies[i].sprite.GameLoop(_delta);
+        }
         this.mode.GameLoop(_delta);
 
         if(this.attack != null)
@@ -566,7 +595,7 @@ class Battle
         if(this.mode.id == GAME_OVER)
             return;
 
-        if(battle.lastActionResult && battle.lastActionResult.speech)
+        if(this.lastActionResult && this.lastActionResult.speech)
             this.SetMode(PRE_ATTACK);
         else
             this.Attack();
@@ -579,12 +608,29 @@ class Battle
         this.SetMode(ATTACK);
         this.ResetBounds();
 
-        this.attackCounter++;
-        this.attack = this.attacks[this.attackCounter % this.attacks.length];
+        let attack = this.enemies[0].GetAttack(this.attackCounter);
+        if(attack == null)
+        {
+            console.error('АТАКУ ДАЙ МНЕ ДУБИНА!!!');
+            return;
+        }
+
+        this.attack = attack;
         this.attack.Start();
 
-        battle.lastActionResult = null;
+        this.lastActionResult = null;
     }
+    OnAttackEnd()
+    {
+        this.attackCounter++;
+
+        this.lastActionResult = this.enemies[0].AttackEnd();
+        if(this.lastActionResult && this.lastActionResult.speech)
+            this.SetMode(POST_ATTACK);
+        else
+            this.Idle();
+    }
+
     OwnAttack()
     {
         if(this.mode.id == GAME_OVER)
@@ -595,6 +641,31 @@ class Battle
         else
             this.SetMode(OWN_ATTACK);
     }
+    OnOwnAttackEnd()
+    {
+        let battleFinished = true;
+
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+
+            if(enemy.hp <= 0 && enemy.alive)
+                enemy.Die();
+
+            // если хотя бы один соперник жив, бой продолжается!
+            if(enemy.alive)
+                battleFinished = false;
+        }
+
+        if(!battleFinished)
+            this.PreAttack();
+        else
+        {
+            alert('ТЫ ВЫИГРАЛ!');
+            this.GameOver();
+        }
+    }
+
     Act()
     {
         if(this.mode.id == GAME_OVER)
@@ -612,6 +683,8 @@ class Battle
         
         this.SetMode(IDLE);
         this.ResetBounds();
+        
+        this.lastActionResult = null;
     }
     GameOver()
     {
@@ -626,10 +699,18 @@ class Battle
         this.mode = this.modes[_id];
         this.mode.Start();
         
-        if(_id == ATTACK)
-            this.enemySprite.SetAnimation(STATE_ATTACKING, 0);
-        else
-            this.enemySprite.SetAnimation(STATE_NORMAL, 0);
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+
+            if(!enemy.alive)
+                continue;
+
+            if(_id == ATTACK)
+                enemy.sprite.SetAnimation(STATE_ATTACKING, 0);
+            else
+                enemy.sprite.SetAnimation(STATE_NORMAL, 0);
+        }
     }
 
     AddProjectile(_projectile)
@@ -742,11 +823,11 @@ class Battle
         }
     }
 
-    DealDamage(_damage)
+    DealDamage(_target, _damage)
     {
-        this.enemies[0].hp -= _damage;
-        if(this.enemies[0].hp < 0)
-            this.enemies[0].hp = 0;
+        _target.data.hp -= _damage;
+        if(_target.data.hp < 0)
+            _target.data.hp = 0;
     }
 }
 
@@ -781,129 +862,6 @@ class Entity
 
         /*_ctx.fillStyle = 'blue';
         _ctx.fillRect(-5, -5, 10, 10);*/
-    }
-}
-
-class EnemySprite extends Entity
-{
-    constructor(_x, _y)
-    {
-        super(_x, _y, 300, 300);
-
-        let spr = [
-            './img/duck.png',
-            './img/duck2.png',
-            './img/promote.png',
-        ];
-
-        this.sprites = [];
-        for(let i in spr)
-        {
-            let img = new Image();
-            img.src = spr[i];
-            this.sprites.push(img);
-        }
-
-        this.state = STATE_NORMAL;
-        this.animationTime = 0;
-
-        this.speaking = false;
-        this.typeWriter = new TypeWriter();
-
-        this.stakeShown = false;
-    }
-
-    SetAnimation(_state, _time)
-    {
-        this.state = _state;
-        this.animationTime = _time;
-    }
-
-    SetSpeechBubble(_text, _actions)
-    {
-        this.speaking = true;
-        this.typeWriter.SetText(_text);
-        this.typeWriter.SetActions(_actions);
-    }
-
-    GameLoop(_delta)
-    {
-        if(this.speaking)
-        {
-            this.typeWriter.GameLoop(_delta);
-
-            if(this.typeWriter.finished)
-                this.speaking = false;
-        }
-    }
-
-    Render(_ctx, _dt)
-    {
-        if(this.state == STATE_ATTACKING)
-            _ctx.globalAlpha = .5;
-        
-        // промотка
-        if(this.stakeShown)
-        {
-            let y = 25;
-            let h = battle.defaultBounds.y1 - 25 - 25;
-            if(this.state == STATE_HANGING)
-                y = -h + (h + 25) * this.animationTime;
-
-            _ctx.lineCap = 'round';
-            _ctx.lineJoin = 'round';
-            
-            _ctx.lineWidth = 5;
-            _ctx.strokeStyle = '#000';
-            _ctx.fillStyle = '#fff';
-
-            _ctx.beginPath();
-            _ctx.rect(battle.defaultBounds.x1, y, 250, h);
-            _ctx.fill();
-            _ctx.stroke();
-            _ctx.closePath();
-            
-            _ctx.drawImage(this.sprites[2], 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
-
-            _ctx.font = '48px Arial';
-            _ctx.fillStyle = '#000';
-    
-            let text = `324905`;
-            let w = _ctx.measureText(text).width;
-
-            _ctx.textAlign = 'center';
-            _ctx.textBaseline = 'bottom';
-
-            _ctx.save();
-            _ctx.translate(battle.defaultBounds.x1 + 250 / 2, y + h - 30);
-
-            _ctx.fillText(text, 0, 0);
-            _ctx.translate(w / 2 + 5, -16);
-            _ctx.rotate(Math.PI * 1.5);
-            _ctx.drawImage(battle.soul.sprite, 0, 0);
-
-            _ctx.restore();
-            
-            _ctx.font = '24px Arial';
-            _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
-        }
-
-        let shake = 0;
-
-        if(this.state == STATE_HURT)
-            shake = Math.sin(_dt / 20) * (20 * this.animationTime);
-
-        // утка
-        _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], this.x + shake, this.y, this.w, this.h);
-
-        if(this.state == STATE_ATTACKING)
-            _ctx.globalAlpha = 1;
-
-        // спичбабол
-        if(this.speaking)
-        {
-            this.typeWriter.RenderSpeechBubble(_ctx, _dt);
-        }
     }
 }
 

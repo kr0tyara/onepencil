@@ -25,7 +25,7 @@ class Attack
 
     End()
     {
-        battle.Idle();
+        battle.OnAttackEnd();
     }
 
     Render(_ctx, _dt)
@@ -258,16 +258,21 @@ class CockAttack extends Attack
     constructor()
     {
         super(30, 400);
+
+        this.preTime = 30;
+        this.preTimer = 0;
     }
     
     Start()
     {
         super.Start();
 
+        this.preTimer = this.preTime;
+
         battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
         
-        this.speed = 5;
-        this.drawer = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2};
+        this.speed = 3;
+        this.drawer = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 - 60};
         this.lastPos = {x: this.drawer.x, y: this.drawer.y};
         this.SetAngle();
     }
@@ -301,16 +306,32 @@ class CockAttack extends Attack
 
     OnGameLoop(_delta)
     {
-        this.drawer.x += Math.cos(this.angle) * this.speed * _delta;
-        this.drawer.y += Math.sin(this.angle) * this.speed * _delta;
-
-        if(Utils.Distance(this.drawer, this.lastPos) >= 12)
+        if(this.preTimer >= 0)
         {
-            let projectile = new CockProjectile(this.drawer.x, this.drawer.y);
-            battle.AddProjectile(projectile);
+            this.preTimer -= _delta;
 
-            this.lastPos.x = this.drawer.x;
-            this.lastPos.y = this.drawer.y;
+            this.drawer.y += 2 * _delta;
+
+            return;
+        }
+
+        if(this.timeOut)
+        {
+            this.drawer.y -= 2 * _delta;
+        }
+        else
+        {
+            this.drawer.x += Math.cos(this.angle) * this.speed * _delta;
+            this.drawer.y += Math.sin(this.angle) * this.speed * _delta;
+
+            if(Utils.Distance(this.drawer, this.lastPos) >= 12)
+            {
+                let projectile = new CockProjectile(this.drawer.x, this.drawer.y);
+                battle.AddProjectile(projectile);
+
+                this.lastPos.x = this.drawer.x;
+                this.lastPos.y = this.drawer.y;
+            }
         }
     }
 
@@ -478,20 +499,20 @@ class TeethAttack extends Attack
             }
         }
 
-        // перед укусом
+        // перед укусом, откроем рот пошире
         if(this.bite == 1)
         {
             this.teethA.y -= 2 * _delta;
             
-            if(this.teethA.y <= battle.bounds.y1 - 30)
+            if(this.teethA.y <= battle.bounds.y1)
             {
-                this.teethA.y = battle.bounds.y1 - 30;
+                this.teethA.y = battle.bounds.y1;
                 
                 this.bite = 2;
                 this.preBiteTimer = this.biteTime;
             }
         }
-        // открыл рот пошире
+        // выжидает
         else if(this.bite == 2)
         {
             this.preBiteTimer -= 1 * _delta;
@@ -516,17 +537,15 @@ class TeethAttack extends Attack
             this.biteTimer -= 1 * _delta;
 
             if(this.biteTimer <= 0)
-            {
                 this.bite = 5;
-            }
         }
         // открываю рот
         else if(this.bite == 5)
         {
             this.teethA.y -= 4 * _delta;
-            if(this.teethA.y <= battle.bounds.y1)
+            if(this.teethA.y <= battle.bounds.y1 + 30)
             {
-                this.teethA.y = battle.bounds.y1;
+                this.teethA.y = battle.bounds.y1 + 30;
                 this.bite = 0;
             }
         }

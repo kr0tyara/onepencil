@@ -1,11 +1,16 @@
-class EnemyData
+class Enemy
 {
     constructor()
     {
         this.name = 'Никто';
         this.index = {x: 0, y: 0};
+        this.sprite = null;
+
         this.hp = 0;
-        this.maxHP = 0;
+        this.maxHP = 5;
+
+        this.alive = true;
+        this.attacks = [new TestAttack()];
 
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -14,7 +19,25 @@ class EnemyData
 
     Start()
     {
+        this.alive = true;
         this.hp = this.maxHP;
+    }
+
+    CreateSprite(_x, _y)
+    {
+        this.sprite = new EnemySprite(_x, _y, 200, 300);
+        return this.sprite;
+    }
+
+    GetAttack(_counter)
+    {
+        return this.attacks[_counter % this.attacks.length];
+    }
+
+    Die()
+    {
+        this.alive = false;
+        this.sprite.SetAnimation(STATE_DEAD, 0);
     }
 
     Idle()
@@ -24,7 +47,11 @@ class EnemyData
         }
     }
 
-    Attack()
+    Hurt()
+    {
+        return {};
+    }
+    AttackEnd()
     {
         return {};
     }
@@ -36,65 +63,156 @@ class EnemyData
         };
     }
 }
-class TriggerAction
+
+class EnemySprite extends Entity
 {
-    constructor()
+    constructor(_x, _y, _w, _h)
     {
-        this.finished = false;
+        super(_x, _y, _w, _h);
+
+        this.state = STATE_NORMAL;
+        this.animationTime = 0;
+
+        this.speaking = false;
+        this.typeWriter = new TypeWriter(this);
     }
 
-    Start()
+    SetAnimation(_state, _time)
     {
-
+        this.state = _state;
+        this.animationTime = _time;
     }
-    Render(_ctx, _dt)
+
+    SetSpeechBubble(_text, _actions)
     {
-
+        this.speaking = true;
+        this.typeWriter.SetText(_text);
+        this.typeWriter.SetActions(_actions);
     }
+
     GameLoop(_delta)
     {
-
-    }
-    Finish()
-    {
-        this.finished = true;
-    }
-}
-
-class StakeAction extends TriggerAction
-{
-    constructor()
-    {
-        super();
-        
-        this.animationTime = 25;
-        this.animationTimer = this.animationTime;
-    }
-
-    Start()
-    {
-        battle.enemySprite.stakeShown = true;
-        this.animationTimer = this.animationTime;
-        battle.enemySprite.SetAnimation(STATE_HANGING, 0);
-    }
-    GameLoop(_delta)
-    {
-        this.animationTimer -= 1 * _delta;
-        battle.enemySprite.SetAnimation(STATE_HANGING, 1 - this.animationTimer / this.animationTime);
-        
-        if(this.animationTimer <= 0)
+        if(this.speaking)
         {
-            this.Finish();
+            this.typeWriter.GameLoop(_delta);
+
+            if(this.typeWriter.finished)
+                this.speaking = false;
         }
     }
 
-    Finish()
+    Render(_ctx, _dt)
     {
-        super.Finish();
-        battle.enemySprite.SetAnimation(STATE_NORMAL, 0);
+        if(this.state == STATE_DEAD)
+            _ctx.globalAlpha = .05;
+
+        if(this.state == STATE_ATTACKING)
+            _ctx.globalAlpha = .5;
+        
+        this.Draw(_ctx, _dt);
+
+        if(this.state == STATE_DEAD || this.state == STATE_ATTACKING)
+            _ctx.globalAlpha = 1;
+
+        // спичбабол
+        if(this.speaking)
+            this.typeWriter.RenderSpeechBubble(_ctx, _dt);
+    }
+    
+    Draw(_ctx, _dt)
+    {
+        let shake = 0;
+
+        if(this.state == STATE_HURT)
+            shake = Math.sin(_dt / 20) * (20 * this.animationTime);
+
+        _ctx.fillStyle = 'red';
+        _ctx.fillRect(this.x + shake, this.y, this.w, this.h);
     }
 }
-class PromoDuck extends EnemyData
+
+class PromoDuckSprite extends EnemySprite
+{
+    constructor(_x, _y)
+    {
+        super(_x, _y, 300, 300);
+        
+        let spr = [
+            './img/duck.png',
+            './img/duck2.png',
+            './img/promote.png',
+        ];
+
+        this.sprites = [];
+        for(let i in spr)
+        {
+            let img = new Image();
+            img.src = spr[i];
+            this.sprites.push(img);
+        }
+
+        this.stakeShown = false;
+    }
+
+    Draw(_ctx, _dt)
+    {
+        // промотка
+        if(this.stakeShown)
+        {
+            let y = 25;
+            let h = battle.defaultBounds.y1 - 25 - 25;
+            if(this.state == STATE_HANGING)
+                y = -h + (h + 25) * this.animationTime;
+
+            _ctx.lineCap = 'round';
+            _ctx.lineJoin = 'round';
+            
+            _ctx.lineWidth = 5;
+            _ctx.strokeStyle = '#000';
+            _ctx.fillStyle = '#fff';
+
+            _ctx.beginPath();
+            _ctx.rect(battle.defaultBounds.x1, y, 250, h);
+            _ctx.fill();
+            _ctx.stroke();
+            _ctx.closePath();
+            
+            _ctx.drawImage(this.sprites[2], 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
+
+            _ctx.font = '48px Arial';
+            _ctx.fillStyle = '#000';
+    
+            let text = `324905`;
+            let w = _ctx.measureText(text).width;
+
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'bottom';
+
+            _ctx.save();
+            _ctx.translate(battle.defaultBounds.x1 + 250 / 2, y + h - 30);
+
+            _ctx.fillText(text, 0, 0);
+            _ctx.translate(w / 2 + 5, -16);
+            _ctx.rotate(Math.PI * 1.5);
+            _ctx.drawImage(battle.soul.sprite, 0, 0);
+
+            _ctx.restore();
+            
+            _ctx.font = '24px Arial';
+            _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
+        }
+
+        let shake = 0;
+
+        if(this.state == STATE_HURT)
+            shake = Math.sin(_dt / 20) * (20 * this.animationTime);
+
+        // утка
+        _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], this.x + shake, this.y, this.w, this.h);
+    }
+}
+
+class PromoDuck extends Enemy
 {
     constructor()
     {
@@ -102,12 +220,14 @@ class PromoDuck extends EnemyData
 
         this.name = 'ПромоУтка';
         this.index = {x: 0, y: 0};
-        this.hp = 500;
+
         this.maxHP = 500;
 
         this.scream = 0;
         this.bet = 0;
 
+        this.attacks = [new FallAttack(), new AssAttack(), new CockAttack(), new WheelAttack(), new TeethAttack()].reverse();
+        
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
             {name: 'Ставка', index: {x: 0, y: 1}, action: this.Bet.bind(this)},
@@ -123,6 +243,12 @@ class PromoDuck extends EnemyData
         ];
     }
 
+    CreateSprite(_x, _y)
+    {
+        this.sprite = new PromoDuckSprite(_x, _y);
+        return this.sprite;
+    }
+
     Start()
     {
         super.Start();
@@ -136,11 +262,6 @@ class PromoDuck extends EnemyData
         return {
             text: [Utils.RandomArray(this.flavourText)]
         }
-    }
-
-    Attack()
-    {
-        return {};
     }
 
     Check()
@@ -173,7 +294,7 @@ class PromoDuck extends EnemyData
                     text: ['* Ты третий раз предлагаешь свой карандаш.'],
                     speech: ['ХВАТИТ ТЫКАТЬ\nСВОЙ КАРАНДАШ\nМНЕ В ЛИЦО!!!', '...%Значит ТАК.&0', 'ЭТО - ПРОМОТКА.\nВидишь??!%...тут таймер, когда\nставка сбросится.', 'ЖДИ!!!\nЕсли выживешь,%ТО МЕСТО ТВОЁ!!!!'],
                     actions: [
-                        () => new StakeAction()
+                        () => new StakeAction(this)
                     ]
                 };
 
@@ -216,5 +337,66 @@ class PromoDuck extends EnemyData
                     text: ['* Тебе больше некого позвать.', '* Может, попробовать сделать что-то ещё?...']
                 };
         }
+    }
+}
+
+class TriggerAction
+{
+    constructor(_parent)
+    {
+        this.parent = _parent;
+        this.finished = false;
+    }
+
+    Start()
+    {
+
+    }
+    Render(_ctx, _dt)
+    {
+
+    }
+    GameLoop(_delta)
+    {
+
+    }
+    Finish()
+    {
+        this.parent = null;
+        this.finished = true;
+    }
+}
+class StakeAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 25;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.parent.sprite.stakeShown = true;
+        this.animationTimer = this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_HANGING, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+        this.parent.sprite.SetAnimation(STATE_HANGING, 1 - this.animationTimer / this.animationTime);
+        
+        if(this.animationTimer <= 0)
+        {
+            this.Finish();
+        }
+    }
+
+    Finish()
+    {
+        this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
+        
+        super.Finish();
     }
 }
