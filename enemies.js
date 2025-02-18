@@ -25,7 +25,7 @@ class Enemy
 
     CreateSprite(_x, _y)
     {
-        this.sprite = new EnemySprite(_x, _y, 200, 300);
+        this.sprite = new EnemySprite(_x, _y, 200, 300, this);
         return this.sprite;
     }
 
@@ -66,9 +66,11 @@ class Enemy
 
 class EnemySprite extends Entity
 {
-    constructor(_x, _y, _w, _h)
+    constructor(_x, _y, _w, _h, _enemy)
     {
         super(_x, _y, _w, _h);
+
+        this.enemy = _enemy;
 
         this.state = STATE_NORMAL;
         this.animationTime = 0;
@@ -133,13 +135,12 @@ class EnemySprite extends Entity
 
 class PromoDuckSprite extends EnemySprite
 {
-    constructor(_x, _y)
+    constructor(_x, _y, _enemy)
     {
-        super(_x, _y, 300, 300);
+        super(_x, _y, 300, 300, _enemy);
         
         let spr = [
             './img/duck.png',
-            './img/duck2.png',
             './img/promote.png',
         ];
 
@@ -161,6 +162,7 @@ class PromoDuckSprite extends EnemySprite
         {
             let y = 25;
             let h = battle.defaultBounds.y1 - 25 - 25;
+            
             if(this.state == STATE_HANGING)
                 y = -h + (h + 25) * this.animationTime;
 
@@ -177,7 +179,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.stroke();
             _ctx.closePath();
             
-            _ctx.drawImage(this.sprites[2], 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
+            _ctx.drawImage(this.sprites[1], 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
 
             _ctx.font = '48px Arial';
             _ctx.fillStyle = '#000';
@@ -208,7 +210,13 @@ class PromoDuckSprite extends EnemySprite
             shake = Math.sin(_dt / 20) * (20 * this.animationTime);
 
         // утка
-        _ctx.drawImage(this.sprites[this.state == STATE_HURT ? 1 : 0], this.x + shake, this.y, this.w, this.h);
+        let offset = 0;
+        if(this.state == STATE_HURT)
+            offset = 400;
+        else if(this.state == STATE_HANGING || this.state == STATE_HELP)
+            offset = 800;
+
+        _ctx.drawImage(this.sprites[0], offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
     }
 }
 
@@ -222,9 +230,6 @@ class PromoDuck extends Enemy
         this.index = {x: 0, y: 0};
 
         this.maxHP = 500;
-
-        this.scream = 0;
-        this.bet = 0;
 
         this.attacks = [new FallAttack(), new AssAttack(), new CockAttack(), new WheelAttack(), new TeethAttack()].reverse();
         
@@ -241,11 +246,18 @@ class PromoDuck extends Enemy
             '* ПромоУтка считает свою прибыль.\n* Для этого не нужен калькулятор.',
             '* ПромоУтка ковыряется в зубах.%* Но, скорее, просто грызёт зубочистку...',
         ];
+        this.dangerFlavourText = [
+            '* ПромоУтка нервно глядит по сторонам.',
+            '* С ПромоУтки слетают перья.',
+            '* ПромоУтка... молится???%%%  ...послышалось.',
+            '* Пахнет мокрыми наггетсами и опилками.',
+            '* ПромоУтка отменяет все встречи.%* Даже на следующий год.',
+        ];
     }
 
     CreateSprite(_x, _y)
     {
-        this.sprite = new PromoDuckSprite(_x, _y);
+        this.sprite = new PromoDuckSprite(_x, _y, this);
         return this.sprite;
     }
 
@@ -255,13 +267,65 @@ class PromoDuck extends Enemy
 
         this.scream = 0;
         this.bet = 0;
+
+        this.call = 0;
     }
 
     Idle()
     {
-        return {
-            text: [Utils.RandomArray(this.flavourText)]
+        if(this.call == 1)
+        {
+            return {
+                text: ['* ПромоУтка вызвал подкрепление.']
+            }
         }
+        else if(this.call == 3)
+        {
+            return {
+                text: ['* Подкрепление задерживается.']
+            }
+        }
+
+        if(this.call == 0)
+            return {
+                text: [Utils.RandomArray(this.flavourText)]
+            };
+        else
+            return {
+                text: [Utils.RandomArray(this.dangerFlavourText)]
+            };
+    }
+    AttackEnd()
+    {
+        if(this.hp / this.maxHP <= .8 && this.call < 1)
+        {
+            this.call = 1;
+
+            return {
+                speech: ['...&0', '(Н-нужна помощь...)'],
+                actions: [
+                    () => new CallHelpAction(this)
+                ]
+            };
+        }
+        else if(this.call == 1)
+        {
+            this.call = 2;
+        }
+        else if(this.hp / this.maxHP <= .6 && this.call < 3)
+        {
+            this.call = 3;
+
+            return {
+                speech: ['(Д-да где он...)'],
+            };
+        }
+        else if(this.call == 3)
+        {
+            this.call = 4;
+        }
+        
+        return {};
     }
 
     Check()
@@ -366,13 +430,43 @@ class TriggerAction
         this.finished = true;
     }
 }
+
+class CallHelpAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 100;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.parent.sprite.SetAnimation(STATE_HELP, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+        this.parent.sprite.SetAnimation(STATE_HELP, 1 - this.animationTimer / this.animationTime);
+        
+        if(this.animationTimer <= 0)
+            this.Finish();
+    }
+
+    Finish()
+    {
+        super.Finish();
+    }
+}
+
 class StakeAction extends TriggerAction
 {
     constructor(_parent)
     {
         super(_parent);
         
-        this.animationTime = 25;
+        this.animationTime = 50;
         this.animationTimer = this.animationTime;
     }
 

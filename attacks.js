@@ -439,7 +439,7 @@ class TeethAttack extends Attack
 {
     constructor()
     {
-        super(125, 500);
+        super(125, 375);
 
         this.sheet = new Image();
         this.sheet.src = './img/teeth2.png';
@@ -613,7 +613,7 @@ class TeethMiddleProjectile extends Projectile
 {
     constructor(_x, _y, _h)
     {
-        super(_x, _y, 30, _h, 20);
+        super(_x, _y, 30, _h, 50);
 
         this.destructible = false;
     }

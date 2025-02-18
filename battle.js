@@ -12,7 +12,8 @@ const   IDLE = 0,
         STATE_HURT = 1,
         STATE_ATTACKING = 2,
         STATE_HANGING = 3,
-        STATE_DEAD = 4;
+        STATE_DEAD = 4,
+        STATE_HELP = 5;
 
 class TypeWriter
 {
@@ -42,7 +43,7 @@ class TypeWriter
 
         this.speed = 3;
         this.speedPunctuation = 10;
-        this.speedNextLine = 25;
+        this.speedNextLine = 50;
     }
 
     SetText(_text)
@@ -340,6 +341,32 @@ class BattleUI
     }
 }
 
+class BattleAudio
+{
+    constructor()
+    {
+        return;
+
+        this.audioPending = false;
+        this.audio = new Audio('./sfx/idk.mp3');
+        this.audio.onended = () => this.audio.play();
+
+        this.audio.play().catch((_error) =>
+        {
+            this.audioPending = true
+        });
+    }
+
+    PointerUp(e)
+    {
+        if(this.audioPending)
+        {
+            this.audio.play();
+            this.audioPending = false;
+        }
+    }
+}
+
 class Battle
 {
     constructor()
@@ -370,31 +397,19 @@ class Battle
         this.boundsReady = true;
         
         this.ui = new BattleUI();
+        this.audio = new BattleAudio();
 
         this.enemies = [
             new PromoDuck(),
         ];
 
-        // расстановка врагов
-        let w = 0;
         for(let i in this.enemies)
         {
             let enemy = this.enemies[i];
             enemy.Start();
-
-            let sprite = enemy.CreateSprite(0, 0);
-            w += sprite.w;
-            if(i + 1 < this.enemies.length)
-                w += 50;
+            enemy.CreateSprite(0, 0);
         }
-        let curX = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1 - w) / 2;
-        for(let i in this.enemies)
-        {
-            let enemy = this.enemies[i];
-            enemy.sprite.x = curX;
-            
-            curX += enemy.sprite.w + 50;
-        }
+        this.AlignEnemies();
 
         this.lastActionResult = null;
 
@@ -417,6 +432,26 @@ class Battle
     {
         this.SetMode(IDLE);
         this.ui.Start();
+    }
+
+    AlignEnemies()
+    {
+        let w = 0;
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+            w += enemy.sprite.w;
+            if(i + 1 < this.enemies.length)
+                w += 50;
+        }
+        let curX = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1 - w) / 2;
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+            enemy.sprite.x = curX;
+            
+            curX += enemy.sprite.w + 50;
+        }
     }
 
     SetBounds(_bounds)
@@ -743,6 +778,8 @@ class Battle
     }
     PointerUp(e)
     {
+        this.audio.PointerUp(e);
+
         this.UpdateMousePos(e);
         this.mode.PointerUp(e);
     }
