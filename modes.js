@@ -214,7 +214,7 @@ class OwnAttackMode extends TargettedBattleMode
         this.drawing = false;
         this.drawnPoints = [];
         
-        this.castTime = 40;
+        this.castTime = 80;
         this.castTimer = 0;
 
         this.pendingTime = 60;
