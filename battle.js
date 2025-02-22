@@ -527,7 +527,7 @@ class Battle
 
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
         this.soul = new Soul(this.mousePos.x, this.mousePos.y);
-        this.hp = 100;
+        this.hp = 20;
         this.tp = 0;
 
         this.attack = null;
@@ -542,6 +542,7 @@ class Battle
 
     Start()
     {
+        this.ui.Start();
         for(let i in this.enemies)
             this.enemies[i].Start();
 
@@ -550,7 +551,6 @@ class Battle
         //this.SetMode(ATTACK);
         //this.Attack();
 
-        this.ui.Start();
     }
 
     AlignEnemies()
@@ -618,6 +618,15 @@ class Battle
             enemy.sprite.Render(this.ctx, _dt);
         }
 
+        // спич баболы
+        for(let i in this.enemies)
+        {
+            let enemy = this.enemies[i];
+
+            if(enemy.sprite.speaking)
+                enemy.sprite.speechBubble.Render(this.ctx, _dt);
+        }
+
         // поле боя
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
@@ -638,7 +647,7 @@ class Battle
 
         this.ctx.textBaseline = 'top';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.hp}/100`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
+        this.ctx.fillText(`${this.hp}/20`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
 
         this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
@@ -652,6 +661,14 @@ class Battle
 
         // душа, проджектайлы и атака
         this.soul.Render(this.ctx, _dt);
+
+        this.projectiles.sort((a, b) =>
+        {
+            if(a.onTop != b.onTop)
+                return a.onTop - b.onTop;
+
+            return ~~(a.y - b.y);
+        });
 
         for(let i in this.projectiles)
         {
@@ -1158,14 +1175,22 @@ class Utils
         };
     }
 
+    static Quadratic(_min, _max, _index, _total)
+    {
+        let factor = ((_total - _index) / (_total - 1)) ** 2;
+        return _max - factor * (_max - _min);
+    }
+    static ReverseQuadratic(_min, _max, _index, _total)
+    {
+        return this.Quadratic(_min, _max, _total - _index, _total);
+    }
+
     static SliceText(_ctx, _text, _bounds)
     {
         let newLines = [];
 
         for(let k in _text)
         {
-            let line = _text[k];
-
             let ll = _text[k].split('*');
             for(let j in ll)
             {

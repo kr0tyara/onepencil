@@ -393,8 +393,11 @@ class OwnAttackMode extends TargettedBattleMode
         let damage = ~~(attack.damage * res.Score);
         battle.DealDamage(this.targetEnemy, damage);
         
-        let result = battle.enemies[0].Hurt();
-        battle.lastActionResult = result;
+        let result = this.targetEnemy.data.Hurt(damage);
+        battle.lastActionResult = {
+            ...result,
+            target: this.targetEnemy.data,
+        }
         
         this.pending = true;
         this.currentAttack = attack;
@@ -617,7 +620,10 @@ class ActMode extends TargettedBattleMode
             }
 
             this.typeWriter.SetText(result.text);
-            battle.lastActionResult = result;
+            battle.lastActionResult = {
+                ...result,
+                target: this.targetEnemy.data,
+            }
 
             this.locked = true;
         }

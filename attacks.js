@@ -1,7 +1,9 @@
 class Attack
 {
-    constructor(_projectileTime, _attackTime)
+    constructor(_caster, _projectileTime, _attackTime)
     {
+        this.caster = _caster;
+
         this.timeOut = false;
         this.tickCount = 0;
 
@@ -82,15 +84,21 @@ class Attack
     {
     }
 
-    SpawnProjectile(_tickCount)
+    SpawnProjectile(_index)
     {
     }
 }
 class Projectile extends Entity
 {
-    constructor(_x, _y, _w, _h, _damage)
+    constructor(_parent, _index, _x, _y, _w, _h, _damage)
     {
         super(_x, _y, _w, _h);
+
+        this.onTop = false;
+
+        this.parent = _parent;
+        this.index = _index;
+
         this.damage = _damage;
 
         this.speed = 5;
@@ -143,26 +151,102 @@ class Projectile extends Entity
 
 class TestAttack extends Attack
 {
-    constructor()
+    constructor(_caster)
     {
-        super(30, 200);
+        super(_caster, 30, 200);
     }
 
     SpawnProjectile(_tickCount)
     {
-        let projectile = new TestProjectile(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
+        let projectile = new TestProjectile(this, _tickCount, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
         battle.AddProjectile(projectile);
     }
 }
 class TestProjectile extends Projectile
 {
-    constructor(_x, _y)
+    constructor(_parent, _index, _x, _y)
     {
-        super(_x, _y, 100, 100, 10);
+        super(_parent, _index, _x, _y, 100, 100, 10);
     }
 }
 
 
+class CardAttack extends Attack
+{
+    constructor(_caster)
+    {
+        super(_caster, 400, 400);
+    }
+
+    Start()
+    {
+        super.Start();
+        battle.SetBounds({x1: 400, y1: 300, x2: 880, y2: 550});
+
+        this.x = this.caster.x + this.caster.pivot.x;
+        this.y = this.caster.y + this.caster.pivot.y;
+
+        let time = 30;
+        for(let i = 0; i < 16; i++)
+        {
+            let projectile = new CardProjectile(this, i, this.x, this.y - i * 6);
+
+            time += Utils.ReverseQuadratic(15, 30, i, 16);
+            projectile.honingTime = time;
+
+            battle.AddProjectile(projectile);
+        }
+    }
+
+    OnGameLoop(_delta)
+    {
+        super.OnGameLoop(_delta);
+    }
+}
+class CardProjectile extends Projectile
+{
+    constructor(_parent, _index, _x, _y)
+    {
+        super(_parent, _index, _x, _y, 50, 75, 2);
+
+        this.pivot.x = this.w / 2;
+
+        this.count = 16;
+        this.speed = Utils.Quadratic(7, 10, _index, this.count);
+
+        this.sprite = new Image();
+        this.sprite.src = './img/stake.png';
+    }
+
+    Draw(_ctx, _dt)
+    {
+        _ctx.drawImage(this.sprite, -this.pivot.x - 5, -this.pivot.y - 7.5, this.w + 10, this.h + 15);
+    }
+
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        if(this.honingTimer > 0)
+        {
+            let cos = Math.cos((this.honingTime - this.honingTimer) / 25 - this.index / this.count);
+
+            this.rotation = -cos / 5;
+            this.x = this.parent.x + cos * (200 + 50 * (this.honingTime - this.honingTimer) / this.honingTime);
+
+            if(this.honingTimer <= 15)
+            {
+                this.onTop = true;
+                this.y = this.parent.y - this.index * 6 - 32 * ((15 - this.honingTimer) / 15);
+            }
+
+            return;
+        }
+        
+        this.rotation += Math.PI / 60 * _delta;
+        this.y += this.speed * _delta;
+    }
+}
 
 
 

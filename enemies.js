@@ -18,7 +18,7 @@ class Enemy
         this.maxHP = 5;
 
         this.alive = true;
-        this.attacks = [new TestAttack()];
+        this.attacks = [TestAttack];
 
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -42,7 +42,8 @@ class Enemy
 
     GetAttack(_counter)
     {
-        return this.attacks[_counter % this.attacks.length];
+        let attackClass = this.attacks[_counter % this.attacks.length];
+        return new attackClass(this.sprite);
     }
 
     Die()
@@ -58,7 +59,7 @@ class Enemy
         }
     }
 
-    Hurt()
+    Hurt(_damage)
     {
         return {};
     }
@@ -70,7 +71,8 @@ class Enemy
     Check()
     {
         return {
-            text: ['*Никто - АТК 1000 ЗЩТ -999.*Я ем любовь.']
+            text: ['*Никто - АТК 1000 ЗЩТ -999.*Я ем любовь.'],
+            speech: ['Мяу'],
         };
     }
 }
@@ -131,10 +133,6 @@ class EnemySprite extends Entity
 
         if(this.state == STATE_DEAD || this.state == STATE_ATTACKING)
             _ctx.globalAlpha = 1;
-
-        // спичбабол
-        if(this.speaking)
-            this.speechBubble.Render(_ctx, _dt);
     }
     
     Draw(_ctx, _dt)
@@ -247,7 +245,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [new TestAttack()];
+        this.attacks = [CardAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
