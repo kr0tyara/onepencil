@@ -13,7 +13,12 @@ const   IDLE = 0,
         STATE_ATTACKING = 2,
         STATE_HANGING = 3,
         STATE_DEAD = 4,
-        STATE_HELP = 5;
+        STATE_HELP = 5,
+
+        TEXT_COLORS = [
+            '#000000',
+            '#ff0000',
+        ];
 
 class TypeWriter
 {
@@ -22,8 +27,11 @@ class TypeWriter
         // todo: подчищать при уничтожении :)
         this.parent = _parent;
 
-        this.text = ['Пора проснуться\nи почувствовать\nзапах БОЛИ.'];
+        this.text = ['*Пора проснуться и почувствовать запах @1БОЛИ@.'];
         this.actions = [];
+
+        this.textSize = 36;
+        this.textBounds = {};
         
         this.textTriggers = [];
         this.currentAction = null;
@@ -46,6 +54,12 @@ class TypeWriter
         this.speedNextLine = 50;
     }
 
+    Start()
+    {
+        this.textSize = 36;
+        this.textBounds = {x1: battle.defaultBounds.x1 + 25, x2: battle.defaultBounds.x2 - 25, y1: battle.defaultBounds.y1 + 25, y2: battle.defaultBounds.y2 - 25};
+    }
+
     SetText(_text)
     {
         this.text = [..._text];
@@ -63,6 +77,9 @@ class TypeWriter
 
             this.text[i] = text.replaceAll(/&\d+/g, '');
         }
+
+        battle.ctx.font = `${this.textSize}px Arial`;
+        this.text = Utils.SliceText(battle.ctx, this.text, this.textBounds);
 
         this.index = 0;
         this.value = 0;
@@ -135,12 +152,7 @@ class TypeWriter
         if(this.currentAction != null)
             this.currentAction.Render(_ctx, _dt);
 
-        _ctx.font = '36px Arial';
-        _ctx.fillStyle = '#000';
-        _ctx.textBaseline = 'top';
-        _ctx.textAlign = 'left';
-
-        Utils.MultiLineText(_ctx, this.GetText(), battle.defaultBounds.x1 + 25, battle.defaultBounds.y1 + 25);
+        this.DrawText(_ctx, _dt);
 
         if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
         {
@@ -148,45 +160,7 @@ class TypeWriter
             _ctx.fillStyle = '#666';
             _ctx.textBaseline = 'bottom';
             _ctx.textAlign = 'right';
-            _ctx.fillText('Кликни, чтобы продолжить!', battle.defaultBounds.x2 - 25, battle.defaultBounds.y2 - 25);
-        }
-    }
-    RenderSpeechBubble(_ctx, _dt)
-    {
-        if(this.currentAction != null)
-            this.currentAction.Render(_ctx, _dt);
-
-        let x = this.parent.x + this.parent.w + 15;
-        let y = this.parent.y + 55;
-        let w = battle.defaultBounds.x2 - x;
-        
-        _ctx.font = '24px Arial';
-        _ctx.textBaseline = 'top';
-        _ctx.textAlign = 'left';
-        let h = Utils.MultiLineTextHeight(_ctx, this.text[this.index]) + 20;
-
-        _ctx.fillStyle = '#fff';
-        _ctx.strokeStyle = '#000';
-        _ctx.beginPath();
-        _ctx.moveTo(x - 20, y + h / 2);
-        _ctx.lineTo(x, y + h / 2 - 10);
-        _ctx.lineTo(x, y);
-        _ctx.lineTo(x + w, y);
-        _ctx.lineTo(x + w, y + h);
-        _ctx.lineTo(x, y + h);
-        _ctx.lineTo(x, y + h / 2 + 10);
-        _ctx.lineTo(x - 20, y + h / 2);
-        _ctx.fill();
-        _ctx.stroke();
-
-        _ctx.fillStyle = '#000';
-        Utils.MultiLineText(_ctx, this.GetText(), x + 10, y + 10);
-
-        if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
-        {
-            _ctx.font = '16px Arial';
-            _ctx.fillStyle = '#666';
-            _ctx.fillText('Кликни, чтобы продолжить!', x, y + h + 10);
+            _ctx.fillText('Кликни, чтобы продолжить!', this.textBounds.x2, this.textBounds.y2);
         }
     }
 
@@ -223,9 +197,16 @@ class TypeWriter
             let lastSymbol = this.text[this.index].charAt(this.value);
             switch(lastSymbol)
             {
+                // служебные символы
+                case '@':
+                case '^':
+                    this.timer = 0;
+                    break;
+
                 case ',':
                 case '.':
                 case '!':
+                case '—':
                     this.timer = this.speedPunctuation;
                     break;
 
@@ -239,6 +220,138 @@ class TypeWriter
             }
 
             this.value++;
+        }
+    }
+    
+    DrawText(_ctx, _dt)
+    {
+        _ctx.font = `${this.textSize}px Arial`;
+        _ctx.fillStyle = TEXT_COLORS[0];
+        _ctx.textBaseline = 'top';
+        _ctx.textAlign = 'left';
+
+        let text = this.GetText();
+        let lines = text.split(/\*|\n/).filter(a => a);
+
+        let metrics = _ctx.measureText(text);
+        let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+
+        let customColor = false;
+        let customColorSeeking = false;
+        let shakeText = false;
+
+        for(let i = 0; i < lines.length; i++)
+        {
+            let line = lines[i];
+            
+            let x = this.textBounds.x1;
+            let y = this.textBounds.y1 + h * i;
+
+            for(let j = 0; j < line.length; j++)
+            {
+                let char = line.charAt(j);
+
+                // задержка текста
+                if(char == '%')
+                    continue;
+
+                // окрашенный текст
+                if(char == '@')
+                {
+                    // начали красить
+                    if(!customColor)
+                    {
+                        customColor = true;
+                        customColorSeeking = true;
+                    }
+                    // если мы уже начали, то это уже закрывающий "тег"
+                    else
+                    {
+                        _ctx.fillStyle = TEXT_COLORS[0];
+                        customColor = false;
+                    }
+
+                    continue;
+                }
+
+                // после @ должен идти индекс цвета, поэтому мы его отлавливаем!
+                if(customColorSeeking)
+                {
+                    customColorSeeking = false;
+
+                    // если кто-то накосячил с цветом, тупо игнорим
+                    if(!isNaN(char * 1) && char * 1 >= 0 && char * 1 < TEXT_COLORS.length)
+                    {
+                        _ctx.fillStyle = TEXT_COLORS[char * 1];
+                        continue;
+                    }
+                }
+
+                if(char == '^')
+                {
+                    shakeText = !shakeText;
+                    continue;
+                }
+
+                let offset = {x: 0, y: 0};
+                if(shakeText)
+                {
+                    offset.x = (Math.random() - .5) * this.textSize / 9;
+                    offset.y = (Math.random() - .5) * this.textSize / 9;
+                }
+
+                _ctx.fillText(char, x + offset.x, y + offset.y);
+                x += _ctx.measureText(char).width;
+            }
+        }
+    }
+}
+
+class SpeechBubble extends TypeWriter
+{
+    constructor(_parent = null)
+    {
+        super(_parent, true);
+    }
+
+    Start()
+    {
+        this.textSize = 24;
+        this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
+    }
+
+    Render(_ctx, _dt)
+    {
+        if(this.currentAction != null)
+            this.currentAction.Render(_ctx, _dt);
+
+        let x = this.textBounds.x1 - 10;
+        let y = this.textBounds.y1 - 10;
+        let w = this.textBounds.x2 - x;
+        
+        let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize, this.textBounds) + 20;
+
+        _ctx.fillStyle = '#fff';
+        _ctx.strokeStyle = '#000';
+        _ctx.beginPath();
+        _ctx.moveTo(x - 20, y + h / 2);
+        _ctx.lineTo(x, y + h / 2 - 10);
+        _ctx.lineTo(x, y);
+        _ctx.lineTo(x + w, y);
+        _ctx.lineTo(x + w, y + h);
+        _ctx.lineTo(x, y + h);
+        _ctx.lineTo(x, y + h / 2 + 10);
+        _ctx.lineTo(x - 20, y + h / 2);
+        _ctx.fill();
+        _ctx.stroke();
+
+        this.DrawText(_ctx, _dt);
+
+        if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
+        {
+            _ctx.font = '16px Arial';
+            _ctx.fillStyle = '#666';
+            _ctx.fillText('Кликни, чтобы продолжить!', x, y + h + 10);
         }
     }
 }
@@ -406,7 +519,6 @@ class Battle
         for(let i in this.enemies)
         {
             let enemy = this.enemies[i];
-            enemy.Start();
             enemy.CreateSprite(0, 0);
         }
         this.AlignEnemies();
@@ -430,7 +542,14 @@ class Battle
 
     Start()
     {
+        for(let i in this.enemies)
+            this.enemies[i].Start();
+
         this.SetMode(IDLE);
+        
+        //this.SetMode(ATTACK);
+        //this.Attack();
+
         this.ui.Start();
     }
 
@@ -519,7 +638,7 @@ class Battle
 
         this.ctx.textBaseline = 'top';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.hp}/100 ${this.tp}`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
+        this.ctx.fillText(`${this.hp}/100`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
 
         this.ctx.textBaseline = 'bottom';
         this.ctx.textAlign = 'right';
@@ -842,7 +961,7 @@ class Battle
         if(this.soul.invinsible)
             return;
 
-        this.tp++;
+        //this.tp++;
     }
     Hurt(_damage)
     {
@@ -1039,27 +1158,56 @@ class Utils
         };
     }
 
-    static MultiLineTextHeight(_ctx, _text)
+    static SliceText(_ctx, _text, _bounds)
     {
-        let lines = _text.split(/\%|\n/);
+        let newLines = [];
+
+        for(let k in _text)
+        {
+            let line = _text[k];
+
+            let ll = _text[k].split('*');
+            for(let j in ll)
+            {
+                let words = ll[j].split(' ');
+
+                let lines = [];
+                let currentLine = words[0];
+            
+                for(let i = 1; i < words.length; i++)
+                {
+                    let word = words[i];
+                    let width = _ctx.measureText(currentLine + ' ' + word).width;
+                    if(_bounds.x1 + width < _bounds.x2)
+                        currentLine += ' ' + word;
+                    else
+                    {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+
+                lines.push(currentLine);
+                ll[j] = lines.join('\n');
+            }
+
+            newLines.push(ll.join('*'));
+        }
+
+        return newLines;
+    }
+
+    static TextHeight(_ctx, _text, _textSize, _bounds)
+    {
+        _ctx.font = `${_textSize}px Arial`;
+        _ctx.textBaseline = 'top';
+
+        let lines = _text.split(/\*|\n/).filter(a => a);
 
         let metrics = _ctx.measureText(_text);
         let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
 
         return h * lines.length;
-    }
-
-    static MultiLineText(_ctx, _text, _x, _y)
-    {
-        let lines = _text.split(/\%|\n/);
-
-        let metrics = _ctx.measureText(_text);
-        let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-
-        for(let i = 0; i < lines.length; i++)
-        {
-            _ctx.fillText(lines[i], _x, _y + h * i);
-        }
     }
 }
 

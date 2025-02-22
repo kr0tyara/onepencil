@@ -162,6 +162,15 @@ class TestProjectile extends Projectile
     }
 }
 
+
+
+
+
+
+
+
+
+/*
 class FallAttack extends Attack
 {
     constructor()
@@ -457,7 +466,7 @@ class TeethAttack extends Attack
         this.biteTime = 15;
         this.biteTimer = this.biteTime;
 
-        let bounds = {x1: 400, y1: 300, x2: 880, y2: 550};
+        let bounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
         battle.SetBounds(bounds);
 
         this.x = bounds.x2 + 75;
@@ -553,7 +562,9 @@ class TeethAttack extends Attack
         else
         {
             let targetX = battle.soul.x - 75;
-            this.x += (targetX - this.x) * 0.05 * _delta;
+
+            if(Math.abs(targetX - this.x) >= 8)
+                this.x += Math.sign(targetX - this.x) * 5 * _delta;
 
             this.teethA.x = this.x;
             this.teethB.x = this.x;
@@ -621,4 +632,4 @@ class TeethMiddleProjectile extends Projectile
     Render(_ctx, _dt)
     {
     }
-}
+}*/

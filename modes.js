@@ -169,6 +169,8 @@ class IdleMode extends BattleMode
     Start()
     {
         let result = battle.enemies[0].Idle();
+
+        this.typeWriter.Start();
         this.typeWriter.SetText(result.text);
     }
 
@@ -227,8 +229,7 @@ class OwnAttackMode extends TargettedBattleMode
         this.ownAttacks = 
         {
             '':         {id: '', damage: 0, index: {x: 0, y: 0}},
-            'triangle': {id: 'triangle', damage: 50, index: {x: 1, y: 0}},
-            'circle':   {id: 'circle', damage: 100, index: {x: 0, y: 1}},
+            'circle':   {id: 'circle', damage: 50, index: {x: 0, y: 1}},
             'star':     {id: 'star', damage: 120, index: {x: 1, y: 1}},
         };
         this.currentAttack = null;
@@ -423,7 +424,7 @@ class PreAttackMode extends BattleMode
     }
     PointerUp(e)
     {
-        battle.enemies[0].sprite.typeWriter.PointerUp(e);
+        battle.enemies[0].sprite.speechBubble.PointerUp(e);
     }
 
     GameLoop(_delta)
@@ -452,7 +453,7 @@ class PostAttackMode extends BattleMode
     }
     PointerUp(e)
     {
-        battle.enemies[0].sprite.typeWriter.PointerUp(e);
+        battle.enemies[0].sprite.speechBubble.PointerUp(e);
     }
 
     GameLoop(_delta)
@@ -496,6 +497,7 @@ class ActMode extends TargettedBattleMode
     {
         super.Start();
 
+        this.typeWriter.Start();
         this.selectedAction = null;
     }
     SelectTarget(_target)

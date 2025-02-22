@@ -1,3 +1,11 @@
+/*
+    * - новый абзац
+    % - задержка текста
+    &n - триггер actions 
+    @n - цвет
+    ^ - тряска
+*/
+
 class Enemy
 {
     constructor()
@@ -21,6 +29,9 @@ class Enemy
     {
         this.alive = true;
         this.hp = this.maxHP;
+
+        if(this.sprite)
+            this.sprite.Start();
     }
 
     CreateSprite(_x, _y)
@@ -43,7 +54,7 @@ class Enemy
     Idle()
     {
         return {
-            text: ['* Где я?']
+            text: ['*Где я?']
         }
     }
 
@@ -59,7 +70,7 @@ class Enemy
     Check()
     {
         return {
-            text: ['* Никто - АТК 1000 ЗЩТ -999.\n* Я ем любовь.']
+            text: ['*Никто - АТК 1000 ЗЩТ -999.*Я ем любовь.']
         };
     }
 }
@@ -76,7 +87,12 @@ class EnemySprite extends Entity
         this.animationTime = 0;
 
         this.speaking = false;
-        this.typeWriter = new TypeWriter(this);
+        this.speechBubble = new SpeechBubble(this);
+    }
+
+    Start()
+    {
+        this.speechBubble.Start();
     }
 
     SetAnimation(_state, _time)
@@ -88,17 +104,17 @@ class EnemySprite extends Entity
     SetSpeechBubble(_text, _actions)
     {
         this.speaking = true;
-        this.typeWriter.SetText(_text);
-        this.typeWriter.SetActions(_actions);
+        this.speechBubble.SetText(_text);
+        this.speechBubble.SetActions(_actions);
     }
 
     GameLoop(_delta)
     {
         if(this.speaking)
         {
-            this.typeWriter.GameLoop(_delta);
+            this.speechBubble.GameLoop(_delta);
 
-            if(this.typeWriter.finished)
+            if(this.speechBubble.finished)
                 this.speaking = false;
         }
     }
@@ -118,7 +134,7 @@ class EnemySprite extends Entity
 
         // спичбабол
         if(this.speaking)
-            this.typeWriter.RenderSpeechBubble(_ctx, _dt);
+            this.speechBubble.Render(_ctx, _dt);
     }
     
     Draw(_ctx, _dt)
@@ -231,7 +247,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [new FallAttack(), new AssAttack(), new CockAttack(), new WheelAttack(), new TeethAttack()].reverse();
+        this.attacks = [new TestAttack()];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -240,18 +256,18 @@ class PromoDuck extends Enemy
         ];
         
         this.flavourText = [
-            '* ПромоУтка чистит пёрышки.%* Залысину видно за километр.',
-            '* 9 из 36 538 Тунеров рекомендуют!',
-            '* Пахнет грифелем.',
-            '* ПромоУтка считает свою прибыль.\n* Для этого не нужен калькулятор.',
-            '* ПромоУтка ковыряется в зубах.%* Но, скорее, просто грызёт зубочистку...',
+            '*ПромоУтка чистит пёрышки.%*Залысину видно за километр.',
+            '*9 из 36 538 Тунеров рекомендуют!',
+            '*Пахнет грифелем.',
+            '*ПромоУтка считает свою прибыль.%*Для этого не нужен калькулятор.',
+            '*ПромоУтка ковыряется в зубах.*Но, скорее, просто грызёт зубочистку...',
         ];
         this.dangerFlavourText = [
-            '* ПромоУтка нервно глядит по сторонам.',
-            '* С ПромоУтки слетают перья.',
-            '* ПромоУтка... молится???%%%  ...послышалось.',
-            '* Пахнет мокрыми наггетсами и опилками.',
-            '* ПромоУтка отменяет все встречи.%* Даже на следующий год.',
+            '*ПромоУтка нервно глядит по сторонам.',
+            '*С ПромоУтки слетают перья.',
+            '*ПромоУтка... молится???%%%*...послышалось.',
+            '*Пахнет мокрыми наггетсами и опилками.',
+            '*ПромоУтка отменяет все встречи.%*Даже на следующий год.',
         ];
     }
 
@@ -276,13 +292,13 @@ class PromoDuck extends Enemy
         if(this.call == 1)
         {
             return {
-                text: ['* ПромоУтка вызвал подкрепление.']
+                text: ['*ПромоУтка вызвал подкрепление.']
             }
         }
         else if(this.call == 3)
         {
             return {
-                text: ['* Подкрепление задерживается.']
+                text: ['*Подкрепление задерживается.']
             }
         }
 
@@ -302,7 +318,7 @@ class PromoDuck extends Enemy
             this.call = 1;
 
             return {
-                speech: ['...&0', '(Н-нужна помощь...)'],
+                speech: ['...&0', '^(Н-нужна помощь...)^'],
                 actions: [
                     () => new CallHelpAction(this)
                 ]
@@ -317,7 +333,7 @@ class PromoDuck extends Enemy
             this.call = 3;
 
             return {
-                speech: ['(Д-да где он...)'],
+                speech: ['^(Д-да где он...)^'],
             };
         }
         else if(this.call == 3)
@@ -331,8 +347,11 @@ class PromoDuck extends Enemy
     Check()
     {
         return {
-            text: ['* ПромоУтка — АТК 10 ЗЩТ 0\n* Рекламный бизнесмен.%* Древесный сомелье.%* КРАСАВЧИК.'],
-            speech: ['О дааааа!!!\nЭто всё ПРАВДА.%ОСОБЕННО\nПОСЛЕДНЕЕ!!']
+            text: ['*ПромоУтка — АТК 10 ЗЩТ 0*Рекламный бизнесмен.%*Древесный сомелье.%*КРАСАВЧИК.'],
+            speech: ['О дааааа!!! Это всё ПРАВДА. %ОСОБЕННО ПОСЛЕДНЕЕ!!'],
+            actions: [
+                () => new StakeAction(this)
+            ]
         };
     }
     Bet()
@@ -343,20 +362,20 @@ class PromoDuck extends Enemy
         {
             case 1:
                 return {
-                    text: ['* Ты предлагаешь свою ставку.'],
-                    speech: ['Один карандаш???\nЯ ЕГО РАЗВЕ ЧТО\nПОГРЫЗТЬ МОГУ!!!!']
+                    text: ['*Ты предлагаешь свою ставку.'],
+                    speech: ['Один карандаш???*Я ЕГО РАЗВЕ ЧТО ПОГРЫЗТЬ МОГУ!!!!']
                 };
                 
             case 2:
                 return {
-                    text: ['* У тебя всё ещё один карандаш, но ты\n  не сдаёшься.'],
-                    speech: ['ОДИН карандаш...\nА ставка 324905!!!\nПОНИМАЕШЬ???']
+                    text: ['*У тебя всё ещё один карандаш, но ты не сдаёшься.'],
+                    speech: ['ОДИН карандаш... А ставка 324905!!! ПОНИМАЕШЬ???']
                 };
 
             case 3:
                 return {
-                    text: ['* Ты третий раз предлагаешь свой карандаш.'],
-                    speech: ['ХВАТИТ ТЫКАТЬ\nСВОЙ КАРАНДАШ\nМНЕ В ЛИЦО!!!', '...%Значит ТАК.&0', 'ЭТО - ПРОМОТКА.\nВидишь??!%...тут таймер, когда\nставка сбросится.', 'ЖДИ!!!\nЕсли выживешь,%ТО МЕСТО ТВОЁ!!!!'],
+                    text: ['*Ты третий раз предлагаешь свой карандаш.'],
+                    speech: ['ХВАТИТ ТЫКАТЬ СВОЙ КАРАНДАШ МНЕ В ЛИЦО!!!', '...%Значит ТАК.&0', 'ЭТО - ПРОМОТКА. Видишь??!*%...тут таймер, когда ставка сбросится.', 'ЖДИ!!! Если выживешь,% ТО МЕСТО ТВОЁ!!!!'],
                     actions: [
                         () => new StakeAction(this)
                     ]
@@ -364,7 +383,7 @@ class PromoDuck extends Enemy
 
             default:
                 return {
-                    text: ['* Похоже, единственный способ — дождаться\n  сброса ставки и только после этого\n  предложить карандаш.']
+                    text: ['*Похоже, единственный способ — дождаться сброса ставки и только после этого предложить карандаш.']
                 };
         }
     }
@@ -377,28 +396,28 @@ class PromoDuck extends Enemy
         {
             case 1:
                 return {
-                    text: ['* Ты позвал Туни...', '* Но никто не пришёл.']
+                    text: ['*Ты позвал Туни...', '*Но никто не пришёл.']
                 };
 
             case 2:
                 return {
-                    text: ['* Ты позвал Родю...', '* Но никто не пришёл.']
+                    text: ['*Ты позвал Родю...', '*Но никто не пришёл.']
                 };
 
             case 3:
                 return {
-                    text: ['* Ты позвал Нарушителя...', '* Но никто не пришёл.']
+                    text: ['*Ты позвал Нарушителя...', '*Но никто не пришёл.']
                 };
 
             case 4:
                 return {
-                    text: ['* Ты позвал ПромоУтку...'],
-                    speech: ['Моя харизма\nослепила тебя???%Такое\nУЖЕ СЛУЧАЛОСЬ.'],
+                    text: ['*Ты позвал ПромоУтку...'],
+                    speech: ['Моя харизма ослепила тебя???% Такое УЖЕ СЛУЧАЛОСЬ.'],
                 };
 
             default:
                 return {
-                    text: ['* Тебе больше некого позвать.', '* Может, попробовать сделать что-то ещё?...']
+                    text: ['*Тебе больше некого позвать.', '* Может, попробовать сделать что-то ещё?...']
                 };
         }
     }
