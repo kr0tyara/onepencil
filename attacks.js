@@ -181,17 +181,17 @@ class CardAttack extends Attack
     Start()
     {
         super.Start();
-        battle.SetBounds({x1: 400, y1: 300, x2: 880, y2: 550});
+        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
 
         this.x = this.caster.x + this.caster.pivot.x;
         this.y = this.caster.y + this.caster.pivot.y;
 
-        let time = 30;
+        let time = 30 + 50; // appearTime
         for(let i = 0; i < 16; i++)
         {
-            let projectile = new CardProjectile(this, i, this.x, this.y - i * 6);
+            let projectile = new CardProjectile(this, i, this.x, this.y);
 
-            time += Utils.ReverseQuadratic(15, 30, i, 16);
+            time += Utils.ReverseQuadratic(15, 25, i, 16);
             projectile.honingTime = time;
 
             battle.AddProjectile(projectile);
@@ -212,6 +212,9 @@ class CardProjectile extends Projectile
         this.pivot.x = this.w / 2;
 
         this.count = 16;
+        this.preThrowTime = 15;
+        this.appearTime = 50;
+
         this.speed = Utils.Quadratic(7, 10, _index, this.count);
 
         this.sprite = new Image();
@@ -229,15 +232,30 @@ class CardProjectile extends Projectile
 
         if(this.honingTimer > 0)
         {
-            let cos = Math.cos((this.honingTime - this.honingTimer) / 25 - this.index / this.count);
+            let cos = Math.cos((this.honingTime - this.honingTimer) / 25 - this.index / this.count) * 0.8 - 0.1;
+            let targetX = cos * (100 + 50 * (this.honingTime - this.honingTimer) / this.honingTime);
 
             this.rotation = -cos / 5;
-            this.x = this.parent.x + cos * (200 + 50 * (this.honingTime - this.honingTimer) / this.honingTime);
+            
+            // анимация появления
+            if(this.honingTimer >= this.honingTime - this.appearTime)
+            {
+                let t = 1 - (this.honingTimer - (this.honingTime - this.appearTime)) / this.appearTime;
+                this.x = this.parent.x + t * (targetX);
+                this.y = this.parent.y - t * (this.index * 6);
+                return;
+            }
 
-            if(this.honingTimer <= 15)
+            // замах
+            if(this.honingTimer > this.preThrowTime)
+            {
+                this.x = this.parent.x + targetX;
+            }
+            // анимация перед броском
+            else
             {
                 this.onTop = true;
-                this.y = this.parent.y - this.index * 6 - 32 * ((15 - this.honingTimer) / 15);
+                this.y = this.parent.y - this.index * 6 - 32 * ((this.preThrowTime - this.honingTimer) / this.preThrowTime);
             }
 
             return;

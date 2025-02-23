@@ -550,7 +550,6 @@ class Battle
         
         //this.SetMode(ATTACK);
         //this.Attack();
-
     }
 
     AlignEnemies()
@@ -667,7 +666,7 @@ class Battle
             if(a.onTop != b.onTop)
                 return a.onTop - b.onTop;
 
-            return ~~(a.y - b.y);
+            return a.y - b.y;
         });
 
         for(let i in this.projectiles)
