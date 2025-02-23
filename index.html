@@ -15,11 +15,8 @@
             {
                 background-color: #dadada;
             }
-            #battle
+            .game
             {
-                background-color: #fff;
-                touch-action: none;
-
                 position: fixed; 
                 left: 50%;
                 top: 50%;
@@ -29,9 +26,41 @@
                 width: min(calc(100vh * (16 / 9)), 100vw, 1280px);
                 height: auto; 
             }
+            #battle
+            {
+                position: absolute;
+                background-color: #fff;
+                touch-action: none;
+
+                width: 100%;
+                height: 100%;
+            }
+            
+            .preloader 
+            {
+                position: absolute;
+                background-color: #fff;
+
+                width: 100%;
+                height: 100%;
+            }
+            .preloader #progress
+            {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                margin: 0;
+            }
         </style>
     </head>
     <body>
-        <canvas width="1280" height="720" id="battle"></canvas>
+        <div class="game">
+            <canvas width="1280" height="720" id="battle"></canvas>
+            
+            <div class="preloader">
+                <h2 id="progress">0%</h2>
+            </div>
+        </div>
     </body>
 </html>

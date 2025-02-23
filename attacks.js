@@ -216,14 +216,11 @@ class CardProjectile extends Projectile
         this.appearTime = 50;
 
         this.speed = Utils.Quadratic(7, 10, _index, this.count);
-
-        this.sprite = new Image();
-        this.sprite.src = './img/stake.png';
     }
 
     Draw(_ctx, _dt)
     {
-        _ctx.drawImage(this.sprite, -this.pivot.x - 5, -this.pivot.y - 7.5, this.w + 10, this.h + 15);
+        _ctx.drawImage(res.sprites.stake, -this.pivot.x - 5, -this.pivot.y - 7.5, this.w + 10, this.h + 15);
     }
 
     GameLoop(_delta)
@@ -236,7 +233,7 @@ class CardProjectile extends Projectile
             let targetX = cos * (100 + 50 * (this.honingTime - this.honingTimer) / this.honingTime);
 
             this.rotation = -cos / 5;
-            
+
             // анимация появления
             if(this.honingTimer >= this.honingTime - this.appearTime)
             {

@@ -1,4 +1,5 @@
-var battle;
+var res,
+    battle;
 
 const   IDLE = 0,
         PRE_ATTACK = 1,
@@ -477,6 +478,91 @@ class BattleAudio
             this.audio.play();
             this.audioPending = false;
         }
+    }
+}
+
+class GameResources
+{
+    constructor()
+    {
+        this.spritePrefix = './img/';
+        this.spriteData = {};
+        this.sprites = {};
+        this.spriteNames = 
+        {
+            icons: 'icons.png',
+            actions: 'actions.png',
+            ownAttacks: 'own_attacks.png',
+            soul: 'soul.png',
+            
+            duck: 'duck.png',
+            robot: 'robot.png',
+            promote: 'promote.png',
+
+            stake: 'stake.png',
+        };
+
+        this.onReady = null;
+        this.onProgress = null;
+    }
+
+    Load()
+    {
+        for(let i in this.spriteNames)
+        {
+            let sprite = this.spriteNames[i];
+            let path = this.spritePrefix + sprite;
+
+            let img = new Image();
+            img.src = path;
+
+            this.spriteData[i] = 
+            {
+                url: path,
+                src: img,
+                loaded: false,
+                tries: 0
+            };
+            this.sprites[i] = img;
+
+            img.onload = () => this.OnLoad(i);
+            img.onerror = () => this.OnError(i);
+        }
+    }
+
+    OnError(i)
+    {
+        console.log(`${i} doesn't load (tries: ${this.spriteData[i].tries})`);
+        if(this.spriteData[i].tries >= 3)
+        {
+            alert(`Ошибка при загрузке ресурса: ${i}`);
+            return;
+        }
+
+        this.spriteData[i].tries++;
+        setTimeout(() => this.ReloadSprite(this.spriteData[i]), 1000);
+    }
+    ReloadSprite(_sprite)
+    {
+        _sprite.src.src = _sprite.url + `?retry=${Date.now()}`;
+    }
+
+    OnLoad(i)
+    {
+        this.spriteData[i].loaded = true;
+        this.spriteData[i].src.onload  = null;
+        this.spriteData[i].src.onerror = null;
+
+        let readyCount = 0;
+        for(let i in this.spriteData)
+        {
+            if(this.spriteData[i].loaded)
+                readyCount++;
+        }
+
+        this.onProgress(readyCount / Object.keys(this.spriteData).length);
+        if(readyCount == Object.keys(this.spriteData).length)
+            this.onReady();
     }
 }
 
@@ -1049,9 +1135,6 @@ class Soul extends Entity
         this.grazeRadius = 20;
         this.pivot = {x: this.radius, y: this.radius};
 
-        this.sprite = new Image();
-        this.sprite.src = './img/soul.png';
-
         this.invinsibleTime = 50;
         this.invinsibleTimer = 0;
         this.invinsible = false;
@@ -1101,7 +1184,7 @@ class Soul extends Entity
         if(this.invinsible && this.invinsibleTimer % 10 < 4)
             _ctx.globalAlpha = 0.5;
 
-        _ctx.drawImage(this.sprite, this.x, this.y);
+        _ctx.drawImage(res.sprites.soul, this.x, this.y);
 
         if(this.invinsible)
             _ctx.globalAlpha = 1;
@@ -1237,6 +1320,20 @@ class Utils
 
 window.addEventListener('load', () =>
 {
+    res = new GameResources();
+    res.Load();
+
+    res.onReady = Start;
+    res.onProgress = Progress;
+});
+function Start()
+{
+    document.querySelector('.preloader').style.display = 'none';
+    
     battle = new Battle();
     battle.Start();
-});
+}
+function Progress(i)
+{
+    document.querySelector('#progress').textContent = `${~~(i * 100)}%`;
+}

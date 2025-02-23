@@ -153,19 +153,6 @@ class PromoDuckSprite extends EnemySprite
     {
         super(_x, _y, 300, 300, _enemy);
         
-        let spr = [
-            './img/duck.png',
-            './img/promote.png',
-        ];
-
-        this.sprites = [];
-        for(let i in spr)
-        {
-            let img = new Image();
-            img.src = spr[i];
-            this.sprites.push(img);
-        }
-
         this.stakeShown = false;
     }
 
@@ -193,7 +180,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.stroke();
             _ctx.closePath();
             
-            _ctx.drawImage(this.sprites[1], 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
+            _ctx.drawImage(res.sprites.promote, 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
 
             _ctx.font = '48px Arial';
             _ctx.fillStyle = '#000';
@@ -210,7 +197,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillText(text, 0, 0);
             _ctx.translate(w / 2 + 5, -16);
             _ctx.rotate(Math.PI * 1.5);
-            _ctx.drawImage(battle.soul.sprite, 0, 0);
+            _ctx.drawImage(res.sprites.soul, 0, 0);
 
             _ctx.restore();
             
@@ -230,7 +217,7 @@ class PromoDuckSprite extends EnemySprite
         else if(this.state == STATE_HANGING || this.state == STATE_HELP)
             offset = 800;
 
-        _ctx.drawImage(this.sprites[0], offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
+        _ctx.drawImage(res.sprites.duck, offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
     }
 }
 

@@ -45,9 +45,6 @@ class TargettedBattleMode extends BattleMode
     {
         super(_mode);
         
-        this.iconsSheet = new Image();
-        this.iconsSheet.src = './img/icons.png';
-        
         this.enemies = [];
         this.targetEnemy = null;
         this.targetClickTarget = null;
@@ -153,7 +150,7 @@ class TargettedBattleMode extends BattleMode
 
             _ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
             _ctx.fillText(enemy.data.name, enemy.x + 75, enemy.y + enemy.h / 2);
-            _ctx.drawImage(this.iconsSheet, 100 * enemy.data.index.x, 100 * enemy.data.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
+            _ctx.drawImage(res.sprites.icons, 100 * enemy.data.index.x, 100 * enemy.data.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
         }
     }
 }
@@ -224,8 +221,6 @@ class OwnAttackMode extends TargettedBattleMode
         this.pendingAnimationTime = 50;
         this.pending = false;
 
-        this.attacksSheet = new Image();
-        this.attacksSheet.src = './img/own_attacks.png';
         this.ownAttacks = 
         {
             '':         {id: '', damage: 0, index: {x: 0, y: 0}},
@@ -277,7 +272,7 @@ class OwnAttackMode extends TargettedBattleMode
             {
                 let x = (battle.defaultBounds.x2 - this.targetEnemy.data.sprite.x) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
                 
-                _ctx.drawImage(this.attacksSheet, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x2 - x + 100 / 2, battle.defaultBounds.y1 - 150 - 100, 100, 100);
+                _ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x2 - x + 100 / 2, battle.defaultBounds.y1 - 150 - 100, 100, 100);
             }
             // пуля прилетела
             else
@@ -485,9 +480,6 @@ class ActMode extends TargettedBattleMode
     {
         super(ACT);
 
-        this.spriteSheet = new Image();
-        this.spriteSheet.src = './img/actions.png';
-
         this.clickTarget = null;
         this.actions = [];
 
@@ -661,7 +653,7 @@ class ActMode extends TargettedBattleMode
                     _ctx.lineWidth = 2;
 
                 _ctx.strokeRect(action.x, action.y, action.w, action.h);
-                _ctx.drawImage(this.spriteSheet, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 50 + action.h / 2, 100, 100);
+                _ctx.drawImage(res.sprites.actions, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 50 + action.h / 2, 100, 100);
                 _ctx.fillText(action.name, action.x + 150, action.y + action.h / 2);
             }
         }
