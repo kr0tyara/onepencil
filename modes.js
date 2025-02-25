@@ -221,12 +221,6 @@ class OwnAttackMode extends TargettedBattleMode
         this.pendingAnimationTime = 50;
         this.pending = false;
 
-        this.ownAttacks = 
-        {
-            '':         {id: '', damage: 0, index: {x: 0, y: 0}},
-            'circle':   {id: 'circle', damage: 50, index: {x: 0, y: 1}},
-            'star':     {id: 'star', damage: 120, index: {x: 1, y: 1}},
-        };
         this.currentAttack = null;
         this.attackDamage = 0;
     }
@@ -263,6 +257,31 @@ class OwnAttackMode extends TargettedBattleMode
                 _ctx.fillText(`${~~this.castTimer}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
             else
                 _ctx.fillText('РИСУЙ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
+            
+            _ctx.lineCap = 'round';
+            _ctx.lineJoin = 'round';
+            _ctx.lineWidth = 5;
+
+            let template = Object.values(battle.ownAttacks)[battle.ownAttackIndex];
+            if(template != null)
+            {
+                _ctx.globalAlpha = .5;
+
+                _ctx.drawImage(res.sprites.ownAttacks, 100 * template.index.x, 100 * template.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50, 100, 100);
+
+                _ctx.globalAlpha = 1;
+            }
+
+            _ctx.strokeStyle = '#000';
+            _ctx.beginPath();
+
+            for(let i in this.drawnPoints)
+            {
+                _ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
+            }
+
+            _ctx.stroke();
+            _ctx.closePath();
         }
         // анимация нашей атаки
         else
@@ -270,9 +289,9 @@ class OwnAttackMode extends TargettedBattleMode
             // пуля летит
             if(this.pendingTimer >= this.pendingAnimationTime)
             {
-                let x = (battle.defaultBounds.x2 - this.targetEnemy.data.sprite.x) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
+                let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y  - (battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
                 
-                _ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x2 - x + 100 / 2, battle.defaultBounds.y1 - 150 - 100, 100, 100);
+                _ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
             }
             // пуля прилетела
             else
@@ -287,19 +306,6 @@ class OwnAttackMode extends TargettedBattleMode
                 _ctx.fillText(`-${this.attackDamage}`, battle.defaultBounds.x2, battle.defaultBounds.y1 - 40);
             }
         }
-
-        _ctx.lineCap = 'round';
-        _ctx.lineJoin = 'round';
-        _ctx.lineWidth = 5;
-        _ctx.strokeStyle = '#000';
-        _ctx.beginPath();
-
-        for(let i in this.drawnPoints)
-        {
-            _ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
-        }
-
-        _ctx.stroke();
     }
     GameLoop(_delta)
     {
@@ -381,9 +387,12 @@ class OwnAttackMode extends TargettedBattleMode
     {
         let res = this.dollar.Recognize(this.drawnPoints, false);
             
-        let attack = this.ownAttacks[res.Name];
+        let attack = battle.ownAttacks[res.Name];
         if(!attack)
-            attack = this.ownAttacks[''];
+            attack = battle.ownAttacks[''];
+
+        if(res.Name != Object.keys(battle.ownAttacks)[battle.ownAttackIndex])
+            attack = battle.ownAttacks[''];
 
         let damage = ~~(attack.damage * res.Score);
         battle.DealDamage(this.targetEnemy, damage);

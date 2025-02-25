@@ -346,6 +346,7 @@ class SpeechBubble extends TypeWriter
         _ctx.lineTo(x - 20, y + h / 2);
         _ctx.fill();
         _ctx.stroke();
+        _ctx.closePath();
 
         this.DrawText(_ctx, _dt);
 
@@ -614,8 +615,18 @@ class Battle
 
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
         this.soul = new Soul(this.mousePos.x, this.mousePos.y);
+       
         this.hp = 20;
         this.tp = 0;
+
+        this.ownAttacks = 
+        {
+            '':         {id: '', damage: 0, index: {x: 0, y: 0}},
+            'triangle': {id: 'triangle', damage: 30, index: {x: 1, y: 0}},
+            'circle':   {id: 'circle', damage: 50, index: {x: 0, y: 1}},
+            'star':     {id: 'star', damage: 120, index: {x: 1, y: 1}},
+        };
+        this.ownAttackIndex = 1;
 
         this.attack = null;
         this.attackCounter = 0;
@@ -900,6 +911,10 @@ class Battle
     }
     OnOwnAttackEnd()
     {
+        this.ownAttackIndex++;
+        if(this.ownAttackIndex >= this.ownAttacks.length)
+            this.ownAttackIndex = 1;
+
         let battleFinished = true;
 
         for(let i in this.enemies)
