@@ -19,6 +19,7 @@ const   IDLE = 0,
         TEXT_COLORS = [
             '#000000',
             '#ff0000',
+            '#ff6a00',
         ];
 
 class TypeWriter
@@ -328,7 +329,7 @@ class SpeechBubble extends TypeWriter
 
         let x = this.textBounds.x1 - 10;
         let y = this.textBounds.y1 - 10;
-        let w = this.textBounds.x2 - x;
+        let w = this.textBounds.x2 - x + 15;
         
         let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize, this.textBounds) + 20;
 
@@ -969,14 +970,23 @@ class Battle
         }
     }
 
-    AddProjectile(_projectile)
+    AddProjectile(_attack, _projectile)
     {
         _projectile.Start();
         this.projectiles.push(_projectile);
+        _attack.spawnedProjectiles.push(_projectile);
     }
     DestroyProjectileById(i)
     {
-        this.projectiles.splice(i, 1);
+        let projectile = this.projectiles.splice(i, 1)[0];
+        
+        let parent = projectile.parent;
+        let j = parent.spawnedProjectiles.indexOf(projectile);
+        if(j != -1)
+            parent.spawnedProjectiles.splice(j, 1);
+
+        parent = null;
+        projectile = null;
     }
     DestroyProjectile(_projectile)
     {

@@ -1,8 +1,9 @@
 class Attack
 {
-    constructor(_caster, _projectileTime, _attackTime)
+    constructor(_caster, _difficulty, _projectileTime, _attackTime)
     {
         this.caster = _caster;
+        this.difficulty = _difficulty;
 
         this.timeOut = false;
         this.tickCount = 0;
@@ -12,6 +13,10 @@ class Attack
 
         this.startTime = 20;
         this.endTime = 20;
+
+        this.x = this.caster.x + this.caster.pivot.x;
+        this.y = this.caster.y + this.caster.pivot.y;
+        this.spawnedProjectiles = [];
     }
 
     Start()
@@ -53,7 +58,7 @@ class Attack
             if(!this.timeOut)
                 this.OnTimeOut();
 
-            if(battle.projectiles.length == 0)
+            if(this.spawnedProjectiles.length == 0)
             {
                 this.endTimer -= 1 * _delta;
                 if(this.endTimer <= 0)
@@ -80,6 +85,10 @@ class Attack
     {
         this.timeOut = true;
     }
+    Finish()
+    {
+        this.attackTimer = 0;
+    }
     OnGameLoop(_delta)
     {
     }
@@ -105,6 +114,8 @@ class Projectile extends Entity
 
         this.honingTime = 0;
         this.honingTimer = 0;
+        
+        this.lifeTimer = 0;
 
         this.destructible = true;
         this.toDestroy = false;
@@ -113,6 +124,7 @@ class Projectile extends Entity
     Start()
     {
         this.honingTimer = this.honingTime;
+        this.lifeTimer = 0;
     }
 
     Collision(_graze)
@@ -146,20 +158,22 @@ class Projectile extends Entity
     {
         if(this.honingTimer > 0)
             this.honingTimer -= 1 * _delta;
+
+        this.lifeTimer += 1 * _delta;
     }
 }
 
 class TestAttack extends Attack
 {
-    constructor(_caster)
+    constructor(_caster, _difficulty)
     {
-        super(_caster, 30, 200);
+        super(_caster, _difficulty, 30, 200);
     }
 
-    SpawnProjectile(_tickCount)
+    SpawnProjectile(_index)
     {
-        let projectile = new TestProjectile(this, _tickCount, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
-        battle.AddProjectile(projectile);
+        let projectile = new TestProjectile(this, _index, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
+        battle.AddProjectile(this, projectile);
     }
 }
 class TestProjectile extends Projectile
@@ -173,9 +187,9 @@ class TestProjectile extends Projectile
 
 class CardAttack extends Attack
 {
-    constructor(_caster)
+    constructor(_caster, _difficulty)
     {
-        super(_caster, 400, 400);
+        super(_caster, _difficulty, 400, 400);
     }
 
     Start()
@@ -183,18 +197,21 @@ class CardAttack extends Attack
         super.Start();
         battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
 
-        this.x = this.caster.x + this.caster.pivot.x;
-        this.y = this.caster.y + this.caster.pivot.y;
+        let appearTime = 50;
+        let count = 16;
 
-        let time = 30 + 50; // appearTime
-        for(let i = 0; i < 16; i++)
+        let time = 30 + appearTime;
+        for(let i = 0; i < count; i++)
         {
             let projectile = new CardProjectile(this, i, this.x, this.y);
+            projectile.count = count;
+            projectile.appearTime = appearTime;
 
-            time += Utils.ReverseQuadratic(15, 25, i, 16);
+            time += Utils.ReverseQuadratic(15, 30, i, count);
             projectile.honingTime = time;
+            projectile.speed = Utils.Quadratic(7, 10, i, count);
 
-            battle.AddProjectile(projectile);
+            battle.AddProjectile(this, projectile);
         }
     }
 
@@ -210,12 +227,13 @@ class CardProjectile extends Projectile
         super(_parent, _index, _x, _y, 50, 75, 2);
 
         this.pivot.x = this.w / 2;
+        this.x -= this.pivot.x;
 
-        this.count = 16;
+        this.count;
+        this.appearTime;
         this.preThrowTime = 15;
-        this.appearTime = 50;
-
-        this.speed = Utils.Quadratic(7, 10, _index, this.count);
+        
+        this.speed = 7;
     }
 
     Draw(_ctx, _dt)
@@ -263,9 +281,145 @@ class CardProjectile extends Projectile
     }
 }
 
+/*
+todo: переиспользовать для рисовалки!)
+class ProfitAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 300, 500);
+    
+        this.gapTime = 100;
+        this.gapInsideTime = 15;
+        this.offset = 45;
 
+        this.currentProjectile = null;
+    }
+    
+    Start()
+    {
+        super.Start();
 
+        battle.SetBounds({x1: 200, y1: 300, x2: 1080, y2: 550});
 
+        this.x = 400;
+        this.y = 550;
+        this.goingUp = true;
+        
+        this.changeAngleTimer = 0;
+        this.gapTimer = 0;
+        this.gapInsideTimer = 0;
+
+        this.SetAngle();
+    }
+
+    SetAngle()
+    {
+        if(this.goingUp)
+        {
+            this.angle = Utils.Random(-Math.PI / 2, Math.PI / 6);
+
+            if(this.y - battle.bounds.y1 <= this.offset)
+                this.goingUp = false;
+        }
+        else
+        {
+            this.angle = Utils.Random(0, Math.PI / 2);
+
+            if(battle.bounds.y2 - this.y <= this.offset)
+                this.goingUp = true;
+        }
+
+        this.setAngleTimer = Utils.Random(5, 15);
+    }
+    AddLine()
+    {
+        this.currentProjectile = new ProfitProjectile(this, 0, this.x, this.y);
+        this.currentProjectile.rotation = this.angle - Math.PI / 2;
+        battle.AddProjectile(this, this.currentProjectile);
+    }
+
+    OnGameLoop(_delta)
+    {
+        this.setAngleTimer -= 1 * _delta;
+        if(this.setAngleTimer <= 0 || this.y - battle.bounds.y1 <= this.offset || battle.bounds.y2 - this.y <= this.offset)
+        {
+            this.SetAngle();
+
+            if(this.gapInsideTimer < 0)
+                this.AddLine();
+        }
+
+        let speed = Utils.Quadratic(5, 10, this.attackTime - this.attackTimer, this.attackTime);
+        this.x += Math.cos(this.angle) * _delta * speed;
+        this.y += Math.sin(this.angle) * _delta * speed;
+        
+        this.gapTimer -= 1 * _delta;
+        // продлеваем линию
+        if(this.gapTimer > 0)
+        {
+            this.currentProjectile.h += _delta * speed;
+        }
+        // пора добавить дыру
+        else if(this.gapInsideTimer <= 0)
+        {
+            this.gapInsideTimer = this.gapInsideTime;
+        }
+        // продлеваем дыру
+        else
+        {
+            this.gapInsideTimer -= 1 * _delta;
+
+            if(this.gapInsideTimer <= 0)
+                this.gapTimer = this.gapTime;
+        }
+
+        if(this.x >= 640)
+        {
+            this.x -= speed / 4 * _delta;
+
+            for(let i in this.spawnedProjectiles)
+            {
+                this.spawnedProjectiles[i].x -= speed / 4 * _delta;
+            }
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.lineWidth = 25;
+        _ctx.strokeStyle = 'red';
+        _ctx.beginPath();
+        for(let i in this.spawnedProjectiles)
+        {
+            let projectile = this.spawnedProjectiles[i];
+            _ctx.moveTo(projectile.x + projectile.pivot.x, projectile.y + projectile.pivot.y);
+            
+            let rotation = projectile.rotation + Math.PI / 2;
+            let h = projectile.h - 10;
+            _ctx.lineTo(projectile.x + projectile.pivot.x + Math.cos(rotation) * h, projectile.y + projectile.pivot.y + Math.sin(rotation) * h);
+        }
+        _ctx.stroke();
+        _ctx.closePath();
+    }
+}
+
+class ProfitProjectile extends Projectile
+{
+    constructor(_parent, _index, _x, _y)
+    {
+        super(_parent, _index, _x, _y, 25, 10, 1);
+
+        this.pivot.x = this.w / 2;
+        this.pivot.y = 0;
+    }
+
+    Render()
+    {
+
+    }
+}
+*/
 
 
 
