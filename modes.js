@@ -279,6 +279,8 @@ class OwnAttackMode extends TargettedBattleMode
             {
                 _ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
             }
+            if(this.drawnPoints.length > 0)
+                _ctx.lineTo(battle.soul.x, battle.soul.y);
 
             _ctx.stroke();
             _ctx.closePath();

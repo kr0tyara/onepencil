@@ -912,7 +912,7 @@ class Battle
     OnOwnAttackEnd()
     {
         this.ownAttackIndex++;
-        if(this.ownAttackIndex >= this.ownAttacks.length)
+        if(this.ownAttackIndex >= Object.keys(this.ownAttacks).length)
             this.ownAttackIndex = 1;
 
         let battleFinished = true;
