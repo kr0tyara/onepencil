@@ -74,12 +74,16 @@ class Attack
         {
             this.tickCount++;
             this.SpawnProjectile(this.tickCount);
-            this.projectileTimer = this.projectileTime;
+            this.projectileTimer = this.NextProjectileTime(this.tickCount);
         }
 
         this.OnGameLoop(_delta);
     }
 
+    NextProjectileTime(_tickCount)
+    {
+        return this.projectileTime;
+    }
 
     OnTimeOut()
     {
@@ -280,6 +284,86 @@ class CardProjectile extends Projectile
         this.y += this.speed * _delta;
     }
 }
+
+class ThrowAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 35, 300);
+    }
+
+    Start()
+    {
+        super.Start();
+        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
+    }
+    
+    SpawnProjectile(_index)
+    {
+        let center = {x: battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2};
+
+        let angle = Utils.Random(0, Math.PI * 2);
+        let projectile = new ThrowProjectile(this, _index, center.x + Math.cos(angle) * 250, center.y + Math.sin(angle) * 250);
+        battle.AddProjectile(this, projectile);
+    }
+    NextProjectileTime(_tickCount)
+    {
+        if(_tickCount % 2 == 0)
+            return this.projectileTime * 1.5;
+        
+        return super.NextProjectileTime(_tickCount);
+    }
+}
+class ThrowProjectile extends Projectile
+{
+    constructor(_parent, _index, _x, _y)
+    {
+        super(_parent, _index, _x, _y, 25, 80, 5);
+
+        this.speed = _index % 3 == 1 ? 10 : 40;
+        this.honingTime = 50;
+
+        this.pivot.y = 0;
+
+        let delta = {x: battle.soul.x - this.x - this.pivot.x, y: battle.soul.y - this.y - this.pivot.y};
+        this.angle = Math.atan2(delta.y, delta.x);
+        this.rotation = this.angle - Math.PI / 2;
+
+        this.origin = {x: this.x, y: this.y};
+        this.targetPos = {x: -Math.cos(this.angle) * 75, y: -Math.sin(this.angle) * 75};
+    }
+
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        if(this.honingTimer > 0)
+        {
+            this.onTop = true;
+
+            this.x = this.origin.x + Utils.ReverseQuadratic(0, this.targetPos.x, this.honingTimer, this.honingTime);
+            this.y = this.origin.y + Utils.ReverseQuadratic(0, this.targetPos.y, this.honingTimer, this.honingTime);
+            
+            return;
+        }
+
+        this.onTop = false;
+        
+        this.x += Math.cos(this.angle) * this.speed * _delta;
+        this.y += Math.sin(this.angle) * this.speed * _delta;
+    }
+
+    Draw(_ctx, _dt)
+    {
+        if(this.honingTimer > 0)
+            _ctx.globalAlpha = (this.honingTime - this.honingTimer) / this.honingTime;
+
+        _ctx.drawImage(res.sprites.pencil, -40 / 2, -this.pivot.y - 12);
+        
+        _ctx.globalAlpha = 1;
+    }
+}
+
 
 /*
 todo: переиспользовать для рисовалки!)

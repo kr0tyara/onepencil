@@ -502,6 +502,7 @@ class GameResources
             promote: 'promote.png',
 
             stake: 'stake.png',
+            pencil: 'pencil.png',
         };
 
         this.onReady = null;

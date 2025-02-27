@@ -232,7 +232,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [CardAttack];
+        this.attacks = [ThrowAttack, CardAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
