@@ -308,7 +308,7 @@ class ThrowAttack extends Attack
     }
     NextProjectileTime(_tickCount)
     {
-        if(_tickCount % 2 == 0)
+        if(_tickCount % 3 == 0)
             return this.projectileTime * 1.5;
         
         return super.NextProjectileTime(_tickCount);
@@ -320,7 +320,7 @@ class ThrowProjectile extends Projectile
     {
         super(_parent, _index, _x, _y, 25, 80, 5);
 
-        this.speed = _index % 3 == 1 ? 10 : 40;
+        this.speed = _index % 3 == 1 ? 15 : 30;
         this.honingTime = 50;
 
         this.pivot.y = 0;

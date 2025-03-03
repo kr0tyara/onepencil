@@ -80,10 +80,22 @@ class TypeWriter
             this.text[i] = text.replaceAll(/&\d+/g, '');
         }
 
+        this.expressions = new Array(this.text.length);
+        for(let i in this.text)
+        {
+            let text = this.text[i];
+
+            let regex = /#\d+/.exec(text);
+            if(regex)
+                this.expressions[i] = regex[0].split('#')[1] * 1;
+
+            this.text[i] = text.replaceAll(/#\d+/g, '');
+        }
+
         battle.ctx.font = `${this.textSize}px Arial`;
         this.text = Utils.SliceText(battle.ctx, this.text, this.textBounds);
 
-        this.index = 0;
+        this.SetIndex(0);
         this.value = 0;
         this.timer = 0;
         
@@ -135,7 +147,7 @@ class TypeWriter
     {
         if(this.lineFinished && this.index + 1 < this.text.length)
         {
-            this.index++;
+            this.SetIndex(this.index + 1);
 
             this.lineFinished = false;
             this.stuckTimer = this.stuckTime;
@@ -147,6 +159,11 @@ class TypeWriter
         {
             this.finished = true;
         }
+    }
+
+    SetIndex(_index)
+    {
+        this.index = _index;
     }
 
     Render(_ctx, _dt)
@@ -197,10 +214,16 @@ class TypeWriter
             }
 
             let lastSymbol = this.text[this.index].charAt(this.value);
+            let skipNextSymbol = false;
+            
             switch(lastSymbol)
             {
                 // служебные символы
                 case '@':
+                    skipNextSymbol = true;
+                    this.timer = 0;
+                    break;
+                    
                 case '^':
                     this.timer = 0;
                     break;
@@ -222,6 +245,8 @@ class TypeWriter
             }
 
             this.value++;
+            if(skipNextSymbol)
+                this.value++;
         }
     }
     
@@ -233,13 +258,14 @@ class TypeWriter
         _ctx.textAlign = 'left';
 
         let text = this.GetText();
-        let lines = text.split(/\*|\n/).filter(a => a);
+        let lines = text.split(/\~|\n/).filter(a => a);
 
         let metrics = _ctx.measureText(text);
         let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
 
         let customColor = false;
         let customColorSeeking = false;
+
         let shakeText = false;
 
         for(let i = 0; i < lines.length; i++)
@@ -275,7 +301,6 @@ class TypeWriter
 
                     continue;
                 }
-
                 // после @ должен идти индекс цвета, поэтому мы его отлавливаем!
                 if(customColorSeeking)
                 {
@@ -289,6 +314,7 @@ class TypeWriter
                     }
                 }
 
+                // тряска
                 if(char == '^')
                 {
                     shakeText = !shakeText;
@@ -320,6 +346,23 @@ class SpeechBubble extends TypeWriter
     {
         this.textSize = 24;
         this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
+    }
+
+    NextLine()
+    {
+        this.parent.ResetExpression();
+        super.NextLine();
+    }
+
+    SetIndex(_index)
+    {
+        super.SetIndex(_index);
+
+        let expression = this.expressions[this.index];
+        if(expression != null)
+            this.parent.SetExpression(expression);
+        else
+            this.parent.ResetExpression();
     }
 
     Render(_ctx, _dt)
@@ -1299,7 +1342,7 @@ class Utils
 
         for(let k in _text)
         {
-            let ll = _text[k].split('*');
+            let ll = _text[k].split('~');
             for(let j in ll)
             {
                 let words = ll[j].split(' ');
@@ -1324,7 +1367,7 @@ class Utils
                 ll[j] = lines.join('\n');
             }
 
-            newLines.push(ll.join('*'));
+            newLines.push(ll.join('~'));
         }
 
         return newLines;
