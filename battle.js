@@ -49,6 +49,9 @@ class TypeWriter
         this.stuckTime = 100;
         this.stuckTimer = this.stuckTime;
         
+        this.autoSkipTime = 300;
+        this.autoSkipTimer = this.autoSkipTime;
+        
         this.lineFinished = false;
         this.finished = false;
 
@@ -150,6 +153,7 @@ class TypeWriter
 
             this.lineFinished = false;
             this.stuckTimer = this.stuckTime;
+            this.autoSkipTimer = this.autoSkipTime;
             
             this.value = 0;
             this.timer = 0;
@@ -201,6 +205,16 @@ class TypeWriter
         {
             if(this.stuckTimer > 0)
                 this.stuckTimer -= 1 * _delta;
+
+            if(this.autoSkipTimer > 0)
+            {
+                this.autoSkipTimer -= 1 * _delta;
+
+                if(this.autoSkipTimer <= 0)
+                {
+                    this.NextLine();
+                }
+            }
             
             return;
         }
