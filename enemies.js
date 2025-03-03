@@ -245,7 +245,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [ThrowAttack, CardAttack];
+        this.attacks = [CardAttack, ThrowAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -284,6 +284,9 @@ class PromoDuck extends Enemy
         this.check = 0;
 
         this.hurt = 0;
+        this.actualHurt = 0;
+        this.mockery = 0;
+        this.mockAnnoyed = false;
 
         this.call = 0;
     }
@@ -317,11 +320,62 @@ class PromoDuck extends Enemy
     {
         this.hurt++;
 
-        if(this.hurt == 1 && _damage <= 5)
+        if(_damage > 5)
         {
-            return {
-                speech: ['О боже! Какая ужасная атака! ^ПОЩАДИ МЕНЯ!!!^*', '#3* Это шутка.']
-            };
+            this.actualHurt++;
+            
+            if(this.mockery >= 2 && this.actualHurt == 1)
+            {
+                return {
+                    speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...~^БОЛЬНО ЖЕ!^']  
+                };
+            }
+        }
+        else if(this.call == 0)
+        {
+            this.mockery++;
+
+            if(this.actualHurt >= 2 && this.mockery >= 3)
+            {
+                if(this.mockAnnoyed)
+                    return {};
+
+                this.mockAnnoyed = true;
+                return {
+                    speech: ['Ты это специально делаешь?!']
+                };
+            }
+
+            switch(this.mockery)
+            {
+                case 1:
+                    return {
+                        speech: ['О боже! Какая ужасная атака! ^ПОЩАДИ МЕНЯ!!!^*', '#3* Это шутка.']
+                    };
+
+                case 2:
+                    return {
+                        speech: ['Ты ОПЯТЬ?! Не позорься!']
+                    };
+
+                case 3:
+                    return {
+                        speech: ['Может, объяснить тебе, что надо делать?...']
+                    };
+
+                case 4:
+                    return {
+                        speech: ['Просто СРИСУЙ заклинание своим карандашом!!', 'И не отпускай его, пока не закончишь.']  
+                    };
+
+                case 5:
+                    return {
+                        speech: ['...']  
+                    };
+
+                default:
+                    return {};
+            }
         }
 
         return {};

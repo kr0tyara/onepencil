@@ -1378,7 +1378,7 @@ class Utils
         _ctx.font = `${_textSize}px Arial`;
         _ctx.textBaseline = 'top';
 
-        let lines = _text.split(/\*|\n/).filter(a => a);
+        let lines = _text.split(/\~|\n/).filter(a => a);
 
         let metrics = _ctx.measureText(_text);
         let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;

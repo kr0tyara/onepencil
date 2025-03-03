@@ -318,7 +318,7 @@ class ThrowProjectile extends Projectile
 {
     constructor(_parent, _index, _x, _y)
     {
-        super(_parent, _index, _x, _y, 25, 80, 5);
+        super(_parent, _index, _x, _y, 25, 80, 3);
 
         this.speed = _index % 3 == 1 ? 15 : 30;
         this.honingTime = 50;
