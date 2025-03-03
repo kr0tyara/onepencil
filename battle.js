@@ -15,6 +15,7 @@ const   IDLE = 0,
         STATE_HANGING = 3,
         STATE_DEAD = 4,
         STATE_HELP = 5,
+        STATE_DRAW = 6,
 
         TEXT_COLORS = [
             '#000000',
@@ -117,8 +118,6 @@ class TypeWriter
     {
         if(this.currentAction != null)
         {
-            this.currentAction.Finish();
-            this.currentAction = null;
             return;
         }
 
@@ -190,7 +189,10 @@ class TypeWriter
             this.currentAction.GameLoop(_delta);
 
             if(this.currentAction.finished)
+            {
+                this.NextLine();
                 this.currentAction = null;
+            }
             else
                 return;
         }
@@ -546,6 +548,7 @@ class GameResources
 
             stake: 'stake.png',
             pencil: 'pencil.png',
+            scribble: 'scribble.png',
         };
 
         this.onReady = null;
@@ -920,12 +923,13 @@ class Battle
         this.SetMode(ATTACK);
         this.ResetBounds();
 
-        let attack = this.enemies[0].GetAttack(this.attackCounter);
-        if(attack == null)
+        let attackClass = this.enemies[0].GetAttack(this.attackCounter);
+        if(attackClass == null)
         {
             console.error('АТАКУ ДАЙ МНЕ ДУБИНА!!!');
             return;
         }
+        let attack = new attackClass(this.enemies[0].sprite, 0);
 
         this.attack = attack;
         this.attack.Start();

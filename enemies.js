@@ -43,8 +43,7 @@ class Enemy
 
     GetAttack(_counter)
     {
-        let attackClass = this.attacks[_counter % this.attacks.length];
-        return new attackClass(this.sprite, 0);
+        return this.attacks[_counter % this.attacks.length];
     }
 
     Die()
@@ -227,10 +226,28 @@ class PromoDuckSprite extends EnemySprite
             offset = 400;
         else if(this.state == STATE_HANGING || this.state == STATE_HELP)
             offset = 800;
+        else if(this.state == STATE_DRAW)
+            offset = this.animationTime < 1 && _dt % 500 < 250 ? 1600 : 2000;
         else if(this.expression != -1)
             offset = this.expression * 400;
 
         _ctx.drawImage(res.sprites.duck, offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
+
+        if(this.state == STATE_DRAW)
+        {
+            if(this.animationTime >= .5)
+            {
+                let t = (this.animationTime - .5) / (.8 - .5);
+                if(t > 1)
+                    t = 1;
+
+                let k = this.y + 140 + 150;
+                let h = 120 * t;
+                let y = k - 25 * t - h;
+
+                _ctx.drawImage(res.sprites.scribble, 0, 0, 114, 120, this.x + 142, y, 114, h);
+            }
+        }
     }
 }
 
@@ -288,7 +305,17 @@ class PromoDuck extends Enemy
         this.mockery = 0;
         this.mockAnnoyed = false;
 
+        this.drawAttempt = 0;
+
         this.call = 0;
+    }
+
+    GetAttack(_counter)
+    {
+        if(this.drawAttempt == 1)
+            return ScribbleAttack;
+
+        return super.GetAttack(_counter);
     }
 
     Idle()
@@ -324,10 +351,22 @@ class PromoDuck extends Enemy
         {
             this.actualHurt++;
             
-            if(this.mockery >= 2 && this.actualHurt == 1)
+            if(this.call == 0 && this.mockery >= 2 && this.actualHurt == 1)
             {
                 return {
                     speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...~^БОЛЬНО ЖЕ!^']  
+                };
+            }
+            
+            if(this.drawAttempt == 0)
+            {
+                this.drawAttempt = 1;
+    
+                return {
+                    speech: ['Атакуешь своими рисуночками, значит?', 'А я тоже так могу!&0'],
+                    actions: [
+                        () => new DrawAction(this)
+                    ]
                 };
             }
         }
@@ -383,7 +422,16 @@ class PromoDuck extends Enemy
 
     AttackEnd()
     {
-        if(this.hp / this.maxHP <= .8 && this.call < 1)
+        if(this.drawAttempt == 1)
+        {
+            this.drawAttempt = 2;
+
+            return {
+                speech: ['...', '.....', 'А! Карандаш плохой просто.'],
+            };
+        }
+
+        if(this.hp / this.maxHP <= .6 && this.call < 1)
         {
             this.call = 1;
 
@@ -398,7 +446,7 @@ class PromoDuck extends Enemy
         {
             this.call = 2;
         }
-        else if(this.hp / this.maxHP <= .6 && this.call < 3)
+        else if(this.hp / this.maxHP <= .3 && this.call < 3)
         {
             this.call = 3;
 
@@ -535,9 +583,34 @@ class CallHelpAction extends TriggerAction
         if(this.animationTimer <= 0)
             this.Finish();
     }
+}
+
+class DrawAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 200;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.parent.sprite.SetAnimation(STATE_DRAW, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+        this.parent.sprite.SetAnimation(STATE_DRAW, 1 - this.animationTimer / this.animationTime);
+        
+        if(this.animationTimer <= 0)
+            this.Finish();
+    }
 
     Finish()
     {
+        this.parent.sprite.SetAnimation(STATE_DRAW, 1);
         super.Finish();
     }
 }
