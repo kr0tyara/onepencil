@@ -1319,6 +1319,21 @@ class Utils
         };
     }
 
+    static LinearPos(_start, _end, t)
+    {
+        return {
+            x: _start.x + (_end.x - _start.x) * t,
+            y: _start.y + (_end.y - _start.y) * t,
+        }
+    }
+    static CurvePos(_start, _end, _height, t)
+    {
+        return {
+            x: _start.x + (_end.x - _start.x) * t,
+            y: _start.y + (_end.y - _start.y) * t - 4 * _height * t * (1 - t),
+        }
+    }
+
     static Lerp(_a, _b, i)
     {
         return (1 - i) * _a + i * _b;

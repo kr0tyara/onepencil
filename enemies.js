@@ -235,9 +235,9 @@ class PromoDuckSprite extends EnemySprite
 
         if(this.state == STATE_DRAW)
         {
-            if(this.animationTime >= .5)
+            if(this.animationTime >= .3)
             {
-                let t = (this.animationTime - .5) / (.8 - .5);
+                let t = (this.animationTime - .3) / (.6 - .3);
                 if(t > 1)
                     t = 1;
 
@@ -245,7 +245,18 @@ class PromoDuckSprite extends EnemySprite
                 let h = 120 * t;
                 let y = k - 25 * t - h;
 
-                _ctx.drawImage(res.sprites.scribble, 0, 0, 114, 120, this.x + 142, y, 114, h);
+                _ctx.save();
+                _ctx.translate(this.x + 142, y);
+
+                if(this.animationTime >= .65 && this.animationTime <= .75 || this.animationTime >= .8 && this.animationTime <= .85)
+                {
+                    _ctx.scale(-1, 1);
+                    _ctx.translate(-142, 0);
+                }
+
+                _ctx.drawImage(res.sprites.scribble, 0, 0, 114, 120, 0, 0, 114, h);
+
+                _ctx.restore();
             }
         }
     }

@@ -378,15 +378,18 @@ class ScribbleAttack extends Attack
         let bounds = {x1: 515, y1: 300, x2: 765, y2: 550};
         battle.SetBounds(bounds);
 
-        this.scribble = new ScribbleProjectile(this, 0, bounds.x2 + 25, bounds.y2 - 90);
+        this.scribble = new ScribbleProjectile(this, 0, this.caster.x + 142 + 20, this.caster.y + 140 + 30 - 15, bounds.x2 + 25, bounds.y2 - 90);
         battle.AddProjectile(this, this.scribble);
     }
 }
 class ScribbleProjectile extends Projectile
 {
-    constructor(_parent, _index, _x, _y)
+    constructor(_parent, _index, _x, _y, _tx, _ty)
     {
         super(_parent, _index, _x, _y, 75, 75, 1);
+
+        this.startPos = {x: _x, y: _y};
+        this.targetPos = {x: _tx, y: _ty};
 
         this.honingTime = 30;
         this.destroyTime = 15;
@@ -405,7 +408,15 @@ class ScribbleProjectile extends Projectile
         super.GameLoop(_delta);
 
         if(this.honingTimer > 0)
+        {
+            let pos = Utils.CurvePos(this.startPos, this.targetPos, 200, (this.honingTime - this.honingTimer) / this.honingTime)
+
+            this.x = pos.x;
+            this.y = pos.y;
+
             return;
+        }
+        this.y = this.targetPos.y;
 
         this.x -= 1 * _delta;
         if(this.x <= battle.bounds.x1 - this.w)
@@ -424,9 +435,7 @@ class ScribbleProjectile extends Projectile
 
     Draw(_ctx, _dt)
     {
-        if(this.honingTimer > 0)
-            _ctx.globalAlpha = (this.honingTime - this.honingTimer) / this.honingTime;
-        else if(this.destroyLaunch)
+        if(this.destroyLaunch)
             _ctx.globalAlpha = this.destroyTimer / this.destroyTime;
 
         _ctx.drawImage(res.sprites.scribble, this.honingTimer > 0 || this.lifeTimer % 25 < 12 ? 0 : 114, 0, 114, 120, -this.pivot.x - 20, -this.pivot.y - 10, 114, 120);
