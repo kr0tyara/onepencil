@@ -438,7 +438,7 @@ class ScribbleProjectile extends Projectile
         if(this.destroyLaunch)
             _ctx.globalAlpha = this.destroyTimer / this.destroyTime;
 
-        _ctx.drawImage(res.sprites.scribble, this.honingTimer > 0 || this.lifeTimer % 25 < 12 ? 0 : 114, 0, 114, 120, -this.pivot.x - 20, -this.pivot.y - 10, 114, 120);
+        _ctx.drawImage(res.sprites.scribble, this.honingTimer > 0 ? 4 * 114 : this.lifeTimer % 25 < 12 ? 0 : 114, 0, 114, 120, -this.pivot.x - 20, -this.pivot.y - 10, 114, 120);
         _ctx.globalAlpha = 1;
     }
 }

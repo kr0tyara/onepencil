@@ -251,10 +251,10 @@ class PromoDuckSprite extends EnemySprite
                 if(this.animationTime >= .65 && this.animationTime <= .75 || this.animationTime >= .8 && this.animationTime <= .85)
                 {
                     _ctx.scale(-1, 1);
-                    _ctx.translate(-142, 0);
+                    _ctx.translate(-114, 0);
                 }
 
-                _ctx.drawImage(res.sprites.scribble, 0, 0, 114, 120, 0, 0, 114, h);
+                _ctx.drawImage(res.sprites.scribble, (_dt % 500 < 250 ? 2 : 3) * 114, 0, 114, 120, 0, 0, 114, h);
 
                 _ctx.restore();
             }
