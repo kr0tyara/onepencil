@@ -150,13 +150,6 @@ class TypeWriter
         if(this.lineFinished && this.index + 1 < this.text.length)
         {
             this.SetIndex(this.index + 1);
-
-            this.lineFinished = false;
-            this.stuckTimer = this.stuckTime;
-            this.autoSkipTimer = this.autoSkipTime;
-            
-            this.value = 0;
-            this.timer = 0;
         }
         else
         {
@@ -167,6 +160,13 @@ class TypeWriter
     SetIndex(_index)
     {
         this.index = _index;
+
+        this.lineFinished = false;
+        this.stuckTimer = this.stuckTime;
+        this.autoSkipTimer = this.autoSkipTime;
+        
+        this.value = 0;
+        this.timer = 0;
     }
 
     Render(_ctx, _dt)
