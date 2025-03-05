@@ -563,6 +563,7 @@ class GameResources
             stake: 'stake.png',
             pencil: 'pencil.png',
             scribble: 'scribble.png',
+            eat: 'eat.png',
         };
 
         this.onReady = null;

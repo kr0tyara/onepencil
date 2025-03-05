@@ -273,7 +273,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [CardAttack, ThrowAttack];
+        this.attacks = [CardAttack, ThrowAttack, MouthAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -314,6 +314,7 @@ class PromoDuck extends Enemy
         this.hurt = 0;
         this.actualHurt = 0;
         this.mockery = 0;
+        this.failedAttack = 0;
         this.mockAnnoyed = false;
 
         this.drawAttempt = 0;
@@ -331,6 +332,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.failedAttack == 2)
+            return {
+                text: ['~(Перерисуй заклинание по шаблону, не отпуская курсор, чтобы атаковать!)']
+            };
+
         if(this.call == 1)
         {
             return {
@@ -385,6 +391,9 @@ class PromoDuck extends Enemy
         {
             this.mockery++;
 
+            if(this.mockery == 1)
+                this.failedAttack = 1;
+
             if(this.actualHurt >= 2 && this.mockery >= 3)
             {
                 if(this.mockAnnoyed)
@@ -433,6 +442,11 @@ class PromoDuck extends Enemy
 
     AttackEnd()
     {
+        if(this.failedAttack == 1)
+            this.failedAttack = 2;
+        else if(this.failedAttack == 2)
+            this.failedAttack = 0;
+
         if(this.drawAttempt == 1)
         {
             this.drawAttempt = 2;

@@ -443,6 +443,70 @@ class ScribbleProjectile extends Projectile
     }
 }
 
+class MouthAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 50, 300);
+    }
+
+    Start()
+    {
+        super.Start();
+
+        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
+    }
+
+    SpawnProjectile(_index)
+    {
+        let projectile = new MouthProjectile(this, _index, battle.soul.x - 32, battle.soul.y - 32);
+        battle.AddProjectile(this, projectile);
+    }
+}
+class MouthProjectile extends Projectile
+{
+    constructor(_parent, _index, _x, _y)
+    {
+        super(_parent, _index, _x, _y, 64, 64, 5);
+
+        this.appearTime = 20;
+        this.honingTime = 50;
+        this.lifeTime = 100;
+    }
+
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        if(this.lifeTimer > this.lifeTime)
+            this.toDestroy = true;
+    }
+
+    Draw(_ctx, _dt)
+    {
+        if(this.honingTimer >= 0)
+            _ctx.globalAlpha = (this.honingTime - this.honingTimer) / this.appearTime;
+        else if(this.lifeTimer > this.lifeTime - this.appearTime)
+            _ctx.globalAlpha = (this.lifeTime - this.lifeTimer) / this.appearTime;
+
+        let t = (this.honingTime - this.honingTimer) / this.honingTime;
+        let scale = 1.5;
+
+        _ctx.drawImage(res.sprites.eat, 0, 174, 164, 68, -104 / scale, 28 / scale, 164 / scale, 68 / scale);
+        _ctx.drawImage(res.sprites.eat, 0, 0, 164, 139, -104 / scale, (-100 - 75 * (1 - t)) / scale, 164 / scale, 139 / scale);
+
+        _ctx.globalAlpha = 1;
+    }
+
+    Collision(_graze)
+    {
+        if(this.lifeTimer > this.lifeTime - this.appearTime)
+            return false;
+
+        return super.Collision(_graze);
+    }
+}
+
 
 /*
 todo: переиспользовать для рисовалки!)
