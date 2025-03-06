@@ -273,7 +273,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [CardAttack, ThrowAttack, MouthAttack];
+        this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -391,7 +391,7 @@ class PromoDuck extends Enemy
         {
             this.mockery++;
 
-            if(this.mockery == 1)
+            if(this.actualHurt == 0)
                 this.failedAttack = 1;
 
             if(this.actualHurt >= 2 && this.mockery >= 3)

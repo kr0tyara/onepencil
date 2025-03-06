@@ -564,6 +564,8 @@ class GameResources
             pencil: 'pencil.png',
             scribble: 'scribble.png',
             eat: 'eat.png',
+            chunks: 'chunks.png',
+            star: 'star.png',
         };
 
         this.onReady = null;

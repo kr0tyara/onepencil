@@ -507,6 +507,96 @@ class MouthProjectile extends Projectile
     }
 }
 
+class BallAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 5, 300);
+
+        this.startTime = 100;
+        this.angle = 0;
+
+        this.tails = 5;
+        this.count = this.attackTime / this.projectileTime * this.tails;
+    }
+    
+    Start()
+    {
+        super.Start();
+
+        let bounds = {x1: 515, y1: 300, x2: 765, y2: 550};
+        battle.SetBounds(bounds);
+
+        this.x = bounds.x1 + (bounds.x2 - bounds.x1) / 2;
+        this.y = bounds.y1 + (bounds.y2 - bounds.y1) / 2;
+    }
+
+    OnGameLoop(_delta)
+    {
+        let tick = this.tickCount + (this.projectileTime - this.projectileTimer) / this.projectileTime;
+        this.angle = Math.PI / Utils.ReverseQuadratic(22, 36, tick * this.tails, this.count) * tick;
+    }
+
+    SpawnProjectile(_index)
+    {
+        for(let i = 0; i < this.tails; i++)
+        {
+            let index = _index * this.tails + i;
+            let angle = this.angle + i * Math.PI / this.tails * 2;
+
+            let projectile = new BallProjectile(this, index, this.x - 5, this.y - 5, angle);
+            battle.AddProjectile(this, projectile);
+        }
+    }
+    
+    Render(_ctx, _dt)
+    {
+        super.Render(_ctx, _dt);
+
+        _ctx.save();
+        _ctx.translate(this.x, this.y - (this.y / 2) * this.startTimer / this.startTime);
+        _ctx.rotate(this.angle - Math.PI / 7);
+        _ctx.drawImage(res.sprites.star, -46 / 2, -48 / 2);
+        _ctx.restore();
+    }
+}
+class BallProjectile extends Projectile
+{
+    constructor(_parent, _index, _x, _y, _angle)
+    {
+        super(_parent, _index, _x, _y, 10, 10, 2);
+
+        this.angle = _angle;
+        this.speed = 4;
+        
+        this.lifeTime = 50;
+        this.appearTime = 20;
+
+        this.sprite = Utils.RandomRound(0, 5);
+    }
+
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        this.x += Math.cos(this.angle) * this.speed * _delta;
+        this.y += Math.sin(this.angle) * this.speed * _delta;
+
+        if(this.lifeTimer > this.lifeTime)
+            this.toDestroy = true;
+    }
+
+    Draw(_ctx, _dt)
+    {
+        if(this.lifeTimer > this.lifeTime - this.appearTime)
+            _ctx.globalAlpha = (this.lifeTime - this.lifeTimer) / this.appearTime;
+
+        _ctx.drawImage(res.sprites.chunks, 16 * this.sprite, 0, 16, 18, -8, -9, 16, 18);
+
+        _ctx.globalAlpha = 1;
+    }
+}
+
 
 /*
 todo: переиспользовать для рисовалки!)
