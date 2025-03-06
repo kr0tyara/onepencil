@@ -25,10 +25,11 @@ const   IDLE = 0,
 
 class TypeWriter
 {
-    constructor(_parent = null, _showClickToContinueTip = true)
+    constructor(_parent = null, _showClickToContinueTip = true, _voice = res.sfx.check)
     {
         // todo: подчищать при уничтожении :)
         this.parent = _parent;
+        this.voice = _voice;
 
         this.text = ['*Пора проснуться и почувствовать запах @1БОЛИ@.'];
         this.actions = [];
@@ -244,10 +245,15 @@ class TypeWriter
                     this.timer = 0;
                     break;
 
-                case ',':
                 case '.':
+                    this.Speak(lastSymbol);
+                case ',':
+                case '?':
                 case '!':
                 case '—':
+                case '*':
+                case '(':
+                case ')':
                     this.timer = this.speedPunctuation;
                     break;
 
@@ -257,6 +263,7 @@ class TypeWriter
 
                 default:
                     this.timer = this.speed;
+                    this.Speak(lastSymbol);
                     break;
             }
 
@@ -264,6 +271,14 @@ class TypeWriter
             if(skipNextSymbol)
                 this.value++;
         }
+    }
+
+    Speak(_symbol)
+    {
+        if(_symbol == ' ' || _symbol == '\n' || _symbol == '~')
+            return;
+
+        this.voice.play();
     }
     
     DrawText(_ctx, _dt)
@@ -353,9 +368,9 @@ class TypeWriter
 
 class SpeechBubble extends TypeWriter
 {
-    constructor(_parent = null)
+    constructor(_parent = null, _voice = res.sfx.check)
     {
-        super(_parent, true);
+        super(_parent, true, _voice);
     }
 
     Start()
@@ -580,6 +595,15 @@ class GameResources
             star: 'star.png',
         };
 
+        this.sfxPrefix = './sfx/';
+        this.sfxData = {};
+        this.sfx = {};
+        this.sfxNames = 
+        {
+            check: 'check.ogg',
+            duck: 'duck.ogg',
+        };
+
         this.onReady = null;
         this.onProgress = null;
     }
@@ -603,33 +627,58 @@ class GameResources
             };
             this.sprites[i] = img;
 
-            img.onload = () => this.OnLoad(i);
-            img.onerror = () => this.OnError(i);
+            img.onload = () => this.OnLoad(i, 0);
+            img.onerror = () => this.OnError(i, 0);
+        }
+
+        for(let i in this.sfxNames)
+        {
+            let sfx = this.sfxNames[i];
+            let path = this.sfxPrefix + sfx;
+
+            let audio = new Audio(path);
+
+            this.sfxData[i] = 
+            {
+                url: path,
+                src: audio,
+                loaded: false,
+                tries: 0
+            };
+            this.sfx[i] = audio;
+
+            audio.oncanplaythrough = () => this.OnLoad(i, 1);
+            audio.onerror = () => this.OnError(i, 1);
         }
     }
 
-    OnError(i)
+    OnError(i, _type)
     {
-        console.log(`${i} doesn't load (tries: ${this.spriteData[i].tries})`);
-        if(this.spriteData[i].tries >= 3)
+        let target = _type == 0 ? this.spriteData[i] : this.sfxData[i];
+
+        console.log(`${i} doesn't load (tries: ${target.tries})`);
+        if(target.tries >= 3)
         {
             alert(`Ошибка при загрузке ресурса: ${i}`);
             return;
         }
 
-        this.spriteData[i].tries++;
-        setTimeout(() => this.ReloadSprite(this.spriteData[i]), 1000);
+        target.tries++;
+        setTimeout(() => this.Reload(target), 1000);
     }
-    ReloadSprite(_sprite)
+    Reload(_target)
     {
-        _sprite.src.src = _sprite.url + `?retry=${Date.now()}`;
+        _target.src.src = _target.url + `?retry=${Date.now()}`;
     }
 
-    OnLoad(i)
+    OnLoad(i, _type)
     {
-        this.spriteData[i].loaded = true;
-        this.spriteData[i].src.onload  = null;
-        this.spriteData[i].src.onerror = null;
+        let target = _type == 0 ? this.spriteData[i] : this.sfxData[i];
+
+        target.loaded = true;
+        target.src.onload  = null;
+        target.src.oncanplaythrough  = null;
+        target.src.onerror = null;
 
         let readyCount = 0;
         for(let i in this.spriteData)
@@ -637,9 +686,14 @@ class GameResources
             if(this.spriteData[i].loaded)
                 readyCount++;
         }
+        for(let i in this.sfxData)
+        {
+            if(this.sfxData[i].loaded)
+                readyCount++;
+        }
 
-        this.onProgress(readyCount / Object.keys(this.spriteData).length);
-        if(readyCount == Object.keys(this.spriteData).length)
+        this.onProgress(readyCount / (Object.keys(this.spriteData).length + Object.keys(this.sfxData).length));
+        if(readyCount == Object.keys(this.spriteData).length + Object.keys(this.sfxData).length)
             this.onReady();
     }
 }

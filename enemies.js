@@ -91,7 +91,7 @@ class EnemySprite extends Entity
         this.expression = -1;
 
         this.speaking = false;
-        this.speechBubble = new SpeechBubble(this);
+        this.speechBubble = new SpeechBubble(this, res.sfx.duck);
     }
 
     Start()
