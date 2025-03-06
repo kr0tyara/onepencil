@@ -123,15 +123,12 @@ class TargettedBattleMode extends BattleMode
 
     Render(_ctx, _dt)
     {
-        _ctx.font = '36px Arial';
-        _ctx.textBaseline = 'middle';
-        
-        _ctx.font = '36px Arial';
-        _ctx.fillStyle = '#000';
+        _ctx.font = '36px Pangolin';
         _ctx.textAlign = 'center';
         _ctx.textBaseline = 'top';
 
-        _ctx.fillText(this.id == OWN_ATTACK ? 'Атака' : 'Действие', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
+        _ctx.fillStyle = '#666';
+        _ctx.fillText('Цель', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
 
         _ctx.strokeStyle = '#000';
         _ctx.textAlign = 'left';
@@ -144,13 +141,18 @@ class TargettedBattleMode extends BattleMode
             let enemy = this.enemies[i];
 
             if(enemy == target)
-                _ctx.lineWidth = 5;
+                _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
             else
-                _ctx.lineWidth = 2;
+                _ctx.strokeStyle = _ctx.fillStyle = '#000';
 
-            _ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
-            _ctx.fillText(enemy.data.name, enemy.x + 75, enemy.y + enemy.h / 2);
-            _ctx.drawImage(res.sprites.icons, 100 * enemy.data.index.x, 100 * enemy.data.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50);
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, enemy.x, enemy.y, enemy.w, enemy.h, 4);
+            _ctx.stroke();
+            _ctx.closePath();
+
+            _ctx.fillText(enemy.data.name, enemy.x + 75 + 5, enemy.y + enemy.h / 2);
+
+            Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.icons, 100 * enemy.data.index.x, 100 * enemy.data.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50, _ctx.fillStyle);
         }
     }
 }
@@ -188,7 +190,7 @@ class IdleMode extends BattleMode
     {
         // todo: это не очень красиво!!
         if(
-            battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 50
+            battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 70
             || battle.mousePos.x < battle.defaultBounds.x1 || battle.mousePos.x > battle.defaultBounds.x2
         )
         {
@@ -245,7 +247,7 @@ class OwnAttackMode extends TargettedBattleMode
             return;
         }
 
-        _ctx.font = '36px Arial';
+        _ctx.font = '36px Pangolin';
         // рисуем
         if(!this.pending)
         {
@@ -256,7 +258,7 @@ class OwnAttackMode extends TargettedBattleMode
             if(this.drawing)
                 _ctx.fillText(`${~~this.castTimer}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
             else
-                _ctx.fillText('РИСУЙ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
+                _ctx.fillText('РИСУЙ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
             
             _ctx.lineCap = 'round';
             _ctx.lineJoin = 'round';
@@ -520,8 +522,8 @@ class ActMode extends TargettedBattleMode
             this.actions.push(action);
         }
 
-        let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2;
-        let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2);
+        let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 25 * 3 / 4;
+        let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4;
 
         for(let i in this.actions)
         {
@@ -531,8 +533,8 @@ class ActMode extends TargettedBattleMode
             let y = ~~(i / 2);
             action.index = {x, y};
 
-            action.x = battle.defaultBounds.x1 + x * w;
-            action.y = battle.defaultBounds.y1 + y * h;
+            action.x = battle.defaultBounds.x1 + x * w + (x + 1) * 12.5;
+            action.y = battle.defaultBounds.y1 + y * h + (y + 1) * 12.5;
             action.w = w;
             action.h = h;
         }
@@ -648,7 +650,8 @@ class ActMode extends TargettedBattleMode
         {
             _ctx.strokeStyle = '#000';
             _ctx.fillStyle = '#000';
-            _ctx.font = '36px Arial';
+            
+            _ctx.font = '36px Pangolin';
             _ctx.textBaseline = 'middle';
             _ctx.textAlign = 'left';
 
@@ -659,13 +662,18 @@ class ActMode extends TargettedBattleMode
                 let action = this.actions[i];
 
                 if(action == target)
-                    _ctx.lineWidth = 5;
+                    _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
                 else
-                    _ctx.lineWidth = 2;
+                    _ctx.strokeStyle = _ctx.fillStyle = '#000';
 
-                _ctx.strokeRect(action.x, action.y, action.w, action.h);
-                _ctx.drawImage(res.sprites.actions, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 50 + action.h / 2, 100, 100);
-                _ctx.fillText(action.name, action.x + 150, action.y + action.h / 2);
+                _ctx.beginPath();
+                Utils.RoundedRect(_ctx, action.x, action.y, action.w, action.h, 4);
+                _ctx.stroke();
+                _ctx.closePath();
+
+                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.actions, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 75 / 2 + action.h / 2, 75, 75, _ctx.fillStyle);
+
+                _ctx.fillText(action.name, action.x + 75 + 35, action.y + action.h / 2);
             }
         }
         else

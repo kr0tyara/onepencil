@@ -185,14 +185,14 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillStyle = '#fff';
 
             _ctx.beginPath();
-            _ctx.rect(battle.defaultBounds.x1, y, 250, h);
+            Utils.RoundedRect(_ctx, battle.defaultBounds.x1, y, 250, h, 6);
             _ctx.fill();
             _ctx.stroke();
             _ctx.closePath();
             
             _ctx.drawImage(res.sprites.promote, 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
 
-            _ctx.font = '48px Arial';
+            _ctx.font = '48px Pangolin';
             _ctx.fillStyle = '#000';
     
             let text = `324905`;
@@ -211,7 +211,7 @@ class PromoDuckSprite extends EnemySprite
 
             _ctx.restore();
             
-            _ctx.font = '24px Arial';
+            _ctx.font = '24px Pangolin';
             _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
         }
 

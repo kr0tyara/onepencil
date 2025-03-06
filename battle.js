@@ -96,7 +96,7 @@ class TypeWriter
             this.text[i] = text.replaceAll(/#\d+/g, '');
         }
 
-        battle.ctx.font = `${this.textSize}px Arial`;
+        battle.ctx.font = `${this.textSize}px Pangolin`;
         this.text = Utils.SliceText(battle.ctx, this.text, this.textBounds);
 
         this.SetIndex(0);
@@ -178,7 +178,7 @@ class TypeWriter
 
         if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
         {
-            _ctx.font = '24px Arial';
+            _ctx.font = '24px Pangolin';
             _ctx.fillStyle = '#666';
             _ctx.textBaseline = 'bottom';
             _ctx.textAlign = 'right';
@@ -268,7 +268,7 @@ class TypeWriter
     
     DrawText(_ctx, _dt)
     {
-        _ctx.font = `${this.textSize}px Arial`;
+        _ctx.font = `${this.textSize}px Pangolin`;
         _ctx.fillStyle = TEXT_COLORS[0];
         _ctx.textBaseline = 'top';
         _ctx.textAlign = 'left';
@@ -389,18 +389,20 @@ class SpeechBubble extends TypeWriter
         let x = this.textBounds.x1 - 10;
         let y = this.textBounds.y1 - 10;
         let w = this.textBounds.x2 - x + 15;
-        
         let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize, this.textBounds) + 20;
+        let r = 6;
 
         _ctx.fillStyle = '#fff';
         _ctx.strokeStyle = '#000';
         _ctx.beginPath();
         _ctx.moveTo(x - 20, y + h / 2);
         _ctx.lineTo(x, y + h / 2 - 10);
-        _ctx.lineTo(x, y);
-        _ctx.lineTo(x + w, y);
-        _ctx.lineTo(x + w, y + h);
-        _ctx.lineTo(x, y + h);
+
+        _ctx.arcTo(x, y, x + w, y, r);
+        _ctx.arcTo(x + w, y,   x + w, y + h, r);
+        _ctx.arcTo(x + w, y + h, x,   y + h, r);
+        _ctx.arcTo(x, y + h, x, y, r);
+        
         _ctx.lineTo(x, y + h / 2 + 10);
         _ctx.lineTo(x - 20, y + h / 2);
         _ctx.fill();
@@ -411,7 +413,7 @@ class SpeechBubble extends TypeWriter
 
         if(this.stuckTimer <= 0 && !this.clickedAtLeastOnce && this.showClickToContinueTip)
         {
-            _ctx.font = '16px Arial';
+            _ctx.font = '16px Pangolin';
             _ctx.fillStyle = '#666';
             _ctx.fillText('Кликни, чтобы продолжить!', x, y + h + 10);
         }
@@ -432,8 +434,8 @@ class BattleUI
         {
             this.buttons = [
                 {name: '<', mode: IDLE, action: battle.Back.bind(battle), back: true},
-                {name: 'АТАКА', mode: OWN_ATTACK, action: battle.OwnAttack.bind(battle)},
-                {name: 'ДЕЙСТВИЕ', mode: ACT, action: battle.Act.bind(battle)},
+                {name: 'Атака', mode: OWN_ATTACK, index: {x: 0, y: 0}, action: battle.OwnAttack.bind(battle)},
+                {name: 'Действие', mode: ACT, index: {x: 1, y: 0}, action: battle.Act.bind(battle)},
             ];
 
             let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 2) * 20) / (this.buttons.length - 1);
@@ -442,8 +444,8 @@ class BattleUI
                 let button = this.buttons[i];
                 if(button.back)
                 {
-                    button.x = battle.defaultBounds.x1 - 50 - 20;
-                    button.w = 50;
+                    button.x = battle.defaultBounds.x1 - 70 - 20;
+                    button.w = 70;
                     continue;
                 }
 
@@ -460,7 +462,7 @@ class BattleUI
         if(battle.mode.id != IDLE && battle.mode.locked)
             return null;
 
-        if(battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 50)
+        if(battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 70)
             return null;
 
         for(let i in this.buttons)
@@ -494,7 +496,7 @@ class BattleUI
 
         let target = this.TargetButton();
 
-        _ctx.font = '36px Arial';
+        _ctx.font = '36px Pangolin';
         _ctx.textBaseline = 'middle';
         _ctx.textAlign = 'center';
         for(let i in this.buttons)
@@ -504,14 +506,23 @@ class BattleUI
                 continue;
 
             if(target == button || battle.mode.id == button.mode)
-                _ctx.fillStyle = _ctx.strokeStyle = '#000';
+                _ctx.fillStyle = _ctx.strokeStyle = '#0d85f3';
             else if(battle.mode.id == IDLE || !battle.mode.locked)
-                _ctx.fillStyle = _ctx.strokeStyle = '#666';
+                _ctx.fillStyle = _ctx.strokeStyle = '#000';
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
 
-            _ctx.strokeRect(button.x, battle.defaultBounds.y2 + 70, button.w, 50);
-            _ctx.fillText(button.name, button.x + button.w / 2, battle.defaultBounds.y2 + 70 + 25);
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, button.x, battle.defaultBounds.y2 + 70, button.w, 70, 6);
+            _ctx.stroke();
+            _ctx.closePath();
+
+            if(button.index != null)
+            {
+                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.buttons, button.index.x * 50, button.index.y * 50, 50, 50, button.x + 10, battle.defaultBounds.y2 + 70 + 70 / 2 - 25, 50, 50, _ctx.fillStyle);
+            }
+
+            _ctx.fillText(button.name, button.x + button.w / 2, battle.defaultBounds.y2 + 70 + 70 / 2 + 4);
         }
     }
 }
@@ -552,6 +563,7 @@ class GameResources
         this.spriteNames = 
         {
             icons: 'icons.png',
+            buttons: 'buttons.png',
             actions: 'actions.png',
             ownAttacks: 'own_attacks.png',
             soul: 'soul.png',
@@ -639,6 +651,9 @@ class Battle
         this.canvas = document.querySelector('#battle');
         this.ctx    = this.canvas.getContext('2d');
 
+        this.tempCanvas = document.createElement('canvas');
+        this.tempCtx    = this.tempCanvas.getContext('2d');
+
         this.modes =
         [
             new IdleMode(),
@@ -680,7 +695,8 @@ class Battle
         this.mousePos = {x: this.defaultBounds.x1, y: this.defaultBounds.y1};
         this.soul = new Soul(this.mousePos.x, this.mousePos.y);
        
-        this.hp = 20;
+        this.maxHP = 20;
+        this.hp = this.maxHP;
         this.tp = 0;
 
         this.ownAttacks = 
@@ -762,7 +778,7 @@ class Battle
         
         if(this.mode.id == GAME_OVER)
         {
-            this.ctx.font = '36px Arial';
+            this.ctx.font = '36px Pangolin';
             this.ctx.fillStyle = '#000';
     
             this.ctx.textAlign = 'center';
@@ -797,23 +813,37 @@ class Battle
         this.ctx.fillStyle = '#fff';
 
         this.ctx.beginPath();
-        this.ctx.rect(this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1);
+        Utils.RoundedRect(this.ctx, this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1, 6);
         this.ctx.fill();
         this.ctx.stroke();
         this.ctx.closePath();
         
         // здоровье
-        this.ctx.font = '36px Arial';
-        this.ctx.fillStyle = '#000';
+        let x = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 200 / 2;
 
-        this.ctx.textBaseline = 'top';
-        this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.hp}/20`, this.defaultBounds.x1, this.defaultBounds.y2 + 10);
-
-        this.ctx.textBaseline = 'bottom';
-        this.ctx.textAlign = 'right';
-        this.ctx.fillText(`${this.enemies[0].hp}/${this.enemies[0].maxHP}`, this.defaultBounds.x2, this.defaultBounds.y1 - 10);
+        this.ctx.save();
+        this.ctx.beginPath();
+        Utils.RoundedRect(this.ctx, x, this.defaultBounds.y2 + 10 + 9, 200, 32, 6);
+        this.ctx.clip();
         
+        this.ctx.fillStyle = '#aaa';
+        this.ctx.fillRect(x, this.defaultBounds.y2 + 10 + 9, 200, 32);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(x, this.defaultBounds.y2 + 10 + 9, 200 * this.hp / this.maxHP, 32);
+
+        this.ctx.restore();
+        this.ctx.stroke();
+        this.ctx.closePath();
+
+        this.ctx.font = '24px Pangolin';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.textAlign = 'center';
+        
+        this.ctx.globalCompositeOperation = 'difference';
+        this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, this.defaultBounds.y2 + 10 + 10 + 32 / 2);
+        this.ctx.globalCompositeOperation = 'source-over';
+
         // текущий режим
         this.mode.Render(this.ctx, _dt);
 
@@ -1372,6 +1402,33 @@ class Utils
         return this.Quadratic(_min, _max, _total - _index, _total);
     }
 
+    static MaskSprite(_ctx, _temp, _img, _sx, _sy, _sw, _sh, _x, _y, _w, _h, _c)
+    {
+        _temp.canvas.width  = _w;
+        _temp.canvas.height = _h;
+
+        _temp.fillStyle = _c;
+
+        _temp.drawImage(_img, _sx, _sy, _sw, _sh, 0, 0, _w, _h);
+        _temp.globalCompositeOperation = 'source-in';
+        _temp.fillRect(0, 0, _w, _h);
+        _temp.globalCompositeOperation = 'source-over';
+
+        _ctx.drawImage(_temp.canvas, _x, _y, _w, _h);
+    }
+    static RoundedRect(_ctx, _x, _y, _w, _h, _r)
+    {
+        if(_w < 2 * _r) _r = _w / 2;
+        if(_h < 2 * _r) _r = _h / 2;
+        _ctx.beginPath();
+        _ctx.moveTo(_x + _r, _y);
+        _ctx.arcTo(_x + _w, _y,   _x + _w, _y + _h, _r);
+        _ctx.arcTo(_x + _w, _y + _h, _x,   _y + _h, _r);
+        _ctx.arcTo(_x, _y + _h, _x, _y, _r);
+        _ctx.arcTo(_x, _y, _x + _w, _y, _r);
+        _ctx.closePath();
+    }
+
     static SliceText(_ctx, _text, _bounds)
     {
         let newLines = [];
@@ -1411,7 +1468,7 @@ class Utils
 
     static TextHeight(_ctx, _text, _textSize, _bounds)
     {
-        _ctx.font = `${_textSize}px Arial`;
+        _ctx.font = `${_textSize}px Pangolin`;
         _ctx.textBaseline = 'top';
 
         let lines = _text.split(/\~|\n/).filter(a => a);

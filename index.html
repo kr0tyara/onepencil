@@ -12,49 +12,8 @@
         <script type="text/javascript" src="enemies.js"></script>
         <script type="text/javascript" src="attacks.js"></script>
 
-        <style>
-            body
-            {
-                background-color: #dadada;
-            }
-            .game
-            {
-                position: fixed; 
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
-                
-                aspect-ratio: 16 / 9;
-                width: min(calc(100vh * (16 / 9)), 100vw, 1280px);
-                height: auto; 
-            }
-            #battle
-            {
-                position: absolute;
-                background-color: #fff;
-                touch-action: none;
-
-                width: 100%;
-                height: 100%;
-            }
-            
-            .preloader 
-            {
-                position: absolute;
-                background-color: #fff;
-
-                width: 100%;
-                height: 100%;
-            }
-            .preloader #progress
-            {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                margin: 0;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="css/battle.css">
+        <link rel="stylesheet" type="text/css" href="css/font.css">
     </head>
     <body>
         <div class="game">
