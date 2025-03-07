@@ -211,7 +211,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.lineCap = 'round';
             _ctx.lineJoin = 'round';
             
-            _ctx.lineWidth = 5;
+            _ctx.lineWidth = 3;
             _ctx.strokeStyle = '#000';
             _ctx.fillStyle = '#fff';
 
@@ -280,7 +280,8 @@ class PromoDuckSprite extends EnemySprite
         else if(this.state == STATE_DRAW)
         {
             headWobble.x = 0;
-            
+            headWobble.y = ~~(Math.sin(_dt / 200) * 5 + bodyWobble.y);
+
             let drawWobble = {
                 x: ~~(Math.cos(_dt / 50) * 5 + armWobble.x),
                 y: ~~(Math.sin(_dt / 50) * 5 + armWobble.y)

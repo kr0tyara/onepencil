@@ -539,7 +539,7 @@ class BattleUI
 
     Render(_ctx, _dt)
     {
-        _ctx.lineWidth = 5;
+        _ctx.lineWidth = 3;
 
         let target = this.TargetButton();
 
@@ -1078,7 +1078,7 @@ class Battle
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         
-        this.ctx.lineWidth = 5;
+        this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#000';
         this.ctx.fillStyle = '#fff';
 

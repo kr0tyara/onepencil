@@ -133,7 +133,7 @@ class TargettedBattleMode extends BattleMode
         _ctx.strokeStyle = '#000';
         _ctx.textAlign = 'left';
         _ctx.textBaseline = 'middle';
-        _ctx.lineWidth = 3;
+        _ctx.lineWidth = 2;
 
         let target = this.TargetEnemy();
 
@@ -661,7 +661,7 @@ class ActMode extends TargettedBattleMode
             _ctx.font = '36px Pangolin';
             _ctx.textBaseline = 'middle';
             _ctx.textAlign = 'left';
-            _ctx.lineWidth = 3;
+            _ctx.lineWidth = 2;
 
             let target = this.TargetAction();
 
