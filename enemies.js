@@ -168,6 +168,8 @@ class PromoDuckSprite extends EnemySprite
 
     Draw(_ctx, _dt)
     {
+        this.y = battle.bounds.y1 - this.h;
+
         // промотка
         if(this.stakeShown)
         {
@@ -215,13 +217,9 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
         }
 
-        let shake = 0;
-
-        if(this.state == STATE_HURT)
-            shake = Math.sin(_dt / 20) * (20 * this.animationTime);
-
         // утка
-        let offset = 0;
+
+        /*let offset = 0;
         if(this.state == STATE_HURT)
             offset = 400;
         else if(this.state == STATE_HANGING || this.state == STATE_HELP)
@@ -229,9 +227,41 @@ class PromoDuckSprite extends EnemySprite
         else if(this.state == STATE_DRAW)
             offset = this.animationTime < 1 && _dt % 500 < 250 ? 1600 : 2000;
         else if(this.expression != -1)
-            offset = this.expression * 400;
+            offset = this.expression * 400;*/
 
-        _ctx.drawImage(res.sprites.duck, offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
+        if(this.state == STATE_HURT)
+        {
+            let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
+            res.sheets.duck.Draw(_ctx, 'body', 1, this.x + 7 + shake, this.y + 94);
+            res.sheets.duck.Draw(_ctx, 'head', 1, this.x + 7 + shake * 1.5, this.y + 18);
+        }
+        else
+        {
+            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x + 101, this.y + 221);
+
+            let bodyWobble = {
+                x: 0,
+                y: ~~(Math.sin(_dt / 200) * 3)
+            };
+            let armWobble = {
+                x: 0,
+                y: ~~(Math.sin(_dt / 200) * 2 + bodyWobble.y)
+            };
+            let headWobble = {
+                x: ~~(Math.cos(_dt / 200) * 3 + bodyWobble.x),
+                y: ~~(Math.sin(_dt / 200) * 2.5 + bodyWobble.y)
+            };
+
+            res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + 130 + headWobble.x, this.y + 7 + headWobble.y);
+
+            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + 79 + armWobble.x, this.y + 162 + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'body', 0, this.x + 98 + bodyWobble.x, this.y + 132 + bodyWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + 185 + armWobble.x, this.y + 153 + armWobble.y);
+
+            res.sheets.duck.Draw(_ctx, 'head', 0, this.x + 47 + headWobble.x, this.y + 30 + headWobble.y);
+        }
+
+        //_ctx.drawImage(res.sprites.duck, offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
 
         if(this.state == STATE_DRAW)
         {

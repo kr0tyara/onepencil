@@ -75,7 +75,7 @@ class TargettedBattleMode extends BattleMode
         {
             let enemy = this.enemies[i];
             enemy.x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - w / 2;
-            enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 + i * (h + 25) - h / 2;
+            enemy.y = battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 + i * (h + 25) - h / 2 + 10;
             enemy.w = w;
             enemy.h = h;
         }
@@ -133,6 +133,7 @@ class TargettedBattleMode extends BattleMode
         _ctx.strokeStyle = '#000';
         _ctx.textAlign = 'left';
         _ctx.textBaseline = 'middle';
+        _ctx.lineWidth = 3;
 
         let target = this.TargetEnemy();
 
@@ -222,6 +223,9 @@ class OwnAttackMode extends TargettedBattleMode
         this.pendingTimer = 0;
         this.pendingAnimationTime = 50;
         this.pending = false;
+
+        this.impactTime = 10;
+        this.impactTimer = 0;
 
         this.currentAttack = null;
         this.attackDamage = 0;
@@ -315,9 +319,11 @@ class OwnAttackMode extends TargettedBattleMode
     {
         if(this.pending)
         {
-            this.pendingTimer -= 1 * _delta;
-
-            if(this.pendingTimer <= 0)
+            if(this.pendingTimer > 0)
+                this.pendingTimer -= 1 * _delta;
+            else if(this.impactTimer > 0)
+                this.impactTimer -= 1 * _delta;
+            else
             {
                 this.pending = false;
                 this.targetEnemy.data.sprite.SetAnimation(STATE_NORMAL, 0);
@@ -412,6 +418,7 @@ class OwnAttackMode extends TargettedBattleMode
         this.attackDamage = damage;
 
         this.pendingTimer = this.pendingTime;
+        this.impactTimer = this.impactTime;
         
         this.drawing = false;
         this.drawnPoints = [];
@@ -654,6 +661,7 @@ class ActMode extends TargettedBattleMode
             _ctx.font = '36px Pangolin';
             _ctx.textBaseline = 'middle';
             _ctx.textAlign = 'left';
+            _ctx.lineWidth = 3;
 
             let target = this.TargetAction();
 

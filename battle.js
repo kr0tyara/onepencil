@@ -278,7 +278,7 @@ class TypeWriter
         if(_symbol == ' ' || _symbol == '\n' || _symbol == '~')
             return;
 
-        this.voice.play();
+        //this.voice.play();
     }
     
     DrawText(_ctx, _dt)
@@ -401,6 +401,8 @@ class SpeechBubble extends TypeWriter
         if(this.currentAction != null)
             this.currentAction.Render(_ctx, _dt);
 
+        this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
+        
         let x = this.textBounds.x1 - 10;
         let y = this.textBounds.y1 - 10;
         let w = this.textBounds.x2 - x + 15;
@@ -542,29 +544,116 @@ class BattleUI
     }
 }
 
-class BattleAudio
+class Sheet
 {
-    constructor()
+    constructor(_img, _json)
     {
-        return;
+        this.imgReady = false;
+        this.imgUrl = _img;
+        
+        this.img = new Image();
+        this.img.src = this.imgUrl;
+        this.img.onload = this.OnImageLoad.bind(this);
+        this.img.onerror = this.OnError.bind(this);
 
-        this.audioPending = false;
-        this.audio = new Audio('./sfx/idk.mp3');
-        this.audio.onended = () => this.audio.play();
 
-        this.audio.play().catch((_error) =>
-        {
-            this.audioPending = true
-        });
+        this.jsonReady = false;
+        this.jsonUrl = _json;
+
+        this.json = {};
+        this.LoadJSON(this.jsonUrl);
+
+        this.onload = null;
+        this.onerror = null;
     }
 
-    PointerUp(e)
+    LoadJSON(_url)
     {
-        if(this.audioPending)
+        let file = new XMLHttpRequest();
+        file.overrideMimeType('application/json');
+        file.open('GET', _url, true);
+        file.onreadystatechange = () =>
         {
-            this.audio.play();
-            this.audioPending = false;
+            if(file.readyState == 4)
+            {
+                if(file.status == 200)
+                {
+                    this.json = JSON.parse(file.responseText);
+                    this.OnJSONLoad();
+                }
+                else
+                    this.OnError();
+            }
         }
+        file.onerror = this.OnError;
+        file.send();
+    }
+
+    OnImageLoad(e)
+    {
+        this.imgReady = true;
+        this.AddReadyState();
+
+        this.img.onload = null;
+        this.img.onerror = null;
+    }
+    OnJSONLoad(e)
+    {
+        this.jsonReady = true;
+        this.AddReadyState();
+
+        delete this.json.meta;
+
+        this.parts = {};
+        for(let i in this.json.frames)
+        {
+            let frame = this.json.frames[i];
+
+            let split = i.split('_');
+            let name = split.slice(0, split.length - 1).join('_');
+            let id = split[split.length - 1];
+
+            if(this.parts[name])
+                this.parts[name].push(frame);
+            else
+                this.parts[name] = [frame];
+        }
+    }
+
+    OnError(e)
+    {
+        if(this.onerror)
+            this.onerror();
+    }
+
+    Reload()
+    {
+        if(!this.imgReady)
+            this.img.src = this.imgUrl + `?retry=${Date.now()}`;
+
+        if(!this.jsonReady)
+            this.LoadJSON(this.jsonUrl + `?retry=${Date.now()}`);
+    }
+
+    AddReadyState()
+    {
+        if(this.imgReady && this.jsonReady)
+        {
+            if(this.onload)
+                this.onload();
+        }
+    }
+
+    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1)
+    {
+        let part = this.parts[_part];
+
+        if(part == null)
+            return;
+
+        let frame = part[_frame].frame;
+
+        _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, _x, _y, _w > 0 ? _w : frame.w, _h > 0 ? _h : frame.h);
     }
 }
 
@@ -583,7 +672,6 @@ class GameResources
             ownAttacks: 'own_attacks.png',
             soul: 'soul.png',
             
-            duck: 'duck.png',
             robot: 'robot.png',
             promote: 'promote.png',
 
@@ -594,14 +682,31 @@ class GameResources
             chunks: 'chunks.png',
             star: 'star.png',
         };
+        
+        this.sheetPrefix = './img/sheet/';
+        this.sheetData = {};
+        this.sheets = {};
+        this.sheetNames = 
+        {
+            duck: {
+                img: 'duck.png',
+                json: 'duck.json',
+            }
+        };
 
         this.sfxPrefix = './sfx/';
         this.sfxData = {};
         this.sfx = {};
         this.sfxNames = 
         {
-            check: 'check.ogg',
-            duck: 'duck.ogg',
+            check: {
+                url: 'check.ogg',
+                volume: 0.2
+            },
+            duck: {
+                url: 'duck.ogg',
+                volume: 0.2
+            }
         };
 
         this.onReady = null;
@@ -613,7 +718,12 @@ class GameResources
         for(let i in this.spriteNames)
         {
             let sprite = this.spriteNames[i];
-            let path = this.spritePrefix + sprite;
+
+            let path;
+            if(typeof sprite == 'string')
+                path = this.spritePrefix + sprite;
+            else
+                path = this.spritePrefix + sprite.url;
 
             let img = new Image();
             img.src = path;
@@ -631,12 +741,42 @@ class GameResources
             img.onerror = () => this.OnError(i, 0);
         }
 
+        for(let i in this.sheetNames)
+        {
+            let sheet = this.sheetNames[i];
+            let imgPath = this.sheetPrefix + sheet.img;
+            let jsonPath = this.sheetPrefix + sheet.json;
+
+            let s = new Sheet(imgPath, jsonPath);
+
+            this.sheetData[i] = 
+            {
+                src: s,
+                loaded: false,
+                tries: 0
+            };
+            this.sheets[i] = s;
+
+            s.onload = () => this.OnLoad(i, 2);
+            s.onerror = () => this.OnError(i, 2);
+        }
+
         for(let i in this.sfxNames)
         {
             let sfx = this.sfxNames[i];
-            let path = this.sfxPrefix + sfx;
+
+            let path;
+            let volume = 1;
+            if(typeof sfx == 'string')
+                path = this.sfxPrefix + sfx;
+            else
+            {
+                path = this.sfxPrefix + sfx.url;
+                volume = sfx.volume != null ? sfx.volume : 1;
+            }
 
             let audio = new Audio(path);
+            audio.volume = volume;
 
             this.sfxData[i] = 
             {
@@ -654,7 +794,21 @@ class GameResources
 
     OnError(i, _type)
     {
-        let target = _type == 0 ? this.spriteData[i] : this.sfxData[i];
+        let target;
+        switch(_type)
+        {
+            case 0:
+                target = this.spriteData[i];
+                break;
+
+            case 1:
+                target = this.sfxData[i];
+                break;
+
+            case 2:
+                target = this.sheetData[i];
+                break;
+        }
 
         console.log(`${i} doesn't load (tries: ${target.tries})`);
         if(target.tries >= 3)
@@ -664,20 +818,37 @@ class GameResources
         }
 
         target.tries++;
-        setTimeout(() => this.Reload(target), 1000);
+        setTimeout(() => this.Reload(target, _type), 1000);
     }
-    Reload(_target)
+    Reload(_target, _type)
     {
-        _target.src.src = _target.url + `?retry=${Date.now()}`;
+        if(_type == 0 || _type == 1)
+            _target.src.src = _target.url + `?retry=${Date.now()}`;
+        else
+            _target.src.Reload();
     }
 
     OnLoad(i, _type)
     {
-        let target = _type == 0 ? this.spriteData[i] : this.sfxData[i];
+        let target;
+        switch(_type)
+        {
+            case 0:
+                target = this.spriteData[i];
+                break;
+
+            case 1:
+                target = this.sfxData[i];
+                break;
+
+            case 2:
+                target = this.sheetData[i];
+                break;
+        }
 
         target.loaded = true;
-        target.src.onload  = null;
-        target.src.oncanplaythrough  = null;
+        target.src.onload = null;
+        target.src.oncanplaythrough = null;
         target.src.onerror = null;
 
         let readyCount = 0;
@@ -691,9 +862,15 @@ class GameResources
             if(this.sfxData[i].loaded)
                 readyCount++;
         }
+        for(let i in this.sheetData)
+        {
+            if(this.sheetData[i].loaded)
+                readyCount++;
+        }
 
-        this.onProgress(readyCount / (Object.keys(this.spriteData).length + Object.keys(this.sfxData).length));
-        if(readyCount == Object.keys(this.spriteData).length + Object.keys(this.sfxData).length)
+        let totalLen = Object.keys(this.spriteData).length + Object.keys(this.sfxData).length + Object.keys(this.sheetData).length;
+        this.onProgress(readyCount / totalLen);
+        if(readyCount == totalLen)
             this.onReady();
     }
 }
@@ -704,9 +881,11 @@ class Battle
     {
         this.canvas = document.querySelector('#battle');
         this.ctx    = this.canvas.getContext('2d');
+        this.ctx.imageSmoothingEnabled = false;
 
         this.tempCanvas = document.createElement('canvas');
         this.tempCtx    = this.tempCanvas.getContext('2d');
+        this.tempCtx.imageSmoothingEnabled = false;
 
         this.modes =
         [
@@ -725,13 +904,12 @@ class Battle
         window.addEventListener('pointermove', this.PointerMove.bind(this));
         window.addEventListener('pointerup', this.PointerUp.bind(this));
 
-        this.defaultBounds = {x1: 200, y1: 300, x2: 1080, y2: 550};
+        this.defaultBounds = {x1: 200, y1: 350, x2: 1080, y2: 550};
         this.bounds = {...this.defaultBounds};
         this.targetBounds = {...this.bounds};
         this.boundsReady = true;
         
         this.ui = new BattleUI();
-        this.audio = new BattleAudio();
 
         this.enemies = [
             new PromoDuck(),
@@ -1173,8 +1351,6 @@ class Battle
     }
     PointerUp(e)
     {
-        this.audio.PointerUp(e);
-
         this.UpdateMousePos(e);
         this.mode.PointerUp(e);
     }
