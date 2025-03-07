@@ -258,27 +258,44 @@ class PromoDuckSprite extends EnemySprite
         else if(this.expression != -1)
             offset = this.expression * 400;*/
 
+        let bodyWobble = {
+            x: 0,
+            y: ~~(Math.sin(_dt / 200) * 3)
+        };
+        let armWobble = {
+            x: 0,
+            y: ~~(Math.sin(_dt / 200) * 2 + bodyWobble.y)
+        };
+        let headWobble = {
+            x: ~~(Math.cos(_dt / 200) * 3 + bodyWobble.x),
+            y: ~~(Math.sin(_dt / 200) * 2.5 + bodyWobble.y)
+        };
+
         if(this.state == STATE_HURT)
         {
             let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
             res.sheets.duck.Draw(_ctx, 'body', 1, this.x + shake, this.y);
             res.sheets.duck.Draw(_ctx, 'head', 2, this.x + shake * 1.5, this.y);
         }
-        else
+        else if(this.state == STATE_DRAW)
         {
-            let bodyWobble = {
-                x: 0,
-                y: ~~(Math.sin(_dt / 200) * 3)
-            };
-            let armWobble = {
-                x: 0,
-                y: ~~(Math.sin(_dt / 200) * 2 + bodyWobble.y)
-            };
-            let headWobble = {
-                x: ~~(Math.cos(_dt / 200) * 3 + bodyWobble.x),
-                y: ~~(Math.sin(_dt / 200) * 2.5 + bodyWobble.y)
+            headWobble.x = 0;
+            
+            let drawWobble = {
+                x: ~~(Math.cos(_dt / 50) * 5 + armWobble.x),
+                y: ~~(Math.sin(_dt / 50) * 5 + armWobble.y)
             };
 
+            res.sheets.duck.Draw(_ctx, 'feet', 1, this.x, this.y);
+
+            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_front', 1, this.x + drawWobble.x, this.y + drawWobble.y);
+
+            res.sheets.duck.Draw(_ctx, 'head', 8, this.x + headWobble.x, this.y + headWobble.y);
+        }
+        else
+        {
             let headFrame = res.sheets.duck.GetTagFrame(`expression_${this.expression}`) || 0;
 
             let mouthOpen = false;
@@ -310,7 +327,7 @@ class PromoDuckSprite extends EnemySprite
             if(this.expression != 2)
                 res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + hairOffset.x + headWobble.x, this.y + hairOffset.y + headWobble.y);
 
-            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 4 ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
             res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
 
@@ -329,7 +346,7 @@ class PromoDuckSprite extends EnemySprite
 
                 let k = this.y + 140 + 150;
                 let h = 120 * t;
-                let y = k - 25 * t - h;
+                let y = k - h;
 
                 _ctx.save();
                 _ctx.translate(this.x + 142, y);
@@ -538,7 +555,7 @@ class PromoDuck extends Enemy
             this.drawAttempt = 2;
 
             return {
-                speech: ['...', '.....', 'А! Карандаш плохой просто.'],
+                speech: ['#3.....', '#3..........', '#4А! Карандаш плохой просто.'],
             };
         }
 

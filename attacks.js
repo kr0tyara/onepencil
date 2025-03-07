@@ -378,7 +378,7 @@ class ScribbleAttack extends Attack
         let bounds = {x1: 515, y1: 300, x2: 765, y2: 550};
         battle.SetBounds(bounds);
 
-        this.scribble = new ScribbleProjectile(this, 0, this.caster.x + 142 + 20, this.caster.y + 140 + 30 - 15, bounds.x2 + 25, bounds.y2 - 90);
+        this.scribble = new ScribbleProjectile(this, 0, this.caster.x + 142 + 20, this.caster.y + 140 + 40, bounds.x2 + 25, bounds.y2 - 90);
         battle.AddProjectile(this, this.scribble);
     }
 }

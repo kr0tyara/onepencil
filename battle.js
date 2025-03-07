@@ -280,7 +280,6 @@ class TypeWriter
             case '@':
             case '^':
 
-            case '.':
             case ',':
             case '?':
             case '!':
