@@ -92,6 +92,8 @@ class EnemySprite extends Entity
 
         this.speaking = false;
         this.speechBubble = new SpeechBubble(this, res.sfx.duck);
+
+        this.alphaTime = 10;
     }
 
     Start()
@@ -103,6 +105,11 @@ class EnemySprite extends Entity
     {
         this.state = _state;
         this.animationTime = _time;
+
+        if(this.state == STATE_ATTACKING)
+        {
+            this.alphaTimer = this.alphaTime;
+        }
     }
     SetExpression(_index)
     {
@@ -129,20 +136,32 @@ class EnemySprite extends Entity
             if(this.speechBubble.finished)
                 this.speaking = false;
         }
+
+        if(this.alphaTimer > 0)
+        {
+            this.alphaTimer -= 1 * _delta;
+            if(this.alphaTimer < 0)
+                this.alphaTimer = 0;
+        }
     }
 
     Render(_ctx, _dt)
     {
-        if(this.state == STATE_DEAD)
-            _ctx.globalAlpha = .05;
-
-        if(this.state == STATE_ATTACKING)
-            _ctx.globalAlpha = .5;
-        
         this.Draw(_ctx, _dt);
 
-        if(this.state == STATE_DEAD || this.state == STATE_ATTACKING)
-            _ctx.globalAlpha = 1;
+        if(this.state == STATE_DEAD)
+            _ctx.globalAlpha = .05;
+        else if(this.state == STATE_ATTACKING)
+        {
+            _ctx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
+        }
+        else
+            _ctx.globalAlpha = 0;
+
+        _ctx.fillStyle = '#fff';
+        _ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        _ctx.globalAlpha = 1;
     }
     
     Draw(_ctx, _dt)
@@ -233,12 +252,10 @@ class PromoDuckSprite extends EnemySprite
         {
             let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
             res.sheets.duck.Draw(_ctx, 'body', 1, this.x + 7 + shake, this.y + 94);
-            res.sheets.duck.Draw(_ctx, 'head', 1, this.x + 7 + shake * 1.5, this.y + 18);
+            res.sheets.duck.Draw(_ctx, 'head', 2, this.x + 7 + shake * 1.5, this.y + 18);
         }
         else
         {
-            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x + 101, this.y + 221);
-
             let bodyWobble = {
                 x: 0,
                 y: ~~(Math.sin(_dt / 200) * 3)
@@ -252,13 +269,19 @@ class PromoDuckSprite extends EnemySprite
                 y: ~~(Math.sin(_dt / 200) * 2.5 + bodyWobble.y)
             };
 
-            res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + 130 + headWobble.x, this.y + 7 + headWobble.y);
+            let headTalk = 0;
+            if(!this.speechBubble.lineFinished && this.speechBubble.CanPronounce())
+                headTalk = this.speechBubble.value % 4 > 0 ? 1 : 0;
+
+            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x + 101, this.y + 221);
+
+            res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + 130 + headWobble.x, this.y + (headTalk == 0 ? 7 : 4) + headWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + 79 + armWobble.x, this.y + 162 + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'body', 0, this.x + 98 + bodyWobble.x, this.y + 132 + bodyWobble.y);
             res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + 185 + armWobble.x, this.y + 153 + armWobble.y);
 
-            res.sheets.duck.Draw(_ctx, 'head', 0, this.x + 47 + headWobble.x, this.y + 30 + headWobble.y);
+            res.sheets.duck.Draw(_ctx, 'head', headTalk, this.x + 47 + headWobble.x, this.y + (headTalk == 0 ? 30 : 27) + headWobble.y);
         }
 
         //_ctx.drawImage(res.sprites.duck, offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);

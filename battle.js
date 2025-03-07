@@ -53,8 +53,8 @@ class TypeWriter
         this.autoSkipTime = 300;
         this.autoSkipTimer = this.autoSkipTime;
         
-        this.lineFinished = false;
-        this.finished = false;
+        this.lineFinished = true;
+        this.finished = true;
 
         this.speed = 3;
         this.speedPunctuation = 10;
@@ -273,12 +273,43 @@ class TypeWriter
         }
     }
 
+    static IsPronounced(_symbol)
+    {
+        switch(_symbol)
+        {
+            case '@':
+            case '^':
+
+            case '.':
+            case ',':
+            case '?':
+            case '!':
+            case '—':
+            case '*':
+            case '(':
+            case ')':
+            case ' ':
+            case '\n':
+            case '~':
+                return false;
+        }
+
+        return true;
+    }
+    CanPronounce()
+    {
+        if(this.value >= this.text[this.index].length)
+            return false;
+
+        return TypeWriter.IsPronounced(this.text[this.index].charAt(this.value));
+    }
+
     Speak(_symbol)
     {
-        if(_symbol == ' ' || _symbol == '\n' || _symbol == '~')
+        if(!TypeWriter.IsPronounced(_symbol))
             return;
 
-        //this.voice.play();
+        this.voice.play();
     }
     
     DrawText(_ctx, _dt)
@@ -701,11 +732,11 @@ class GameResources
         {
             check: {
                 url: 'check.ogg',
-                volume: 0.2
+                volume: 0.3
             },
             duck: {
                 url: 'duck.ogg',
-                volume: 0.2
+                volume: 0.5
             }
         };
 
