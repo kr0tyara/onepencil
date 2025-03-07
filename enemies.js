@@ -88,12 +88,14 @@ class EnemySprite extends Entity
         this.state = STATE_NORMAL;
         this.animationTime = 0;
 
-        this.expression = -1;
+        this.expression = 0;
 
         this.speaking = false;
         this.speechBubble = new SpeechBubble(this, res.sfx.duck);
 
         this.alphaTime = 10;
+        this.alphaTimer = 0;
+        this.alphaBack = true;
     }
 
     Start()
@@ -103,13 +105,18 @@ class EnemySprite extends Entity
 
     SetAnimation(_state, _time)
     {
+        let oldState = this.state;
+
         this.state = _state;
         this.animationTime = _time;
 
         if(this.state == STATE_ATTACKING)
         {
+            this.alphaBack = false;
             this.alphaTimer = this.alphaTime;
         }
+        else if(oldState == STATE_ATTACKING)
+            this.alphaBack = true;
     }
     SetExpression(_index)
     {
@@ -117,7 +124,7 @@ class EnemySprite extends Entity
     }
     ResetExpression()
     {
-        this.expression = -1;
+        this.expression = 0;
     }
 
     SetSpeechBubble(_text, _actions)
@@ -151,9 +158,12 @@ class EnemySprite extends Entity
 
         if(this.state == STATE_DEAD)
             _ctx.globalAlpha = .05;
-        else if(this.state == STATE_ATTACKING)
+        else if(this.alphaTimer >= 0)
         {
-            _ctx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
+            if(this.alphaBack)
+                _ctx.globalAlpha = 1 - (this.alphaTime - this.alphaTimer) / this.alphaTime;
+            else
+                _ctx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
         }
         else
             _ctx.globalAlpha = 0;
@@ -251,8 +261,8 @@ class PromoDuckSprite extends EnemySprite
         if(this.state == STATE_HURT)
         {
             let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
-            res.sheets.duck.Draw(_ctx, 'body', 1, this.x + 7 + shake, this.y + 94);
-            res.sheets.duck.Draw(_ctx, 'head', 2, this.x + 7 + shake * 1.5, this.y + 18);
+            res.sheets.duck.Draw(_ctx, 'body', 1, this.x + shake, this.y);
+            res.sheets.duck.Draw(_ctx, 'head', 2, this.x + shake * 1.5, this.y);
         }
         else
         {
@@ -269,19 +279,42 @@ class PromoDuckSprite extends EnemySprite
                 y: ~~(Math.sin(_dt / 200) * 2.5 + bodyWobble.y)
             };
 
-            let headTalk = 0;
+            let headFrame = res.sheets.duck.GetTagFrame(`expression_${this.expression}`) || 0;
+
+            let mouthOpen = false;
             if(!this.speechBubble.lineFinished && this.speechBubble.CanPronounce())
-                headTalk = this.speechBubble.value % 4 > 0 ? 1 : 0;
+            {
+                mouthOpen = this.speechBubble.value % 4 > 0;
+                headFrame += mouthOpen ? 1 : 0;
+            }
 
-            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x + 101, this.y + 221);
+            let hairOffset = {
+                x: 0,
+                y: 0
+            };
+            switch(this.expression)
+            {
+                case 0:
+                    if(mouthOpen)
+                        hairOffset.y = -3;
+                    break;
 
-            res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + 130 + headWobble.x, this.y + (headTalk == 0 ? 7 : 4) + headWobble.y);
+                case 2:
+                    headWobble.x = 0;
+                    headWobble.y = 0;
+                    break;
+            }
 
-            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + 79 + armWobble.x, this.y + 162 + armWobble.y);
-            res.sheets.duck.Draw(_ctx, 'body', 0, this.x + 98 + bodyWobble.x, this.y + 132 + bodyWobble.y);
-            res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + 185 + armWobble.x, this.y + 153 + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x, this.y);
 
-            res.sheets.duck.Draw(_ctx, 'head', headTalk, this.x + 47 + headWobble.x, this.y + (headTalk == 0 ? 30 : 27) + headWobble.y);
+            if(this.expression != 2)
+                res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + hairOffset.x + headWobble.x, this.y + hairOffset.y + headWobble.y);
+
+            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
+
+            res.sheets.duck.Draw(_ctx, 'head', headFrame, this.x + headWobble.x, this.y + headWobble.y);
         }
 
         //_ctx.drawImage(res.sprites.duck, offset, 0, 400, 400, this.x + shake, this.y, this.w, this.h);
@@ -462,7 +495,7 @@ class PromoDuck extends Enemy
             {
                 case 1:
                     return {
-                        speech: ['О боже! Какая ужасная атака! ^ПОЩАДИ МЕНЯ!!!^*', '#3* Это шутка.']
+                        speech: ['#1О боже! Какая ужасная атака! ^ПОЩАДИ МЕНЯ!!!^*', '#2* Сарказм.']
                     };
 
                 case 2:
@@ -546,7 +579,7 @@ class PromoDuck extends Enemy
 
         return {
             text: ['~ПромоУтка — АТК 10 ЗЩТ 0~Рекламный бизнесмен.%~Древесный сомелье.%~КРАСАВЧИК. *'],
-            speech: ['#3* Не является рекламой.']
+            speech: ['#2* Не является рекламой.']
         };
     }
     Bet()
@@ -601,7 +634,7 @@ class PromoDuck extends Enemy
             case 4:
                 return {
                     text: ['~Ты позвал ПромоУтку...'],
-                    speech: ['Моя харизма ослепила тебя???% Такое УЖЕ СЛУЧАЛОСЬ *', '#3* Такого не случалось.'],
+                    speech: ['Моя харизма ослепила тебя???% Такое УЖЕ СЛУЧАЛОСЬ *', '#2* Такого не случалось.'],
                 };
 
             default:

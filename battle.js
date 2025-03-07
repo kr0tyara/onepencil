@@ -633,8 +633,6 @@ class Sheet
         this.jsonReady = true;
         this.AddReadyState();
 
-        delete this.json.meta;
-
         this.parts = {};
         for(let i in this.json.frames)
         {
@@ -642,13 +640,20 @@ class Sheet
 
             let split = i.split('_');
             let name = split.slice(0, split.length - 1).join('_');
-            let id = split[split.length - 1];
 
             if(this.parts[name])
                 this.parts[name].push(frame);
             else
                 this.parts[name] = [frame];
         }
+    }
+    GetTagFrame(_tag)
+    {
+        let data = this.json.meta.frameTags.filter(i => i.name == _tag);
+        if(data.length > 0)
+            return data[0].from;
+
+        return null;
     }
 
     OnError(e)
@@ -683,6 +688,9 @@ class Sheet
             return;
 
         let frame = part[_frame].frame;
+
+        _x += part[_frame].spriteSourceSize.x;
+        _y += part[_frame].spriteSourceSize.y;
 
         _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, _x, _y, _w > 0 ? _w : frame.w, _h > 0 ? _h : frame.h);
     }
@@ -732,11 +740,11 @@ class GameResources
         {
             check: {
                 url: 'check.ogg',
-                volume: 0.3
+                volume: 0.8
             },
             duck: {
                 url: 'duck.ogg',
-                volume: 0.5
+                volume: 1
             }
         };
 
