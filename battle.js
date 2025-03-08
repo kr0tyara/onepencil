@@ -737,6 +737,10 @@ class GameResources
         this.sfx = {};
         this.sfxNames = 
         {
+            bgm: {
+                url: 'DUCK IDK.mp3',
+                loop: true,
+            },
             check: {
                 url: 'check.ogg',
                 volume: 0.8
@@ -805,16 +809,26 @@ class GameResources
 
             let path;
             let volume = 1;
+            let loop = false;
+
             if(typeof sfx == 'string')
                 path = this.sfxPrefix + sfx;
             else
             {
                 path = this.sfxPrefix + sfx.url;
                 volume = sfx.volume != null ? sfx.volume : 1;
+                loop = sfx.loop != null ? sfx.loop : false;
             }
 
             let audio = new Audio(path);
             audio.volume = volume;
+            if(loop)
+            {
+                audio.onended = (e) => {
+                    audio.currentTime = 0;
+                    audio.play();
+                }
+            }
 
             this.sfxData[i] = 
             {
@@ -825,6 +839,7 @@ class GameResources
             };
             this.sfx[i] = audio;
 
+            audio.load();
             audio.oncanplaythrough = () => this.OnLoad(i, 1);
             audio.onerror = () => this.OnError(i, 1);
         }
@@ -985,6 +1000,8 @@ class Battle
 
         this.lastRender = 0;
         this.render = requestAnimationFrame(this.Render.bind(this));
+
+        res.sfx.bgm.play();
         //this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
     }
 

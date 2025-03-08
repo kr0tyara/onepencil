@@ -260,15 +260,15 @@ class PromoDuckSprite extends EnemySprite
 
         let bodyWobble = {
             x: 0,
-            y: ~~(Math.sin(_dt / 200) * 3)
+            y: ~~(Math.sin(_dt / 150) * 3)
         };
         let armWobble = {
             x: 0,
-            y: ~~(Math.sin(_dt / 200) * 2 + bodyWobble.y)
+            y: ~~(Math.sin(_dt / 150) * 2 + bodyWobble.y)
         };
         let headWobble = {
-            x: ~~(Math.cos(_dt / 200) * 3 + bodyWobble.x),
-            y: ~~(Math.sin(_dt / 200) * 2.5 + bodyWobble.y)
+            x: ~~(Math.cos(_dt / 150) * 3 + bodyWobble.x),
+            y: ~~(Math.sin(_dt / 150) * 2.5 + bodyWobble.y)
         };
 
         if(this.state == STATE_HURT)
@@ -280,7 +280,7 @@ class PromoDuckSprite extends EnemySprite
         else if(this.state == STATE_DRAW)
         {
             headWobble.x = 0;
-            headWobble.y = ~~(Math.sin(_dt / 200) * 5 + bodyWobble.y);
+            headWobble.y = ~~(Math.sin(_dt / 150) * 5 + bodyWobble.y);
 
             let drawWobble = {
                 x: ~~(Math.cos(_dt / 50) * 5 + armWobble.x),
@@ -313,6 +313,7 @@ class PromoDuckSprite extends EnemySprite
             switch(this.expression)
             {
                 case 0:
+                case 4:
                     if(mouthOpen)
                         hairOffset.y = -3;
                     break;
@@ -475,7 +476,7 @@ class PromoDuck extends Enemy
             if(this.call == 0 && this.mockery >= 2 && this.actualHurt == 1)
             {
                 return {
-                    speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...~^БОЛЬНО ЖЕ!^']  
+                    speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...', '#1^БОЛЬНО ЖЕ!^']  
                 };
             }
             
