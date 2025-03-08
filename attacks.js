@@ -401,6 +401,8 @@ class ScribbleProjectile extends Projectile
 
         this.destroyTimer = this.destroyTime;
         this.destroyLaunch = false;
+
+        res.sfx.jump.play();
     }
 
     GameLoop(_delta)
@@ -416,6 +418,7 @@ class ScribbleProjectile extends Projectile
 
             return;
         }
+
         this.y = this.targetPos.y;
 
         this.x -= 1 * _delta;

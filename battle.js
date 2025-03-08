@@ -748,6 +748,13 @@ class GameResources
             duck: {
                 url: 'duck.ogg',
                 volume: 1
+            },
+            jump: {
+                url: 'jump.ogg'
+            },
+            hurt: {
+                url: 'hurt.wav',
+                volume: 0.6
             }
         };
 
@@ -1056,6 +1063,9 @@ class Battle
     Render(_dt)
     {
         let delta = (_dt - this.lastRender) / 16.67; // 1000 / 60
+        if(delta > 1)
+            delta = 1;
+        
         this.lastRender = _dt;
         this.GameLoop(delta);
         
@@ -1549,6 +1559,8 @@ class Soul extends Entity
     {
         this.invinsibleTimer = this.invinsibleTime;
         this.invinsible = true;
+
+        res.sfx.hurt.play();
     }
 
     GameLoop(_delta)

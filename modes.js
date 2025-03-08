@@ -304,6 +304,12 @@ class OwnAttackMode extends TargettedBattleMode
             // пуля прилетела
             else
             {
+                if(!this.hurtSoundPlayed)
+                {
+                    this.hurtSoundPlayed = true;
+                    res.sfx.hurt.play();
+                }
+
                 this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
 
                 let strength = this.attackDamage / this.currentAttack.damage;
@@ -419,6 +425,7 @@ class OwnAttackMode extends TargettedBattleMode
 
         this.pendingTimer = this.pendingTime;
         this.impactTimer = this.impactTime;
+        this.hurtSoundPlayed = false;
         
         this.drawing = false;
         this.drawnPoints = [];
