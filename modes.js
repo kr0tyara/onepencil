@@ -22,10 +22,6 @@ class BattleMode
 
     }
 
-    Click(e)
-    {
-
-    }
     PointerDown(e)
     {
 
@@ -297,27 +293,50 @@ class OwnAttackMode extends TargettedBattleMode
             // пуля летит
             if(this.pendingTimer >= this.pendingAnimationTime)
             {
-                let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y  - (battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * (1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime));
+                let t = Utils.Clamp(1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime), 0, 1);
+                let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y  - (battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
                 
                 _ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
             }
             // пуля прилетела
             else
             {
-                if(!this.hurtSoundPlayed)
-                {
-                    this.hurtSoundPlayed = true;
-                    res.sfx.hurt.play();
-                }
+                // шкала здоровья
+                let x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 200 / 2;
+                let y = battle.defaultBounds.y1 - 100;
+        
+                _ctx.save();
+                _ctx.beginPath();
+                Utils.RoundedRect(_ctx, x, y, 200, 32, 6);
+                _ctx.clip();
+                
+                _ctx.fillStyle = '#aaa';
+                _ctx.fillRect(x, y, 200, 32);
+                _ctx.fillStyle = '#000';
+
+                let t = Utils.Clamp((this.pendingTimer - (this.pendingAnimationTime - 15)) / 15, 0, 1);
+                let hp = this.targetEnemy.data.hp - (this.targetEnemy.data.hp - this.hpBeforeAttack) * t;
+
+                _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.data.maxHP, 32);
+        
+                _ctx.restore();
+                _ctx.stroke();
+                _ctx.closePath();
+
+                // дельта
+                let strength = this.attackDamage / this.currentAttack.damage;
+                _ctx.fillStyle = strength > .8 ? '#FF0000' : strength > .6 ? '#FF9F00' : '#808080';
+                _ctx.textAlign = 'center';
+                _ctx.textBaseline = 'bottom';
+                _ctx.strokeStyle = '#000';
+                _ctx.lineWidth = 5;
+                _ctx.font = '50px Pangolin';
+
+                let pos = Utils.CurvePos({x: 0, y: y + 10}, {x: 0, y: y}, 25, 1 - t);
+                _ctx.strokeText(`${this.attackDamage}`, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2, pos.y);
+                _ctx.fillText(`${this.attackDamage}`, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2, pos.y);
 
                 this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
-
-                let strength = this.attackDamage / this.currentAttack.damage;
-                _ctx.fillStyle = strength > .7 ? '#FF0000' : strength > .4 ? '#FF9F00' : '#808080';
-                _ctx.textAlign = 'right';
-                _ctx.textBaseline = 'bottom';
-
-                _ctx.fillText(`-${this.attackDamage}`, battle.defaultBounds.x2, battle.defaultBounds.y1 - 40);
             }
         }
     }
@@ -346,6 +365,12 @@ class OwnAttackMode extends TargettedBattleMode
 
             if(this.castTimer <= 0)
                 this.FinishOwnAttack();
+        }
+
+        // пуля прилетела
+        if(this.pending && this.pendingTimer < this.pendingAnimationTime)
+        {
+            this.HurtAnimationEnd();
         }
     }
 
@@ -399,6 +424,21 @@ class OwnAttackMode extends TargettedBattleMode
             this.drawnPoints.push(pos);
     }
 
+    HurtAnimationEnd()
+    {
+        if(this.hurtAnimationFinished)
+            return;
+        
+        this.hurtAnimationFinished = true;
+        res.sfx.hurt.play();
+
+        let result = this.targetEnemy.data.Hurt(this.attackDamage);
+        battle.lastActionResult = {
+            ...result,
+            target: this.targetEnemy.data,
+        }
+    }
+
     FinishOwnAttack()
     {
         let res = this.dollar.Recognize(this.drawnPoints, false);
@@ -410,23 +450,20 @@ class OwnAttackMode extends TargettedBattleMode
         if(res.Name != Object.keys(battle.ownAttacks)[battle.ownAttackIndex])
             attack = battle.ownAttacks[''];
 
+        this.hpBeforeAttack = this.targetEnemy.data.hp;
+        
         let damage = ~~(attack.damage * res.Score);
         battle.DealDamage(this.targetEnemy, damage);
         
-        let result = this.targetEnemy.data.Hurt(damage);
-        battle.lastActionResult = {
-            ...result,
-            target: this.targetEnemy.data,
-        }
-        
         this.pending = true;
         this.currentAttack = attack;
+        
         this.attackDamage = damage;
 
         this.pendingTimer = this.pendingTime;
         this.impactTimer = this.impactTime;
-        this.hurtSoundPlayed = false;
-        
+        this.hurtAnimationFinished = false;
+
         this.drawing = false;
         this.drawnPoints = [];
     }
@@ -537,7 +574,7 @@ class ActMode extends TargettedBattleMode
         }
 
         let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 25 * 3 / 4;
-        let h = (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4;
+        let h = Math.min(80, (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4);
 
         for(let i in this.actions)
         {
@@ -702,5 +739,192 @@ class GameOverMode extends BattleMode
     constructor()
     {
         super(GAME_OVER);
+    
+        this.silentTime = 30;
+        this.shakeTime = 60;
+        this.showTextTime = 120;
+        this.showRetryTime = 200;
+
+        this.breakSpeed = 30;
+        this.breakDelay = 2;
+
+        this.showTextSpeed = 100;
+        this.showRetrySpeed = 50;
+
+        this.soundPlayed = false;
+        this.animationTimer = 0;
+    }
+
+    Start()
+    {
+        res.sfx.bgm.pause();
+
+        this.soulPos = {x: battle.soul.x, y: battle.soul.y};
+
+        this.retryButton = {
+            x: battle.canvas.width / 2 - 300 / 2,
+            y: battle.canvas.height - 100 - 50,
+            w: 300,
+            h: 70
+        };
+
+        this.soundPlayed = false;
+        this.animationTimer = 0;
+    }
+
+    GameLoop(_delta)
+    {
+        this.animationTimer += 1 * _delta;
+
+        if(this.animationTimer >= this.shakeTime && !this.soundPlayed)
+        {
+            this.soundPlayed = true;
+            res.sfx.death.play();
+            
+            res.sfx.fail.play();
+        }
+    }
+    
+    IsHovering()
+    {
+        if(this.animationTimer < this.showRetryTime)
+            return false;
+
+        if(
+            battle.mousePos.x >= this.retryButton.x && battle.mousePos.x <= this.retryButton.x + this.retryButton.w &&
+            battle.mousePos.y >= this.retryButton.y && battle.mousePos.y <= this.retryButton.y + this.retryButton.h
+        )
+            return true;
+
+        return false;
+    }
+    PointerUp(e)
+    {
+        if(this.animationTimer < this.showRetryTime)
+        {
+            this.animationTimer = this.showRetryTime + this.showRetrySpeed;
+            return;
+        }
+
+        if(this.IsHovering())
+            Restart();
+    }
+    UpdateCursor()
+    {
+        if(this.IsHovering())
+        {
+            if(battle.canvas.style.cursor != 'pointer')
+                battle.canvas.style.cursor = 'pointer';
+        }
+        else if(battle.canvas.style.cursor != '')
+            battle.canvas.style.cursor = '';
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.fillStyle = '#000';
+        _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
+
+        if(this.animationTimer > this.showTextTime)
+        {
+            let t = (this.animationTimer - this.showTextTime) / this.showTextSpeed;
+
+            _ctx.globalAlpha = t;
+
+            _ctx.font = '108px Pangolin';
+            _ctx.fillStyle = '#aaa';
+            _ctx.textBaseline = 'top';
+            _ctx.textAlign = 'center';
+            _ctx.fillText('Игра окончена', _ctx.canvas.width / 2, 200);
+
+            _ctx.globalAlpha = 1;
+        }
+        if(this.animationTimer > this.showRetryTime)
+        {
+            let t = (this.animationTimer - this.showRetryTime) / this.showRetrySpeed;
+
+            _ctx.globalAlpha = t;
+
+            _ctx.lineWidth = 3;
+
+            if(this.IsHovering())
+                _ctx.fillStyle = _ctx.strokeStyle = '#0d85f3';
+            else
+                _ctx.fillStyle = _ctx.strokeStyle = '#fff';
+
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, this.retryButton.x, this.retryButton.y, this.retryButton.w, this.retryButton.h, 6);
+            _ctx.stroke();
+            _ctx.closePath();
+
+            Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.buttons, 0, 2 * 50, 50, 50, this.retryButton.x + 10, this.retryButton.y + this.retryButton.h / 2 - 25, 50, 50, _ctx.fillStyle);
+
+            _ctx.font = '32px Pangolin';
+            _ctx.textBaseline = 'middle';
+            _ctx.textAlign = 'center';
+            _ctx.fillText('Заново', this.retryButton.x + 35 / 2 + this.retryButton.w / 2, this.retryButton.y + this.retryButton.h / 2 + 3);
+
+            _ctx.globalAlpha = 1;
+        }
+
+        let offset = {x: 0, y: 0};
+
+        if(this.animationTimer >= this.silentTime)
+        {
+            offset.x = (Math.random() - .5) * 5;
+            offset.y = (Math.random() - .5) * 5;
+        }
+
+        if(this.animationTimer < this.shakeTime)
+            _ctx.drawImage(res.sprites.soul, this.soulPos.x + offset.x, this.soulPos.y + offset.y);
+        else 
+        {
+            let t = (this.animationTimer - this.shakeTime) / this.breakSpeed;
+
+            if(this.animationTimer - this.shakeTime >= this.breakDelay)
+            {
+                let t = (this.animationTimer - this.shakeTime - this.breakDelay) / this.breakSpeed;
+
+                let pos1 = Utils.CurvePos({x: this.soulPos.x + 16, y: this.soulPos.y + 14 - 10}, {x: this.soulPos.x - 64, y: _ctx.canvas.height}, 150, t);
+                _ctx.save();
+                _ctx.translate(pos1.x, pos1.y);
+                _ctx.rotate(Math.PI * t * 2.5);
+                _ctx.drawImage(res.sprites.soulbreak, 0, 0, 32, 28, -16, -14, 32, 28);
+                _ctx.restore();
+                
+                let pos2 = Utils.CurvePos({x: this.soulPos.x + 16, y: this.soulPos.y + 10 + 20}, {x: this.soulPos.x + 100, y: _ctx.canvas.height}, 120, t);
+                _ctx.save();
+                _ctx.translate(pos2.x, pos2.y);
+                _ctx.rotate(-Math.PI * t * 3);
+                _ctx.drawImage(res.sprites.soulbreak, 0, 29, 32, 20, -16, -10, 32, 20);
+                _ctx.restore();
+            }
+            else
+            {
+                _ctx.drawImage(res.sprites.soulbreak, 0, 0, 32, 28, this.soulPos.x, this.soulPos.y - 10, 32, 28);
+                _ctx.drawImage(res.sprites.soulbreak, 0, 29, 32, 20, this.soulPos.x, this.soulPos.y + 20, 32, 20);
+            }
+
+            let pos1 = Utils.CurvePos({x: this.soulPos.x + 30, y: this.soulPos.y}, {x: this.soulPos.x + 130, y: _ctx.canvas.height}, 200, t);
+            _ctx.save();
+            _ctx.translate(pos1.x, pos1.y);
+            _ctx.rotate(Math.PI * t * 2);
+            _ctx.drawImage(res.sprites.soulbreak, 0, 50, 9, 12, -4.5, -6, 9, 12);
+            _ctx.restore();
+
+            let pos2 = Utils.CurvePos({x: this.soulPos.x + 20, y: this.soulPos.y}, {x: this.soulPos.x - 130, y: _ctx.canvas.height}, 300, t);
+            _ctx.save();
+            _ctx.translate(pos2.x, pos2.y);
+            _ctx.rotate(-Math.PI * t * 1.5);
+            _ctx.drawImage(res.sprites.soulbreak, 10, 51, 12, 13, -6, -7.5, 12, 13);
+            _ctx.restore();
+
+            let pos3 = Utils.CurvePos({x: this.soulPos.x + 20, y: this.soulPos.y}, {x: this.soulPos.x + 20, y: _ctx.canvas.height}, 150, t);
+            _ctx.save();
+            _ctx.translate(pos3.x, pos3.y);
+            _ctx.rotate(Math.PI * t);
+            _ctx.drawImage(res.sprites.soulbreak, 22, 54, 8, 8, -4, -4, 8, 8);
+            _ctx.restore();
+        }
     }
 }

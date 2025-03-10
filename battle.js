@@ -14,7 +14,6 @@ const   IDLE = 0,
         STATE_ATTACKING = 2,
         STATE_HANGING = 3,
         STATE_DEAD = 4,
-        STATE_HELP = 5,
         STATE_DRAW = 6,
 
         TEXT_COLORS = [
@@ -709,6 +708,7 @@ class GameResources
             actions: 'actions.png',
             ownAttacks: 'own_attacks.png',
             soul: 'soul.png',
+            soulbreak: 'soulbreak.png',
             
             robot: 'robot.png',
             promote: 'promote.png',
@@ -741,9 +741,12 @@ class GameResources
                 url: 'DUCK IDK.mp3',
                 loop: true,
             },
+            fail: {
+                url: 'fail.mp3',
+            },
             check: {
                 url: 'check.ogg',
-                volume: 0.8
+                volume: 0.8,
             },
             duck: {
                 url: 'duck.ogg',
@@ -755,9 +758,14 @@ class GameResources
             hurt: {
                 url: 'hurt.wav',
                 volume: 0.6
+            },
+            death: {
+                url: 'death.wav',
+                volume: 0.6
             }
         };
 
+        this.ready = false;
         this.onReady = null;
         this.onProgress = null;
     }
@@ -816,6 +824,7 @@ class GameResources
 
             let path;
             let volume = 1;
+            let speed = 1;
             let loop = false;
 
             if(typeof sfx == 'string')
@@ -825,10 +834,13 @@ class GameResources
                 path = this.sfxPrefix + sfx.url;
                 volume = sfx.volume != null ? sfx.volume : 1;
                 loop = sfx.loop != null ? sfx.loop : false;
+                speed = sfx.speed != null ? sfx.speed : 1;
             }
 
             let audio = new Audio(path);
             audio.volume = volume;
+            audio.defaultPlaybackRate = speed;
+
             if(loop)
             {
                 audio.onended = (e) => {
@@ -931,7 +943,12 @@ class GameResources
         let totalLen = Object.keys(this.spriteData).length + Object.keys(this.sfxData).length + Object.keys(this.sheetData).length;
         this.onProgress(readyCount / totalLen);
         if(readyCount == totalLen)
-            this.onReady();
+        {
+            this.ready = true;
+
+            if(this.onReady)
+                this.onReady();
+        }
     }
 }
 
@@ -958,11 +975,15 @@ class Battle
             new GameOverMode()
         ];
 
-        this.canvas.addEventListener('click', this.Click.bind(this));
-        this.canvas.addEventListener('pointerdown', this.PointerDown.bind(this));
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        window.addEventListener('pointermove', this.PointerMove.bind(this));
-        window.addEventListener('pointerup', this.PointerUp.bind(this));
+        this.pointerDownBind = this.PointerDown.bind(this);
+        this.contextMenuBind = (e) => e.preventDefault();
+        this.pointerMoveBind = this.PointerMove.bind(this);
+        this.pointerUpBind = this.PointerUp.bind(this);
+
+        this.canvas.addEventListener('pointerdown', this.pointerDownBind);
+        this.canvas.addEventListener('contextmenu', this.contextMenuBind);
+        window.addEventListener('pointermove', this.pointerMoveBind);
+        window.addEventListener('pointerup', this.pointerUpBind);
 
         this.defaultBounds = {x1: 200, y1: 350, x2: 1080, y2: 550};
         this.bounds = {...this.defaultBounds};
@@ -1008,12 +1029,23 @@ class Battle
         this.lastRender = 0;
         this.render = requestAnimationFrame(this.Render.bind(this));
 
-        res.sfx.bgm.play();
         //this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
+    }
+
+    Destroy()
+    {
+        cancelAnimationFrame(this.render);
+
+        this.canvas.removeEventListener('pointerdown', this.pointerDownBind);
+        this.canvas.removeEventListener('contextmenu', this.contextMenuBind);
+        window.removeEventListener('pointermove', this.pointerMoveBind);
+        window.removeEventListener('pointerup', this.pointerUpBind);
     }
 
     Start()
     {
+        res.sfx.bgm.play();
+
         this.ui.Start();
         for(let i in this.enemies)
             this.enemies[i].Start();
@@ -1075,13 +1107,7 @@ class Battle
         
         if(this.mode.id == GAME_OVER)
         {
-            this.ctx.font = '36px Pangolin';
-            this.ctx.fillStyle = '#000';
-    
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(`Всё!`, this.canvas.width / 2, this.canvas.height / 2);
-
+            this.mode.Render(this.ctx, _dt);
             return;
         }
 
@@ -1117,16 +1143,17 @@ class Battle
         
         // здоровье
         let x = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 200 / 2;
+        let y = this.defaultBounds.y2 + 10 + 9;
 
         this.ctx.save();
         this.ctx.beginPath();
-        Utils.RoundedRect(this.ctx, x, this.defaultBounds.y2 + 10 + 9, 200, 32, 6);
+        Utils.RoundedRect(this.ctx, x, y, 200, 32, 6);
         this.ctx.clip();
         
         this.ctx.fillStyle = '#aaa';
-        this.ctx.fillRect(x, this.defaultBounds.y2 + 10 + 9, 200, 32);
+        this.ctx.fillRect(x, y, 200, 32);
         this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(x, this.defaultBounds.y2 + 10 + 9, 200 * this.hp / this.maxHP, 32);
+        this.ctx.fillRect(x, y, 200 * this.hp / this.maxHP, 32);
 
         this.ctx.restore();
         this.ctx.stroke();
@@ -1169,7 +1196,10 @@ class Battle
     GameLoop(_delta)
     {
         if(this.mode.id == GAME_OVER)
+        {
+            this.mode.GameLoop(_delta);
             return;
+        }
 
         this.MoveSoul();
 
@@ -1403,12 +1433,6 @@ class Battle
             this.DestroyProjectileById(index);
     }
 
-    Click(e)
-    {
-        this.UpdateMousePos(e);
-        this.mode.Click(e);
-    }
-
     PointerDown(e)
     {
         this.UpdateMousePos(e);
@@ -1439,6 +1463,10 @@ class Battle
                 this.canvas.style.cursor = 'none';
             else if(this.canvas.style.cursor != '')
                 this.canvas.style.cursor = '';
+        }
+        else if(this.mode.id == GAME_OVER)
+        {
+            this.mode.UpdateCursor();
         }
         else if(this.canvas.style.cursor != 'none')
             this.canvas.style.cursor = 'none';
@@ -1491,7 +1519,6 @@ class Battle
         if(this.hp <= 0)
         {
             this.hp = 0;
-            alert('ТЫ ПРОСРАЛ!');
             this.GameOver();
         }
     }
@@ -1603,8 +1630,7 @@ class Soul extends Entity
 
         _ctx.drawImage(res.sprites.soul, this.x, this.y);
 
-        if(this.invinsible)
-            _ctx.globalAlpha = 1;
+        _ctx.globalAlpha = 1;
     }
 }
 
@@ -1777,18 +1803,50 @@ class Utils
     }
 }
 
+let started = false;
+window.addEventListener('click', (e) => {
+    if(started)
+        return;
+    
+    if(res.ready)
+        Start();
+});
+
 window.addEventListener('load', () =>
 {
     res = new GameResources();
     res.Load();
 
-    res.onReady = Start;
+    res.onReady = Ready;
     res.onProgress = Progress;
 });
+function Ready()
+{
+    Start();
+    
+    document.querySelector('#progress').textContent = 'Кликни, чтобы начать!';
+}
 function Start()
 {
+    started = true;
     document.querySelector('.preloader').style.display = 'none';
     
+    battle = new Battle();
+    battle.Start();
+}
+function Restart()
+{
+    for(let i in res.sfx)
+    {
+        res.sfx[i].pause();
+        res.sfx[i].currentTime = 0;
+    }
+
+    if(battle != null)
+    {
+        battle.Destroy();
+    }
+
     battle = new Battle();
     battle.Start();
 }

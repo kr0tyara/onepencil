@@ -195,6 +195,14 @@ class PromoDuckSprite extends EnemySprite
         this.stakeShown = false;
     }
 
+    ResetExpression()
+    {
+        if(this.enemy.drawAttempt == 2)
+            this.expression = 3;
+        else
+            super.ResetExpression();
+    }
+
     Draw(_ctx, _dt)
     {
         this.y = battle.bounds.y1 - this.h;
@@ -246,50 +254,44 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
         }
 
-        // утка
+        let harmed = this.enemy.weakened > 0;
 
-        /*let offset = 0;
-        if(this.state == STATE_HURT)
-            offset = 400;
-        else if(this.state == STATE_HANGING || this.state == STATE_HELP)
-            offset = 800;
-        else if(this.state == STATE_DRAW)
-            offset = this.animationTime < 1 && _dt % 500 < 250 ? 1600 : 2000;
-        else if(this.expression != -1)
-            offset = this.expression * 400;*/
+        let t = _dt / 150;
+        if(harmed)
+            t = _dt / 250;
 
         let bodyWobble = {
             x: 0,
-            y: ~~(Math.sin(_dt / 150) * 3)
+            y: ~~(Math.sin(t) * 3)
         };
         let armWobble = {
             x: 0,
-            y: ~~(Math.sin(_dt / 150) * 2 + bodyWobble.y)
+            y: ~~(Math.sin(t) * 2 + bodyWobble.y)
         };
         let headWobble = {
-            x: ~~(Math.cos(_dt / 150) * 3 + bodyWobble.x),
-            y: ~~(Math.sin(_dt / 150) * 2.5 + bodyWobble.y)
+            x: ~~(Math.cos(t) * 3 + bodyWobble.x),
+            y: ~~(Math.sin(t) * 2.5 + bodyWobble.y)
         };
 
         if(this.state == STATE_HURT)
         {
             let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
-            res.sheets.duck.Draw(_ctx, 'body', 1, this.x + shake, this.y);
-            res.sheets.duck.Draw(_ctx, 'head', 2, this.x + shake * 1.5, this.y);
+            res.sheets.duck.Draw(_ctx, 'body', harmed ? 3 : 1, this.x + shake, this.y);
+            res.sheets.duck.Draw(_ctx, 'head', harmed ? 15 : 2, this.x + shake * 1.5, this.y);
         }
         else if(this.state == STATE_DRAW)
         {
             headWobble.x = 0;
-            headWobble.y = ~~(Math.sin(_dt / 150) * 5 + bodyWobble.y);
+            headWobble.y = ~~(Math.sin(t) * 5 + bodyWobble.y);
 
             let drawWobble = {
                 x: ~~(Math.cos(_dt / 50) * 5 + armWobble.x),
                 y: ~~(Math.sin(_dt / 50) * 5 + armWobble.y)
             };
 
+            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'feet', 1, this.x, this.y);
 
-            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
             res.sheets.duck.Draw(_ctx, 'arm_front', 1, this.x + drawWobble.x, this.y + drawWobble.y);
 
@@ -297,7 +299,11 @@ class PromoDuckSprite extends EnemySprite
         }
         else
         {
-            let headFrame = res.sheets.duck.GetTagFrame(`expression_${this.expression}`) || 0;
+            let expression = this.expression;
+            if(harmed && this.expression == 0)
+                expression = 5;
+
+            let headFrame = res.sheets.duck.GetTagFrame(`expression_${expression}`) || 0;
 
             let mouthOpen = false;
             if(!this.speechBubble.lineFinished && this.speechBubble.CanPronounce())
@@ -324,14 +330,16 @@ class PromoDuckSprite extends EnemySprite
                     break;
             }
 
-            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x, this.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', harmed ? 2 : this.expression == 4 ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'feet', harmed ? 2 : 0, this.x, this.y);
 
             if(this.expression != 2)
-                res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + hairOffset.x + headWobble.x, this.y + hairOffset.y + headWobble.y);
+                res.sheets.duck.Draw(_ctx, 'hair', harmed ? 1 : 0, this.x + hairOffset.x + headWobble.x, this.y + hairOffset.y + headWobble.y);
 
-            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 4 ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
-            res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
-            res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'body', harmed ? 2 : 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
+
+            if(this.expression != 6)
+                res.sheets.duck.Draw(_ctx, 'arm_front', harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'head', headFrame, this.x + headWobble.x, this.y + headWobble.y);
         }
@@ -383,7 +391,6 @@ class PromoDuck extends Enemy
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
             {name: 'Ставка', index: {x: 0, y: 1}, action: this.Bet.bind(this)},
-            {name: 'На помощь', index: {x: 1, y: 0}, action: this.Scream.bind(this)},
         ];
         
         this.flavourText = [
@@ -412,9 +419,10 @@ class PromoDuck extends Enemy
     {
         super.Start();
 
-        this.scream = 0;
-        this.bet = 0;
         this.check = 0;
+
+        this.bet = 0;
+        this.betShown = false;
 
         this.hurt = 0;
         this.actualHurt = 0;
@@ -424,12 +432,13 @@ class PromoDuck extends Enemy
 
         this.drawAttempt = 0;
 
+        this.weakened = 0;
         this.call = 0;
     }
 
     GetAttack(_counter)
     {
-        if(this.drawAttempt == 1)
+        if(this.drawAttempt == 2)
             return ScribbleAttack;
 
         return super.GetAttack(_counter);
@@ -437,6 +446,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.weakened == 2)
+            return {
+                text: ['~(На твоём месте я бы прислушался к Промоутке.)']
+            };
+
         if(this.failedAttack == 2)
             return {
                 text: ['~(Перерисуй заклинание по шаблону, не отпуская курсор, чтобы атаковать!)']
@@ -455,7 +469,7 @@ class PromoDuck extends Enemy
             }
         }
 
-        if(this.call == 0)
+        if(this.weakened == 0 && this.call == 0)
             return {
                 text: [Utils.RandomArray(this.flavourText)]
             };
@@ -469,14 +483,36 @@ class PromoDuck extends Enemy
     {
         this.hurt++;
 
+        if(this.hp / this.maxHP <= .6 && this.weakened == 0)
+        {
+            this.weakened = 1;
+            let message = {
+                speech: ['^П-послушай...^', 'Ты, вижу, мастер карандаша и всё такое...', 'Н-но я не ^груша для битья^, а живое существо.', 'П-просто дождись, когда сбросится ставка на Промотке...&0', '...Затем поставь свой мульт за один карандаш, и мы мирно разойдёмся.', 'Ты ведь за этим пришёл?'],
+                actions: [
+                    () => new StakeAction(this),
+                ]
+            }
+            
+            this.bet = 3;
+
+            if(!this.betShown)
+            {
+                this.betShown = true;
+                return message;
+            }
+
+            delete message.actions;
+            return message;
+        }
+
         if(_damage > 5)
         {
             this.actualHurt++;
             
-            if(this.call == 0 && this.mockery >= 2 && this.actualHurt == 1)
+            if(this.weakened == 0 && this.call == 0 && this.mockery >= 2 && this.actualHurt == 1)
             {
                 return {
-                    speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...', '#1^БОЛЬНО ЖЕ!^']  
+                    speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...', '#7^БОЛЬНО ЖЕ!^']  
                 };
             }
             
@@ -492,7 +528,7 @@ class PromoDuck extends Enemy
                 };
             }
         }
-        else if(this.call == 0)
+        else if(this.weakened == 0 && this.call == 0)
         {
             this.mockery++;
 
@@ -532,13 +568,10 @@ class PromoDuck extends Enemy
                         speech: ['Просто СРИСУЙ заклинание своим карандашом!!', 'И не отпускай его, пока не закончишь.']  
                     };
 
-                case 5:
-                    return {
-                        speech: ['...']  
-                    };
-
                 default:
-                    return {};
+                    return {
+                        speech: ['#7...']  
+                    };
             }
         }
 
@@ -552,24 +585,27 @@ class PromoDuck extends Enemy
         else if(this.failedAttack == 2)
             this.failedAttack = 0;
 
-        if(this.drawAttempt == 1)
+        if(this.drawAttempt == 2)
         {
-            this.drawAttempt = 2;
+            this.drawAttempt = 3;
 
             return {
                 speech: ['#3.....', '#3..........', '#4А! Карандаш плохой просто.'],
             };
         }
 
-        if(this.hp / this.maxHP <= .6 && this.call < 1)
+        if(this.weakened == 1)
+            this.weakened = 2;
+        else if(this.weakened == 2)
+            this.weakened = 3;
+
+        if(this.hp / this.maxHP <= .5 && this.call < 1)
         {
+            res.sfx.bgm.playbackRate = .8;
             this.call = 1;
 
             return {
-                speech: ['...&0', '^(Н-нужна помощь...)^'],
-                actions: [
-                    () => new CallHelpAction(this)
-                ]
+                speech: ['#6...', '#6^(Н-нужна помощь...)^'],
             };
         }
         else if(this.call == 1)
@@ -581,7 +617,7 @@ class PromoDuck extends Enemy
             this.call = 3;
 
             return {
-                speech: ['^(Д-да где он...)^'],
+                speech: ['#6^(Д-да где он...)^'],
             };
         }
         else if(this.call == 3)
@@ -608,9 +644,10 @@ class PromoDuck extends Enemy
         switch(this.bet)
         {
             case 1:
+                this.betShown = true;
                 return {
-                    text: ['~Ты предлагаешь свою ставку.'],
-                    speech: ['Один карандаш???? НЕ СМЕШИ, Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!', 'Короч, смотри...&0', '@2Триста тыщ@ карандашей против @2одного@ твоего. Сечёшь?'],
+                    text: ['~Ты предлагаешь свой карандаш ПромоУтке.'],
+                    speech: ['Один карандаш???? НЕ СМЕШИ, Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!', 'Короч, смотри...&0', '@2Триста тыщ@ карандашей против @2одного@ твоего. Сечёшь, почему это не сработает?'],
                     actions: [
                         () => new StakeAction(this)
                     ]
@@ -625,40 +662,6 @@ class PromoDuck extends Enemy
             default:
                 return {
                     text: ['~Похоже, стоит дождаться сброса ставки и только после этого предложить карандаш.']
-                };
-        }
-    }
-
-    Scream()
-    {
-        this.scream++;
-
-        switch(this.scream)
-        {
-            case 1:
-                return {
-                    text: ['~Ты позвал Туни...', '~Но никто не пришёл.']
-                };
-
-            case 2:
-                return {
-                    text: ['~Ты позвал Родю...', '~Но никто не пришёл.']
-                };
-
-            case 3:
-                return {
-                    text: ['~Ты позвал Нарушителя...', '~Но никто не пришёл.']
-                };
-
-            case 4:
-                return {
-                    text: ['~Ты позвал ПромоУтку...'],
-                    speech: ['Моя харизма ослепила тебя???% Такое УЖЕ СЛУЧАЛОСЬ *', '#2* Такого не случалось.'],
-                };
-
-            default:
-                return {
-                    text: ['~Тебе больше некого позвать.', '~ Может, попробовать сделать что-то ещё?...']
                 };
         }
     }
@@ -691,30 +694,6 @@ class TriggerAction
     }
 }
 
-class CallHelpAction extends TriggerAction
-{
-    constructor(_parent)
-    {
-        super(_parent);
-        
-        this.animationTime = 100;
-        this.animationTimer = this.animationTime;
-    }
-
-    Start()
-    {
-        this.parent.sprite.SetAnimation(STATE_HELP, 0);
-    }
-    GameLoop(_delta)
-    {
-        this.animationTimer -= 1 * _delta;
-        this.parent.sprite.SetAnimation(STATE_HELP, 1 - this.animationTimer / this.animationTime);
-        
-        if(this.animationTimer <= 0)
-            this.Finish();
-    }
-}
-
 class DrawAction extends TriggerAction
 {
     constructor(_parent)
@@ -741,6 +720,8 @@ class DrawAction extends TriggerAction
     Finish()
     {
         this.parent.sprite.SetAnimation(STATE_DRAW, 1);
+        this.parent.drawAttempt = 2;
+
         super.Finish();
     }
 }
