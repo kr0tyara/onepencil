@@ -1051,7 +1051,7 @@ class Battle
             this.enemies[i].Start();
 
         this.SetMode(IDLE);
-        
+
         //this.SetMode(ATTACK);
         //this.Attack();
     }
@@ -1838,8 +1838,11 @@ function Restart()
 {
     for(let i in res.sfx)
     {
-        res.sfx[i].pause();
-        res.sfx[i].currentTime = 0;
+        let sfx = res.sfx[i];
+
+        sfx.pause();
+        sfx.currentTime = 0;
+        sfx.playbackRate = 1;
     }
 
     if(battle != null)

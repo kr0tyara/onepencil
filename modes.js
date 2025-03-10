@@ -142,14 +142,24 @@ class TargettedBattleMode extends BattleMode
             else
                 _ctx.strokeStyle = _ctx.fillStyle = '#000';
 
+            _ctx.save();
             _ctx.beginPath();
             Utils.RoundedRect(_ctx, enemy.x, enemy.y, enemy.w, enemy.h, 4);
-            _ctx.stroke();
-            _ctx.closePath();
+            _ctx.clip();
 
             _ctx.fillText(enemy.data.name, enemy.x + 75 + 5, enemy.y + enemy.h / 2);
 
             Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.icons, 100 * enemy.data.index.x, 100 * enemy.data.index.y, 100, 100, enemy.x + 15, enemy.y - 25 + enemy.h / 2, 50, 50, _ctx.fillStyle);
+
+            _ctx.fillStyle = enemy == target ? '#B3C9DB' : '#aaa';
+            _ctx.fillRect(enemy.x, enemy.y + enemy.h - 15, enemy.w, 15);
+
+            _ctx.fillStyle = enemy == target ? '#0d85f3' : '#000';
+            _ctx.fillRect(enemy.x, enemy.y + enemy.h - 15, enemy.w * enemy.data.hp / enemy.data.maxHP, 15);
+
+            _ctx.stroke();
+            _ctx.closePath();
+            _ctx.restore();
         }
     }
 }
