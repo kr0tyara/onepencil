@@ -20,6 +20,7 @@ const   IDLE = 0,
             '#000000',
             '#ff0000',
             '#ff6a00',
+            '#ffffff'
         ];
 
 class TypeWriter

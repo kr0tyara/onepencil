@@ -129,7 +129,7 @@ class TargettedBattleMode extends BattleMode
         _ctx.strokeStyle = '#000';
         _ctx.textAlign = 'left';
         _ctx.textBaseline = 'middle';
-        _ctx.lineWidth = 2;
+        _ctx.lineWidth = 3;
 
         let target = this.TargetEnemy();
 
@@ -753,7 +753,8 @@ class GameOverMode extends BattleMode
         this.silentTime = 30;
         this.shakeTime = 60;
         this.showTextTime = 120;
-        this.showRetryTime = 200;
+        this.showMockeryTime = 200;
+        this.showRetryTime = 300;
 
         this.breakSpeed = 30;
         this.breakDelay = 2;
@@ -763,6 +764,12 @@ class GameOverMode extends BattleMode
 
         this.soundPlayed = false;
         this.animationTimer = 0;
+
+        this.typeWriter = new TypeWriter(null, false, res.sfx.duck);
+        this.flavorText = [
+            'Возвращайся, когда станешь... м-м-м... побогаче.',
+            'Однажды даже ты сможешь что-то позволить!~          Начни с чего-то малого. %С картошки.'
+        ];
     }
 
     Start()
@@ -780,10 +787,26 @@ class GameOverMode extends BattleMode
 
         this.soundPlayed = false;
         this.animationTimer = 0;
+
+        this.typeWriter.Start();
+
+        battle.ctx.font = `${this.typeWriter.textSize}px Pangolin`;
+
+        let text = Utils.RandomArray(this.flavorText);
+        let w = battle.ctx.measureText(text.split('~')[0]).width;
+        
+        this.typeWriter.textBounds.y1 = 380;
+        this.typeWriter.textBounds.x1 = (battle.canvas.width - w) / 2;
+        this.typeWriter.textBounds.x2 = battle.canvas.width;
+
+        this.typeWriter.SetText([`@3${text}@`]);
     }
 
     GameLoop(_delta)
     {
+        if(this.animationTimer > this.showMockeryTime)
+            this.typeWriter.GameLoop(_delta);
+
         this.animationTimer += 1 * _delta;
 
         if(this.animationTimer >= this.shakeTime && !this.soundPlayed)
@@ -810,6 +833,9 @@ class GameOverMode extends BattleMode
     }
     PointerUp(e)
     {
+        if(!this.typeWriter.finished)
+            this.typeWriter.PointerUp(e);
+
         if(this.animationTimer < this.showRetryTime)
         {
             this.animationTimer = this.showRetryTime + this.showRetrySpeed;
@@ -834,6 +860,8 @@ class GameOverMode extends BattleMode
     {
         _ctx.fillStyle = '#000';
         _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
+
+        this.typeWriter.Render(_ctx, _dt);
 
         if(this.animationTimer > this.showTextTime)
         {
