@@ -225,22 +225,34 @@ class OwnAttackMode extends TargettedBattleMode
         this.castTime = 80;
         this.castTimer = 0;
 
-        this.pendingTime = 60;
+        this.pendingTime = 130;
+        this.transformTime = 50;
+        this.flyTime = 20;
+        this.damageTime = 20;
+        this.shakeTime = 40;
         this.pendingTimer = 0;
-        this.pendingAnimationTime = 50;
         this.pending = false;
-
-        this.impactTime = 10;
-        this.impactTimer = 0;
 
         this.currentAttack = null;
         this.attackDamage = 0;
+
+        this.attackType = null;
+        this.attackAnimation = null;
     }
     
     Start()
     {
         super.Start();
         this.locked = false;
+
+        this.attackType = Object.values(battle.ownAttacks)[battle.ownAttackIndex];
+        this.attackAnimations = 
+        {
+            drawing: this.attackType.sheet.GetTagFrames('drawing'),
+            attack: this.attackType.sheet.GetTagFrames('transform'),
+            loop: this.attackType.sheet.GetTagFrames('loop'),
+            failure: this.attackType.sheet.GetTagFrames('failure'),
+        }
     }
     SelectTarget(_target)
     {
@@ -274,12 +286,12 @@ class OwnAttackMode extends TargettedBattleMode
             _ctx.lineJoin = 'round';
             _ctx.lineWidth = 5;
 
-            let template = Object.values(battle.ownAttacks)[battle.ownAttackIndex];
+            let template = this.attackType;
             if(template != null)
             {
                 _ctx.globalAlpha = .5;
 
-                _ctx.drawImage(res.sprites.ownAttacks, 100 * template.index.x, 100 * template.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50, 100, 100);
+                this.attackType.sheet.Draw(_ctx, 'attack', Utils.GetAnimationFrame(_dt, 200, this.attackAnimations.drawing), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
 
                 _ctx.globalAlpha = 1;
             }
@@ -300,53 +312,91 @@ class OwnAttackMode extends TargettedBattleMode
         // анимация нашей атаки
         else
         {
-            // пуля летит
-            if(this.pendingTimer >= this.pendingAnimationTime)
+            if(this.attackDamage <= 5)
             {
-                let t = Utils.Clamp(1 - (this.pendingTimer - this.pendingAnimationTime) / (this.pendingTime - this.pendingAnimationTime), 0, 1);
-                let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y  - (battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
-                
-                _ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
+                // превращается в каракулю
+                if(this.pendingTimer <= this.transformTime)
+                {
+                    let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
+
+                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
+                }
+                else
+                {
+                    let t = Utils.Clamp((this.pendingTimer - this.transformTime) / (this.flyTime + this.damageTime), 0, 1);
+
+                    let pos = Utils.CurvePos({x: 0, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2}, {x: 0, y: _ctx.canvas.height + 150}, 300, t);
+
+                    _ctx.save();
+                    _ctx.translate(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+                    _ctx.rotate(Math.PI * t);
+                    
+                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, -1, -1, true);
+
+                    _ctx.restore();
+                }
             }
-            // пуля прилетела
             else
             {
-                // шкала здоровья
-                let x = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 200 / 2;
-                let y = battle.defaultBounds.y1 - 100;
-        
-                _ctx.save();
-                _ctx.beginPath();
-                Utils.RoundedRect(_ctx, x, y, 200, 32, 6);
-                _ctx.clip();
-                
-                _ctx.fillStyle = '#aaa';
-                _ctx.fillRect(x, y, 200, 32);
-                _ctx.fillStyle = '#000';
+                // пуля транформируется
+                if(this.pendingTimer <= this.transformTime)
+                {
+                    let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
 
-                let t = Utils.Clamp((this.pendingTimer - (this.pendingAnimationTime - 15)) / 15, 0, 1);
-                let hp = this.targetEnemy.data.hp - (this.targetEnemy.data.hp - this.hpBeforeAttack) * t;
+                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.attack[Math.round((this.attackAnimations.attack.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
+                }
+                // пуля летит
+                else if(this.pendingTimer - this.transformTime <= this.flyTime)
+                {
+                    let t = Utils.Clamp((this.pendingTimer - this.transformTime) / this.flyTime, 0, 1);
 
-                _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.data.maxHP, 32);
-        
-                _ctx.restore();
-                _ctx.stroke();
-                _ctx.closePath();
+                    let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y + 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
+                    
+                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true);
+                    
+                    //_ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
+                }
+                // пуля прилетела
+                else
+                {
+                    // шкала здоровья
+                    let x = battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - 200 / 2;
+                    let y = battle.bounds.y1 - 50;
+            
+                    _ctx.save();
+                    _ctx.beginPath();
+                    Utils.RoundedRect(_ctx, x, y, 200, 32, 6);
+                    _ctx.clip();
+                    
+                    _ctx.fillStyle = '#aaa';
+                    _ctx.fillRect(x, y, 200, 32);
+                    _ctx.fillStyle = '#000';
 
-                // дельта
-                let strength = this.attackDamage / this.currentAttack.damage;
-                _ctx.fillStyle = strength > .8 ? '#FF0000' : strength > .6 ? '#FF9F00' : '#808080';
-                _ctx.textAlign = 'center';
-                _ctx.textBaseline = 'bottom';
-                _ctx.strokeStyle = '#000';
-                _ctx.lineWidth = 5;
-                _ctx.font = '50px Pangolin';
+                    let t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.damageTime, 0, 1);
+                    let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.data.hp) * t;
 
-                let pos = Utils.CurvePos({x: 0, y: y + 10}, {x: 0, y: y}, 25, 1 - t);
-                _ctx.strokeText(`${this.attackDamage}`, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2, pos.y);
-                _ctx.fillText(`${this.attackDamage}`, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2, pos.y);
+                    _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.data.maxHP, 32);
+            
+                    _ctx.restore();
+                    _ctx.stroke();
+                    _ctx.closePath();
 
-                this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, this.pendingTimer / this.pendingAnimationTime);
+                    // дельта
+                    let strength = this.attackDamage / this.currentAttack.damage;
+                    _ctx.fillStyle = strength > .9 ? '#FF0000' : strength > .5 ? '#FF9F00' : '#808080';
+                    _ctx.textAlign = 'center';
+                    _ctx.textBaseline = 'bottom';
+                    _ctx.strokeStyle = '#000';
+                    _ctx.lineWidth = 5;
+                    _ctx.font = '50px Pangolin';
+
+                    let pos = Utils.CurvePos({x: 0, y: y + 10}, {x: 0, y: y}, 25, t);
+                    _ctx.strokeText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+                    _ctx.fillText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+
+                    t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.shakeTime, 0, 1);
+                    this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, 1 - t);
+                }
             }
         }
     }
@@ -354,10 +404,8 @@ class OwnAttackMode extends TargettedBattleMode
     {
         if(this.pending)
         {
-            if(this.pendingTimer > 0)
-                this.pendingTimer -= 1 * _delta;
-            else if(this.impactTimer > 0)
-                this.impactTimer -= 1 * _delta;
+            if(this.pendingTimer <= this.pendingTime)
+                this.pendingTimer += 1 * _delta;
             else
             {
                 this.pending = false;
@@ -378,7 +426,7 @@ class OwnAttackMode extends TargettedBattleMode
         }
 
         // пуля прилетела
-        if(this.pending && this.pendingTimer < this.pendingAnimationTime)
+        if(this.pending && this.pendingTimer - this.transformTime >= this.flyTime)
         {
             this.HurtAnimationEnd();
         }
@@ -440,7 +488,8 @@ class OwnAttackMode extends TargettedBattleMode
             return;
         
         this.hurtAnimationFinished = true;
-        res.sfx.hurt.play();
+        if(this.attackDamage > 5)
+            res.sfx.hurt.play();
 
         let result = this.targetEnemy.data.Hurt(this.attackDamage);
         battle.lastActionResult = {
@@ -451,27 +500,33 @@ class OwnAttackMode extends TargettedBattleMode
 
     FinishOwnAttack()
     {
-        let res = this.dollar.Recognize(this.drawnPoints, false);
-            
-        let attack = battle.ownAttacks[res.Name];
-        if(!attack)
-            attack = battle.ownAttacks[''];
-
-        if(res.Name != Object.keys(battle.ownAttacks)[battle.ownAttackIndex])
-            attack = battle.ownAttacks[''];
-
         this.hpBeforeAttack = this.targetEnemy.data.hp;
+
+        let res = this.dollar.Recognize(this.drawnPoints, false);
+        let attack = battle.ownAttacks[res.Name];
+        let failure = false;
+
+        if(!attack || res.Name != Object.keys(battle.ownAttacks)[battle.ownAttackIndex])
+            failure = true;
+
+        if(failure)
+            attack = battle.ownAttacks[''];
         
-        let damage = ~~(attack.damage * res.Score);
-        battle.DealDamage(this.targetEnemy, damage);
+        let damage = 0;
+        let bonus = 0;
+        if(!failure)
+        {
+            damage = ~~(attack.damage * res.Score);
+            bonus = Math.max(~~(attack.damage / 2 * (this.castTimer / this.castTime)), 0);
+        }
+        
+        this.attackDamage = damage + bonus;
+        battle.DealDamage(this.targetEnemy, this.attackDamage);
         
         this.pending = true;
         this.currentAttack = attack;
-        
-        this.attackDamage = damage;
 
-        this.pendingTimer = this.pendingTime;
-        this.impactTimer = this.impactTime;
+        this.pendingTimer = 0;
         this.hurtAnimationFinished = false;
 
         this.drawing = false;

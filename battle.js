@@ -648,11 +648,25 @@ class Sheet
     }
     GetTagFrame(_tag)
     {
-        let data = this.json.meta.frameTags.filter(i => i.name == _tag);
-        if(data.length > 0)
-            return data[0].from;
+        let frames = this.GetTagFrames(_tag);
 
-        return null;
+        if(frames == null)
+            return null;
+
+        return frames[0];
+    }
+    GetTagFrames(_tag)
+    {
+        let data = this.json.meta.frameTags.filter(i => i.name == _tag);
+        
+        if(data.length == 0)
+            return null;
+
+        let arr = [];
+        for(let i = data[0].from; i <= data[0].to; i++)
+            arr.push(i);
+
+        return arr;
     }
 
     OnError(e)
@@ -679,7 +693,7 @@ class Sheet
         }
     }
 
-    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1)
+    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1, _center = false)
     {
         let part = this.parts[_part];
 
@@ -687,11 +701,22 @@ class Sheet
             return;
 
         let frame = part[_frame].frame;
+        
+        let w = _w > 0 ? _w : frame.w;
+        let h = _h > 0 ? _h : frame.h;
 
-        _x += part[_frame].spriteSourceSize.x;
-        _y += part[_frame].spriteSourceSize.y;
+        if(_center)
+        {
+            _x -= w / 2;
+            _y -= h / 2;
+        }
+        else
+        {
+            _x += part[_frame].spriteSourceSize.x;
+            _y += part[_frame].spriteSourceSize.y;
+        }
 
-        _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, _x, _y, _w > 0 ? _w : frame.w, _h > 0 ? _h : frame.h);
+        _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, _x, _y, w, h);
     }
 }
 
@@ -730,6 +755,18 @@ class GameResources
             duck: {
                 img: 'duck.png',
                 json: 'duck.json',
+            },
+            triangle: {
+                img: 'triangle.png',
+                json: 'triangle.json'
+            },
+            circle: {
+                img: 'circle.png',
+                json: 'circle.json'
+            },
+            star: {
+                img: 'star.png',
+                json: 'star.json'
             }
         };
 
@@ -1015,10 +1052,10 @@ class Battle
 
         this.ownAttacks = 
         {
-            '':         {id: '', damage: 0, index: {x: 0, y: 0}},
-            'triangle': {id: 'triangle', damage: 30, index: {x: 1, y: 0}},
-            'circle':   {id: 'circle', damage: 50, index: {x: 0, y: 1}},
-            'star':     {id: 'star', damage: 120, index: {x: 1, y: 1}},
+            '':         {id: '', damage: 0, sheet: res.sheets.triangle},
+            'triangle': {id: 'triangle', damage: 30, sheet: res.sheets.triangle},
+            'circle':   {id: 'circle', damage: 50, sheet: res.sheets.circle},
+            'star':     {id: 'star', damage: 120, sheet: res.sheets.star},
         };
         this.ownAttackIndex = 1;
 
@@ -1045,7 +1082,7 @@ class Battle
 
     Start()
     {
-        res.sfx.bgm.play();
+        //res.sfx.bgm.play();
 
         this.ui.Start();
         for(let i in this.enemies)
@@ -1801,6 +1838,11 @@ class Utils
         let h = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
 
         return h * lines.length;
+    }
+
+    static GetAnimationFrame(_dt, _framerate, _frames)
+    {
+        return _frames[Math.round(_dt / _framerate) % _frames.length];
     }
 }
 
