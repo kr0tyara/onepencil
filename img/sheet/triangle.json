@@ -144,10 +144,10 @@
     "duration": 100
    },
    "attack_18": {
-    "frame": { "x": 432, "y": 329, "w": 91, "h": 118 },
+    "frame": { "x": 432, "y": 329, "w": 91, "h": 117 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 55, "y": 3, "w": 91, "h": 118 },
+    "spriteSourceSize": { "x": 55, "y": 3, "w": 91, "h": 117 },
     "sourceSize": { "w": 200, "h": 125 },
     "duration": 100
    },
@@ -168,10 +168,10 @@
     "duration": 100
    },
    "attack_21": {
-    "frame": { "x": 322, "y": 337, "w": 88, "h": 118 },
+    "frame": { "x": 322, "y": 337, "w": 88, "h": 117 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 57, "y": 3, "w": 88, "h": 118 },
+    "spriteSourceSize": { "x": 57, "y": 3, "w": 88, "h": 117 },
     "sourceSize": { "w": 200, "h": 125 },
     "duration": 100
    },

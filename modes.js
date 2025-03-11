@@ -110,7 +110,10 @@ class TargettedBattleMode extends BattleMode
     {
         let target = this.TargetEnemy();
         if(target == this.targetClickTarget && target != null)
+        {
+            Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
             this.SelectTarget(target);
+        }
         else
             battle.ui.PointerUp(e);
 
@@ -238,6 +241,7 @@ class OwnAttackMode extends TargettedBattleMode
 
         this.attackType = null;
         this.attackAnimation = null;
+        this.soundPlayed = false;
     }
     
     Start()
@@ -350,7 +354,7 @@ class OwnAttackMode extends TargettedBattleMode
                 {
                     let t = Utils.Clamp((this.pendingTimer - this.transformTime) / this.flyTime, 0, 1);
 
-                    let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y + 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
+                    let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y - 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
                     
                     this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true);
                     
@@ -430,6 +434,15 @@ class OwnAttackMode extends TargettedBattleMode
         {
             this.HurtAnimationEnd();
         }
+
+        if(this.pending && this.pendingTimer >= this.transformTime && !this.soundPlayed)
+        {
+            this.soundPlayed = true;
+            if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 1)
+                this.currentAttack.sfx[1].play();
+            else if(this.attackDamage <= 5)
+                res.sfx.scribble2.play();
+        }
     }
 
     PointerDown(e)
@@ -502,11 +515,11 @@ class OwnAttackMode extends TargettedBattleMode
     {
         this.hpBeforeAttack = this.targetEnemy.data.hp;
 
-        let res = this.dollar.Recognize(this.drawnPoints, false);
-        let attack = battle.ownAttacks[res.Name];
+        let recognize = this.dollar.Recognize(this.drawnPoints, false);
+        let attack = battle.ownAttacks[recognize.Name];
         let failure = false;
 
-        if(!attack || res.Name != Object.keys(battle.ownAttacks)[battle.ownAttackIndex])
+        if(!attack || recognize.Name != Object.keys(battle.ownAttacks)[battle.ownAttackIndex])
             failure = true;
 
         if(failure)
@@ -516,7 +529,7 @@ class OwnAttackMode extends TargettedBattleMode
         let bonus = 0;
         if(!failure)
         {
-            damage = ~~(attack.damage * res.Score);
+            damage = ~~(attack.damage * recognize.Score);
             bonus = Math.max(~~(attack.damage / 2 * (this.castTimer / this.castTime)), 0);
         }
         
@@ -525,6 +538,12 @@ class OwnAttackMode extends TargettedBattleMode
         
         this.pending = true;
         this.currentAttack = attack;
+
+        this.soundPlayed = false;
+        if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 0)
+            this.currentAttack.sfx[0].play();
+        else if(this.attackDamage <= 5)
+            res.sfx.scribble1.play();
 
         this.pendingTimer = 0;
         this.hurtAnimationFinished = false;
@@ -733,6 +752,8 @@ class ActMode extends TargettedBattleMode
         let target = this.TargetAction();
         if(target && target == this.clickTarget)
         {
+            Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
+
             this.selectedAction = target;
             let result = this.selectedAction.action();
             if(!result || !result.text)

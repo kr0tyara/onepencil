@@ -531,6 +531,7 @@ class BattleUI
 
         if(target && target == this.clickTarget)
         {
+            Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
             target.action();
         }
 
@@ -732,7 +733,6 @@ class GameResources
             icons: 'icons.png',
             buttons: 'buttons.png',
             actions: 'actions.png',
-            ownAttacks: 'own_attacks.png',
             soul: 'soul.png',
             soulbreak: 'soulbreak.png',
             
@@ -778,6 +778,7 @@ class GameResources
             bgm: {
                 url: 'DUCK IDK.mp3',
                 loop: true,
+                volume: 0.7,
             },
             fail: {
                 url: 'fail.mp3',
@@ -797,9 +798,51 @@ class GameResources
                 url: 'hurt.wav',
                 volume: 0.6
             },
+            hurt2: {
+                url: 'hurt2.wav',
+                volume: 0.6
+            },
             death: {
                 url: 'death.wav',
                 volume: 0.6
+            },
+            circle1: {
+                url: 'circle_1.ogg',
+            },
+            circle2: {
+                url: 'circle_2.ogg',
+            },
+            triangle1: {
+                url: 'triangle_1.ogg',
+            },
+            triangle2: {
+                url: 'triangle_2.ogg',
+            },
+            star1: {
+                url: 'star_1.ogg',
+            },
+            star2: {
+                url: 'star_2.ogg',
+            },
+            click1:
+            {
+                url: 'jump.ogg',
+            },
+            click2:
+            {
+                url: 'jump2.ogg',
+            },
+            click3:
+            {
+                url: 'jump4.ogg',
+            },
+            scribble1:
+            {
+                url: 'scribble_1.wav',
+            },
+            scribble2:
+            {
+                url: 'scribble_2.wav',
             }
         };
 
@@ -1053,9 +1096,9 @@ class Battle
         this.ownAttacks = 
         {
             '':         {id: '', damage: 0, sheet: res.sheets.triangle},
-            'triangle': {id: 'triangle', damage: 30, sheet: res.sheets.triangle},
-            'circle':   {id: 'circle', damage: 50, sheet: res.sheets.circle},
-            'star':     {id: 'star', damage: 120, sheet: res.sheets.star},
+            'triangle': {id: 'triangle', damage: 30, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
+            'circle':   {id: 'circle', damage: 50, sheet: res.sheets.circle, sfx: [res.sfx.circle1, res.sfx.circle2]},
+            'star':     {id: 'star', damage: 120, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
         };
         this.ownAttackIndex = 1;
 
@@ -1082,7 +1125,7 @@ class Battle
 
     Start()
     {
-        //res.sfx.bgm.play();
+        res.sfx.bgm.play();
 
         this.ui.Start();
         for(let i in this.enemies)
@@ -1625,7 +1668,7 @@ class Soul extends Entity
         this.invinsibleTimer = this.invinsibleTime;
         this.invinsible = true;
 
-        res.sfx.hurt.play();
+        Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
     }
 
     GameLoop(_delta)
