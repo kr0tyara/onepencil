@@ -739,8 +739,8 @@ class GameResources
             robot: 'robot.png',
             promote: 'promote.png',
 
-            stake: 'stake.png',
-            pencil: 'pencil.png',
+            card: 'card.png',
+            pencils: 'pencils.png',
             scribble: 'scribble.png',
             eat: 'eat.png',
             chunks: 'chunks.png',
@@ -778,7 +778,7 @@ class GameResources
             bgm: {
                 url: 'DUCK IDK.mp3',
                 loop: true,
-                volume: 0.7,
+                volume: 0.5,
             },
             fail: {
                 url: 'fail.mp3',
@@ -1125,7 +1125,7 @@ class Battle
 
     Start()
     {
-        res.sfx.bgm.play();
+        //res.sfx.bgm.play();
 
         this.ui.Start();
         for(let i in this.enemies)
@@ -1378,13 +1378,13 @@ class Battle
         this.SetMode(ATTACK);
         this.ResetBounds();
 
-        let attackClass = this.enemies[0].GetAttack(this.attackCounter);
-        if(attackClass == null)
+        let attackData = this.enemies[0].GetAttack(this.attackCounter);
+        if(attackData == null)
         {
             console.error('АТАКУ ДАЙ МНЕ ДУБИНА!!!');
             return;
         }
-        let attack = new attackClass(this.enemies[0].sprite, 0);
+        let attack = new attackData.attackClass(this.enemies[0].sprite, attackData.difficulty);
 
         this.attack = attack;
         this.attack.Start();

@@ -43,7 +43,10 @@ class Enemy
 
     GetAttack(_counter)
     {
-        return this.attacks[_counter % this.attacks.length];
+        return {
+            attackClass: this.attacks[_counter % this.attacks.length],
+            difficulty: 1
+        }
     }
 
     Die()
@@ -439,9 +442,20 @@ class PromoDuck extends Enemy
     GetAttack(_counter)
     {
         if(this.drawAttempt == 2)
-            return ScribbleAttack;
+            return {
+                attackClass: ScribbleAttack,
+                difficulty: 1
+            };
 
-        return super.GetAttack(_counter);
+        let attackData = super.GetAttack(_counter);
+
+        if(_counter >= 4)
+            attackData.difficulty = 2;
+
+        if(_counter >= 8)
+            attackData.attackClass = Utils.RandomArray(this.attacks);
+
+        return attackData;
     }
 
     Idle()
@@ -634,7 +648,7 @@ class PromoDuck extends Enemy
 
         return {
             text: ['~ПромоУтка — АТК 10 ЗЩТ 0~Рекламный бизнесмен.%~Древесный сомелье.%~КРАСАВЧИК. *'],
-            speech: ['#2* Не является рекламой.']
+            speech: ['#2* Выдержки из визитной карточки.~Могут не отражать действительное качество услуг.']
         };
     }
     Bet()

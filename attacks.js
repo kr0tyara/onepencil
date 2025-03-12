@@ -203,6 +203,8 @@ class CardAttack extends Attack
 
         let appearTime = 50;
         let count = 16;
+        if(this.difficulty == 2)
+            count = 12;
 
         let time = 30 + appearTime;
         for(let i = 0; i < count; i++)
@@ -211,7 +213,10 @@ class CardAttack extends Attack
             projectile.count = count;
             projectile.appearTime = appearTime;
 
-            time += Utils.ReverseQuadratic(15, 30, i, count);
+            if(this.difficulty == 2)
+                time += Utils.ReverseQuadratic(25, 40, i, count);
+            else
+                time += Utils.ReverseQuadratic(15, 30, i, count);
             projectile.honingTime = time;
             projectile.speed = Utils.Quadratic(7, 10, i, count);
 
@@ -233,16 +238,23 @@ class CardProjectile extends Projectile
         this.pivot.x = this.w / 2;
         this.x -= this.pivot.x;
 
+        this.originalPos = {x: _x, y: _y};
+        this.bounceCount = 0;
+
         this.count;
         this.appearTime;
         this.preThrowTime = 15;
         
         this.speed = 7;
+        this.vy = 1;
     }
 
     Draw(_ctx, _dt)
     {
-        _ctx.drawImage(res.sprites.stake, -this.pivot.x - 5, -this.pivot.y - 7.5, this.w + 10, this.h + 15);
+        _ctx.save();
+        _ctx.rotate(Math.PI / 2);
+        _ctx.drawImage(res.sprites.card, (this.parent.difficulty == 2 ? 90 : 0), 0, 90, 60, -this.pivot.y - 7.5, -this.pivot.x - 5, this.h + 15, this.w + 10);
+        _ctx.restore();
     }
 
     GameLoop(_delta)
@@ -260,28 +272,47 @@ class CardProjectile extends Projectile
             if(this.honingTimer >= this.honingTime - this.appearTime)
             {
                 let t = 1 - (this.honingTimer - (this.honingTime - this.appearTime)) / this.appearTime;
-                this.x = this.parent.x + t * (targetX);
-                this.y = this.parent.y - t * (this.index * 6);
+                this.x = this.originalPos.x + t * (targetX);
+                this.y = this.originalPos.y - t * (this.index * 6);
                 return;
             }
 
             // замах
             if(this.honingTimer > this.preThrowTime)
             {
-                this.x = this.parent.x + targetX;
+                this.x = this.originalPos.x + targetX;
             }
             // анимация перед броском
             else
             {
                 this.onTop = true;
-                this.y = this.parent.y - this.index * 6 - 32 * ((this.preThrowTime - this.honingTimer) / this.preThrowTime);
+                this.y = this.originalPos.y - this.index * 6 - 32 * ((this.preThrowTime - this.honingTimer) / this.preThrowTime);
             }
 
             return;
         }
         
-        this.rotation += Math.PI / 60 * _delta;
-        this.y += this.speed * _delta;
+        let speed = this.speed * _delta;
+        if(this.speed > 0)
+            speed *= this.vy;
+        else
+            speed += (_delta * this.vy) / 2;
+
+        this.rotation += Math.PI / 60 * _delta * Math.abs(speed) / 15;
+        this.y += speed;
+
+        if(this.parent.difficulty == 2)
+        {
+            this.vy *= 1.03;
+
+            if(this.y > battle.bounds.y2 && this.bounceCount < 1)
+            {
+                this.y = battle.bounds.y2;
+                this.speed = -Math.min(8, Math.abs(this.speed));
+                this.bounceCount++;
+                this.vy = 3;
+            }
+        }
     }
 }
 
@@ -290,6 +321,9 @@ class ThrowAttack extends Attack
     constructor(_caster, _difficulty)
     {
         super(_caster, _difficulty, 35, 300);
+
+        if(this.difficulty == 2)
+            this.projectileTime = 25;
     }
 
     Start()
@@ -311,6 +345,9 @@ class ThrowAttack extends Attack
         if(_tickCount % 3 == 0)
             return this.projectileTime * 1.5;
         
+        if(this.difficulty == 2)
+            return 10;
+
         return super.NextProjectileTime(_tickCount);
     }
 }
@@ -358,7 +395,7 @@ class ThrowProjectile extends Projectile
         if(this.honingTimer > 0)
             _ctx.globalAlpha = (this.honingTime - this.honingTimer) / this.honingTime;
 
-        _ctx.drawImage(res.sprites.pencil, -40 / 2, -this.pivot.y - 12);
+        _ctx.drawImage(res.sprites.pencils, (this.index % 3) * 40, 0, 40, 120, -40 / 2, -this.pivot.y - 12, 40, 120);
         
         _ctx.globalAlpha = 1;
     }
@@ -451,6 +488,9 @@ class MouthAttack extends Attack
     constructor(_caster, _difficulty)
     {
         super(_caster, _difficulty, 50, 300);
+
+        if(this.difficulty == 2)
+            this.projectileTime = 20;
     }
 
     Start()
@@ -464,6 +504,11 @@ class MouthAttack extends Attack
     {
         let projectile = new MouthProjectile(this, _index, battle.soul.x - 32, battle.soul.y - 32);
         battle.AddProjectile(this, projectile);
+    }
+
+    NextProjectileTime()
+    {
+        return this.projectileTime;
     }
 }
 class MouthProjectile extends Projectile
@@ -493,10 +538,9 @@ class MouthProjectile extends Projectile
             _ctx.globalAlpha = (this.lifeTime - this.lifeTimer) / this.appearTime;
 
         let t = (this.honingTime - this.honingTimer) / this.honingTime;
-        let scale = 1.5;
 
-        _ctx.drawImage(res.sprites.eat, 0, 174, 164, 68, -104 / scale, 28 / scale, 164 / scale, 68 / scale);
-        _ctx.drawImage(res.sprites.eat, 0, 0, 164, 139, -104 / scale, (-100 - 75 * (1 - t)) / scale, 164 / scale, 139 / scale);
+        _ctx.drawImage(res.sprites.eat, 0, 112, 108, 47, -70, 16, 108, 47);
+        _ctx.drawImage(res.sprites.eat, 0, 0, 108, 86, -70, -64 - 50 * (1 - t), 108, 86);
 
         _ctx.globalAlpha = 1;
     }
@@ -520,6 +564,9 @@ class BallAttack extends Attack
         this.angle = 0;
 
         this.tails = 5;
+        if(this.difficulty == 2)
+            this.tails = 6;
+        
         this.count = this.attackTime / this.projectileTime * this.tails;
     }
     
@@ -537,7 +584,11 @@ class BallAttack extends Attack
     OnGameLoop(_delta)
     {
         let tick = this.tickCount + (this.projectileTime - this.projectileTimer) / this.projectileTime;
-        this.angle = Math.PI / Utils.ReverseQuadratic(22, 36, tick * this.tails, this.count) * tick;
+
+        if(this.difficulty == 2)
+            this.angle = Math.PI / Utils.ReverseQuadratic(18, 30, tick * this.tails, this.count) * tick;
+        else
+            this.angle = Math.PI / Utils.ReverseQuadratic(22, 36, tick * this.tails, this.count) * tick;
     }
 
     SpawnProjectile(_index)
