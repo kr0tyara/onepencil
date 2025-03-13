@@ -292,6 +292,7 @@ class PromoDuckSprite extends EnemySprite
                 y: ~~(Math.sin(_dt / 50) * 5 + armWobble.y)
             };
 
+            res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
             res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'feet', 1, this.x, this.y);
 
@@ -333,6 +334,7 @@ class PromoDuckSprite extends EnemySprite
                     break;
             }
 
+            res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
             res.sheets.duck.Draw(_ctx, 'arm_back', harmed ? 2 : this.expression == 4 ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'feet', harmed ? 2 : 0, this.x, this.y);
 

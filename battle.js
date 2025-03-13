@@ -7,7 +7,8 @@ const   IDLE = 0,
         POST_ATTACK = 3,
         OWN_ATTACK = 4,
         ACT = 5,
-        GAME_OVER = 6,
+        ITEMS = 6,
+        GAME_OVER = 7,
         
         STATE_NORMAL = 0,
         STATE_HURT = 1,
@@ -483,6 +484,7 @@ class BattleUI
                 {name: '<', mode: IDLE, action: battle.Back.bind(battle), back: true},
                 {name: 'Атака', mode: OWN_ATTACK, index: {x: 0, y: 0}, action: battle.OwnAttack.bind(battle)},
                 {name: 'Действие', mode: ACT, index: {x: 1, y: 0}, action: battle.Act.bind(battle)},
+                {name: 'Вещи', mode: ITEMS, index: {x: 1, y: 1}, action: battle.Items.bind(battle)},
             ];
 
             let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 2) * 20) / (this.buttons.length - 1);
@@ -1053,6 +1055,7 @@ class Battle
             new PostAttackMode(),
             new OwnAttackMode(),
             new ActMode(),
+            new ItemsMode(),
             new GameOverMode()
         ];
 
@@ -1450,6 +1453,16 @@ class Battle
             this.Idle();
         else
             this.SetMode(ACT);
+    }
+    Items()
+    {
+        if(this.mode.id == GAME_OVER)
+            return;
+
+        if(this.mode.id == ITEMS)
+            this.Idle();
+        else
+            this.SetMode(ITEMS);
     }
     Idle()
     {

@@ -820,6 +820,25 @@ class ActMode extends TargettedBattleMode
         }
     }
 }
+
+class ItemsMode extends BattleMode
+{
+    constructor()
+    {
+        super(ITEMS);
+        this.locked = false;
+    }
+
+    PointerDown(e)
+    {
+        battle.ui.PointerDown(e);
+    }
+    PointerUp(e)
+    {
+        battle.ui.PointerUp(e);
+    }
+}
+
 class GameOverMode extends BattleMode
 {
     constructor()

@@ -1,4 +1,12 @@
 { "frames": {
+   "shadow_0": {
+    "frame": { "x": 217, "y": 634, "w": 152, "h": 39 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 79, "y": 250, "w": 152, "h": 39 },
+    "sourceSize": { "w": 300, "h": 300 },
+    "duration": 100
+   },
    "feet_0": {
     "frame": { "x": 1, "y": 634, "w": 107, "h": 63 },
     "rotated": false,
@@ -298,6 +306,7 @@
    { "name": "expression_7", "from": 18, "to": 19, "direction": "forward", "color": "#000000ff" }
   ],
   "layers": [
+   { "name": "shadow", "opacity": 38, "blendMode": "normal" },
    { "name": "feet", "opacity": 255, "blendMode": "normal" },
    { "name": "arm_back", "opacity": 255, "blendMode": "normal" },
    { "name": "hair", "opacity": 255, "blendMode": "normal" },
