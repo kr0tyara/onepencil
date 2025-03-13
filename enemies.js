@@ -70,6 +70,10 @@ class Enemy
     {
         return {};
     }
+    Drawn(_len)
+    {
+        return {};
+    }
 
     Check()
     {
@@ -195,7 +199,13 @@ class PromoDuckSprite extends EnemySprite
     {
         super(_x, _y, 300, 300, _enemy);
         
-        this.stakeShown = false;
+        this.stakeShown = true;
+        this.drawnLines = [];
+    }
+
+    AddDrawing(_line)
+    {
+        this.drawnLines.push(_line);
     }
 
     ResetExpression()
@@ -208,31 +218,34 @@ class PromoDuckSprite extends EnemySprite
 
     Draw(_ctx, _dt)
     {
+        // todo: он не должен прыгать во время вандализма
         this.y = battle.bounds.y1 - this.h;
+        if(this.y < 0)
+            this.y = 0;
 
         // промотка
         if(this.stakeShown)
         {
+            let x = battle.defaultBounds.x1;
             let y = 25;
             let h = battle.defaultBounds.y1 - 25 - 25;
             
             if(this.state == STATE_HANGING)
                 y = -h + (h + 25) * this.animationTime;
 
-            _ctx.lineCap = 'round';
-            _ctx.lineJoin = 'round';
+            _ctx.lineCap = _ctx.lineJoin = 'round';
             
             _ctx.lineWidth = 3;
             _ctx.strokeStyle = '#000';
             _ctx.fillStyle = '#fff';
 
             _ctx.beginPath();
-            Utils.RoundedRect(_ctx, battle.defaultBounds.x1, y, 250, h, 6);
+            Utils.RoundedRect(_ctx, x, y, 250, h, 6);
             _ctx.fill();
             _ctx.stroke();
             _ctx.closePath();
             
-            _ctx.drawImage(res.sprites.promote, 0, (this.state == STATE_ATTACKING || _dt % 500 < 250 ? 0 : 162), 244, 162, battle.defaultBounds.x1, y, 244, 162);
+            _ctx.drawImage(res.sprites.promote, 0, _dt % 500 < 250 ? 0 : 162, 244, 162, x, y, 244, 162);
 
             _ctx.font = '48px Pangolin';
             _ctx.fillStyle = '#000';
@@ -244,7 +257,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.textBaseline = 'bottom';
 
             _ctx.save();
-            _ctx.translate(battle.defaultBounds.x1 + 250 / 2, y + h - 30);
+            _ctx.translate(x + 250 / 2, y + h - 30);
 
             _ctx.fillText(text, 0, 0);
             _ctx.translate(w / 2 + 5, -16);
@@ -254,7 +267,37 @@ class PromoDuckSprite extends EnemySprite
             _ctx.restore();
             
             _ctx.font = '24px Pangolin';
-            _ctx.fillText(`Осталось ${10 - battle.attackCounter} атак`, battle.defaultBounds.x1 + 250 / 2, y + h - 10);
+            _ctx.fillText(`До сброса: ${this.enemy.resetCounter} м.`, x + 250 / 2, y + h - 10);
+            
+            // вандализм
+            for(let j in this.drawnLines)
+            {
+                _ctx.lineWidth = this.drawnLines[j].width;
+                _ctx.strokeStyle = this.drawnLines[j].color;
+                _ctx.beginPath();
+
+                for(let i in this.drawnLines[j].points)
+                    _ctx.lineTo(this.drawnLines[j].points[i].x, this.drawnLines[j].points[i].y);
+
+                _ctx.stroke();
+                _ctx.closePath();
+            }
+
+            // в режиме атаки
+            if(this.alphaTimer >= 0)
+            {
+                if(this.alphaBack)
+                    _ctx.globalAlpha = 1 - (this.alphaTime - this.alphaTimer) / this.alphaTime;
+                else
+                    _ctx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
+            }
+            else
+                _ctx.globalAlpha = 0;
+    
+            _ctx.fillStyle = '#fff';
+            _ctx.fillRect(x - 55, 0, 360, y + h + 20);
+    
+            _ctx.globalAlpha = 1;
         }
 
         let harmed = this.enemy.weakened > 0;
@@ -390,12 +433,14 @@ class PromoDuck extends Enemy
         this.index = {x: 0, y: 0};
 
         this.maxHP = 500;
+        this.resetCounter = 30;
 
         this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
             {name: 'Ставка', index: {x: 0, y: 1}, action: this.Bet.bind(this)},
+            {name: 'Вандализм', index: {x: 1, y: 1}, action: this.Vandalize.bind(this)},
         ];
         
         this.flavourText = [
@@ -439,6 +484,8 @@ class PromoDuck extends Enemy
 
         this.weakened = 0;
         this.call = 0;
+
+        this.drawn = 0;
     }
 
     GetAttack(_counter)
@@ -498,6 +545,11 @@ class PromoDuck extends Enemy
     Hurt(_damage)
     {
         this.hurt++;
+
+        if(_damage > 5)
+        {
+            this.DecreaseResetCounter(1);
+        }
 
         if(this.hp / this.maxHP <= .6 && this.weakened == 0)
         {
@@ -593,9 +645,46 @@ class PromoDuck extends Enemy
 
         return {};
     }
+    
+    Drawn(_len)
+    {
+        this.drawn++;
+        
+        let result = {text: ['Время ставки немного понижается!']};
+        let delta = 1;
+        
+        if(_len >= 50)
+        {
+            delta = 3;
+            result.text = ['Время ставки сильно понижается!!!'];
+        }
+        else if(_len >= 25)
+        {
+            delta = 2;
+            result.text = ['Время ставки понижается!!'];
+        }
+
+        if(this.drawn == 1)
+            result.speech = ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
+
+        this.DecreaseResetCounter(delta);
+
+        return result;
+    }
+
+    DecreaseResetCounter(_delta)
+    {
+        this.resetCounter -= _delta;
+        if(this.resetCounter <= 0)
+        {
+            alert('ВАУ!');
+        }
+    }
 
     AttackEnd()
     {
+        this.DecreaseResetCounter(1);
+        
         if(this.failedAttack == 1)
             this.failedAttack = 2;
         else if(this.failedAttack == 2)
@@ -679,6 +768,13 @@ class PromoDuck extends Enemy
                 return {
                     text: ['~Похоже, стоит дождаться сброса ставки и только после этого предложить карандаш.']
                 };
+        }
+    }
+    Vandalize()
+    {
+        return {
+            text: ['Нарисуй что угодно, чтобы ускорить сброс ставки!'],
+            mode: DRAW
         }
     }
 }

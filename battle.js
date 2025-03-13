@@ -8,7 +8,8 @@ const   IDLE = 0,
         OWN_ATTACK = 4,
         ACT = 5,
         ITEMS = 6,
-        GAME_OVER = 7,
+        DRAW = 7,
+        GAME_OVER = 8,
         
         STATE_NORMAL = 0,
         STATE_HURT = 1,
@@ -440,6 +441,7 @@ class SpeechBubble extends TypeWriter
         let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize, this.textBounds) + 20;
         let r = 6;
 
+        _ctx.lineWidth = 3;
         _ctx.fillStyle = '#fff';
         _ctx.strokeStyle = '#000';
         _ctx.beginPath();
@@ -481,10 +483,10 @@ class BattleUI
         if(!this.buttonsPrepared)
         {
             this.buttons = [
-                {name: '<', mode: IDLE, action: battle.Back.bind(battle), back: true},
+                {name: 'Назад', mode: IDLE, index: {x: 1, y: 2}, action: battle.Back.bind(battle), back: true},
                 {name: 'Атака', mode: OWN_ATTACK, index: {x: 0, y: 0}, action: battle.OwnAttack.bind(battle)},
                 {name: 'Действие', mode: ACT, index: {x: 1, y: 0}, action: battle.Act.bind(battle)},
-                {name: 'Вещи', mode: ITEMS, index: {x: 1, y: 1}, action: battle.Items.bind(battle)},
+                {name: 'Вещи', mode: ITEMS, index: {x: 0, y: 1}, action: battle.Items.bind(battle)},
             ];
 
             let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 2) * 20) / (this.buttons.length - 1);
@@ -548,7 +550,7 @@ class BattleUI
 
         _ctx.font = '36px Pangolin';
         _ctx.textBaseline = 'middle';
-        _ctx.textAlign = 'center';
+        _ctx.textAlign = 'left';
         for(let i in this.buttons)
         {
             let button = this.buttons[i];
@@ -567,12 +569,10 @@ class BattleUI
             _ctx.stroke();
             _ctx.closePath();
 
-            if(button.index != null)
-            {
-                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.buttons, button.index.x * 50, button.index.y * 50, 50, 50, button.x + 10, battle.defaultBounds.y2 + 70 + 70 / 2 - 25, 50, 50, _ctx.fillStyle);
-            }
+            Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.buttons, button.index.x * 50, button.index.y * 50, 50, 50, button.x + 10, battle.defaultBounds.y2 + 70 + 70 / 2 - 25, 50, 50, _ctx.fillStyle);
 
-            _ctx.fillText(button.name, button.x + button.w / 2, battle.defaultBounds.y2 + 70 + 70 / 2 + 4);
+            if(!button.back)
+                _ctx.fillText(button.name, button.x + 70, battle.defaultBounds.y2 + 70 + 70 / 2 + 4);
         }
     }
 }
@@ -1056,6 +1056,7 @@ class Battle
             new OwnAttackMode(),
             new ActMode(),
             new ItemsMode(),
+            new DrawMode(),
             new GameOverMode()
         ];
 
@@ -1217,11 +1218,9 @@ class Battle
         
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#000';
-        this.ctx.fillStyle = '#fff';
 
         this.ctx.beginPath();
         Utils.RoundedRect(this.ctx, this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1, 6);
-        this.ctx.fill();
         this.ctx.stroke();
         this.ctx.closePath();
         
@@ -1368,8 +1367,13 @@ class Battle
         if(this.mode.id == GAME_OVER)
             return;
 
-        if(this.lastActionResult && this.lastActionResult.speech)
-            this.SetMode(PRE_ATTACK);
+        if(this.lastActionResult != null && (this.lastActionResult.text != null || this.lastActionResult.speech || this.lastActionResult.mode != null))
+        { 
+            if(this.lastActionResult.text != null || this.lastActionResult.speech != null)
+                this.SetMode(PRE_ATTACK);
+            else if(this.lastActionResult.mode != null)
+                this.SetMode(this.lastActionResult.mode);
+        }
         else
             this.Attack();
     }
@@ -1377,6 +1381,9 @@ class Battle
     {
         if(this.mode.id == GAME_OVER)
             return;
+
+        for(let i in battle.enemies)
+            battle.enemies[i].sprite.ResetExpression();
 
         this.SetMode(ATTACK);
         this.ResetBounds();
@@ -1548,7 +1555,7 @@ class Battle
         let pos = Utils.MousePos(e, this.canvas);
         this.mousePos = pos;
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked))
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked) || this.mode.id == DRAW)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -1579,7 +1586,7 @@ class Battle
     {
         let pos = {...this.mousePos};
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked))
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked) || this.mode.id == DRAW)
         {
             if(pos.x < this.targetBounds.x1)
                 pos.x = this.targetBounds.x1;

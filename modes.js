@@ -185,6 +185,9 @@ class IdleMode extends BattleMode
 
     GameLoop(_delta)
     {
+        if(!battle.boundsReady)
+            return;
+        
         this.typeWriter.GameLoop(_delta);
     }
 
@@ -261,7 +264,7 @@ class OwnAttackMode extends TargettedBattleMode
     SelectTarget(_target)
     {
         super.SelectTarget(_target);
-        battle.SetBounds({x1: 500, y1: 300, x2: 780, y2: 550});
+        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
     }
 
     Render(_ctx, _dt)
@@ -273,21 +276,20 @@ class OwnAttackMode extends TargettedBattleMode
             return;
         }
 
-        _ctx.font = '36px Pangolin';
         // рисуем
         if(!this.pending)
         {
+            _ctx.font = '36px Pangolin';
             _ctx.fillStyle = '#ff0000';
             _ctx.textAlign = 'center';
             _ctx.textBaseline = 'top';
 
+            let text = 'РИСУЙ!!!';
             if(this.drawing)
-                _ctx.fillText(`${~~this.castTimer}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15);
-            else
-                _ctx.fillText('РИСУЙ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
+                text = `${~~this.castTimer}`;
+            _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
             
-            _ctx.lineCap = 'round';
-            _ctx.lineJoin = 'round';
+            _ctx.lineCap = _ctx.lineJoin = 'round';
             _ctx.lineWidth = 5;
 
             let template = this.attackType;
@@ -490,7 +492,7 @@ class OwnAttackMode extends TargettedBattleMode
         if(this.pending || !this.drawing)
             return;
 
-        let pos = {x: battle.soul.x, y: battle.soul.y};
+        let pos = {x: ~~battle.soul.x, y: ~~battle.soul.y};
         if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
             this.drawnPoints.push(pos);
     }
@@ -557,28 +559,90 @@ class PreAttackMode extends BattleMode
     constructor()
     {
         super(PRE_ATTACK);
+
+        this.typeWriter = new TypeWriter(null, true);
+        this.typeWriterActive = false;
+        this.speechActive = false;
     }
 
     Start()
     {
         this.locked = true;
+        this.typeWriterActive = false;
+        this.speechActive = false;
 
-        if(battle.lastActionResult.speech)
-        {
-            battle.enemies[0].sprite.SetSpeechBubble(battle.lastActionResult.speech, battle.lastActionResult.actions ? battle.lastActionResult.actions : []);
-        }
+        if(battle.lastActionResult.text)
+            this.StartTypeWriter();
+        else if(battle.lastActionResult.speech)
+            this.StartSpeech();
+        else
+            battle.Attack();
+    }
+
+    StartTypeWriter()
+    {
+        if(!battle.lastActionResult.text)
+            return;
+
+        battle.ResetBounds();
+        this.typeWriter.Start();
+        this.typeWriter.SetText(battle.lastActionResult.text);
+
+        this.typeWriterActive = true;
+    }
+
+    StartSpeech()
+    {
+        if(!battle.lastActionResult.speech)
+            return;
+
+        this.speechActive = true;
+        battle.enemies[0].sprite.SetSpeechBubble(battle.lastActionResult.speech, battle.lastActionResult.actions ? battle.lastActionResult.actions : []);
     }
     PointerUp(e)
     {
-        battle.enemies[0].sprite.speechBubble.PointerUp(e);
+        if(this.typeWriterActive)
+            this.typeWriter.PointerUp(e);
+        else if(this.speechActive)
+            battle.enemies[0].sprite.speechBubble.PointerUp(e);
     }
 
     GameLoop(_delta)
     {
-        if(!battle.enemies[0].sprite.speaking)
+        if(this.typeWriterActive)
         {
-            battle.Attack();
+            if(!this.typeWriter.finished)
+            {
+                if(battle.boundsReady)
+                    this.typeWriter.GameLoop(_delta);
+            }
+            else if(!this.speechActive)
+            {
+                this.typeWriterActive = false;
+                this.StartSpeech();
+            }
+            return;
         }
+
+        if(this.speechActive && !battle.enemies[0].sprite.speaking)
+            this.speechActive = false;
+        
+        if(!this.typeWriterActive && !this.speechActive)
+        {
+            if(battle.lastActionResult.mode != null)
+                battle.SetMode(battle.lastActionResult.mode);
+            else
+                battle.Attack();
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        if(!battle.boundsReady)
+            return;
+
+        if(this.typeWriterActive)
+            this.typeWriter.Render(_ctx, _dt);
     }
 }
 class PostAttackMode extends BattleMode
@@ -658,7 +722,7 @@ class ActMode extends TargettedBattleMode
         }
 
         let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 25 * 3 / 4;
-        let h = Math.min(80, (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4);
+        let h = 80; //Math.min(80, (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4);
 
         for(let i in this.actions)
         {
@@ -766,6 +830,7 @@ class ActMode extends TargettedBattleMode
                 ...result,
                 target: this.targetEnemy.data,
             }
+            delete battle.lastActionResult.text;
 
             this.locked = true;
         }
@@ -821,6 +886,127 @@ class ActMode extends TargettedBattleMode
     }
 }
 
+class DrawMode extends BattleMode
+{
+    constructor()
+    {
+        super(DRAW);
+        this.locked = true;
+        
+        this.castTime = 60;
+        this.castTimer = 0;
+        
+        this.drawing = false;
+        this.drawnPoints = [];
+
+        this.lineWidth = 5;
+        this.color = '#ff0000';
+    }
+
+    Start()
+    {
+        this.drawing = false;
+        this.drawnPoints = [];
+
+        this.lineWidth = Utils.RandomRound(2, 20);
+        
+        let hue = Utils.RandomRound(0, 36) * 10;
+        this.color = `hsl(${hue}, 100%, 50%)`;
+
+        battle.SetBounds({x1: battle.defaultBounds.x1 - 25, y1: 15, x2: battle.defaultBounds.x1 + 295, y2: 305});
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.font = '36px Pangolin';
+        _ctx.textAlign = 'center';
+        _ctx.textBaseline = 'top';
+
+        let text = 'РИСУЙ!!!';
+        if(this.drawing)
+            text = `${~~this.castTimer}`;
+
+        _ctx.fillStyle = '#ff0000';
+        _ctx.strokeStyle = '#000';
+        _ctx.lineWidth = 8;
+        _ctx.strokeText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
+        _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
+        
+        _ctx.lineCap = _ctx.lineJoin = 'round';
+        _ctx.lineWidth = this.lineWidth;
+        _ctx.strokeStyle = this.color;
+        _ctx.beginPath();
+
+        for(let i in this.drawnPoints)
+        {
+            _ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
+        }
+        if(this.drawnPoints.length > 0)
+            _ctx.lineTo(battle.soul.x, battle.soul.y);
+
+        _ctx.stroke();
+        _ctx.closePath();
+    }
+
+    PointerDown(e)
+    {
+        battle.lastActionResult.target.sprite.SetExpression(8);
+        this.castTimer = this.castTime;
+
+        this.drawing = true;
+        this.drawnPoints = [];
+
+        // фикс рисования с мобилы
+        battle.TeleportSoulToCursor(e);
+
+        this.AddPoint();
+    }
+    PointerUp(e)
+    {
+        this.AddPoint();
+        if(this.drawing)
+            this.Finish();
+    }
+    PointerMove(e)
+    {
+        this.AddPoint();
+    }
+    AddPoint()
+    {
+        if(!this.drawing)
+            return;
+
+        let pos = {x: ~~battle.soul.x, y: ~~battle.soul.y};
+        if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
+            this.drawnPoints.push(pos);
+    }
+
+    GameLoop(_delta)
+    {
+        if(this.drawing)
+        {
+            this.castTimer -= 1 * _delta;
+
+            if(this.castTimer <= 0)
+                this.Finish();
+        }
+    }
+
+    Finish()
+    {
+        delete battle.lastActionResult.mode;
+
+        // это очень говёно. хорошо что никто не смотрит!
+        battle.lastActionResult.target.sprite.AddDrawing({width: this.lineWidth, color: this.color, points: [...this.drawnPoints]});
+        battle.lastActionResult = {...battle.lastActionResult.target.Drawn(this.drawnPoints.length), target: battle.lastActionResult.target};
+
+        battle.SetMode(PRE_ATTACK);
+
+        this.drawing = false;
+        this.drawnPoints = [];
+    }
+}
+
 class ItemsMode extends BattleMode
 {
     constructor()
@@ -836,6 +1022,10 @@ class ItemsMode extends BattleMode
     PointerUp(e)
     {
         battle.ui.PointerUp(e);
+    }
+    Back()
+    {
+        battle.Idle();
     }
 }
 
