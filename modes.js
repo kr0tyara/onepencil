@@ -280,6 +280,9 @@ class DrawingMode extends TargettedBattleMode
         if(_points.length > 0 && _pos != null)
             _ctx.lineTo(_pos.x, _pos.y);
 
+        if(_pos == null)
+            _ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+
         _ctx.stroke();
         _ctx.closePath();
     }
@@ -291,31 +294,27 @@ class DrawingMode extends TargettedBattleMode
             super.Render(_ctx, _dt);
             return;
         }
-        
-        _ctx.save();
-
-        // уголки
-        _ctx.beginPath();
-        Utils.RoundedRect(_ctx, battle.bounds.x1 + 2, battle.bounds.y1 + 2, battle.bounds.x2 - battle.bounds.x1 - 4, battle.bounds.y2 - battle.bounds.y1 - 4, 3);
-        _ctx.clip();
-
-        _ctx.fillStyle = '#fff';
-        _ctx.globalAlpha = .8;
-        _ctx.fillRect(battle.bounds.x1, battle.bounds.y1, battle.bounds.x2 - battle.bounds.x1, 64);
-        
-        _ctx.restore();
 
         // текст
         _ctx.font = '36px Pangolin';
-        _ctx.fillStyle = '#ff0000';
-        _ctx.textAlign = 'center';
-        _ctx.textBaseline = 'top';
-
         let text = 'РИСУЙ!!!';
+        let w = _ctx.measureText(text).width + 24;
+        
         if(this.drawing)
+        {
+            w = 40;
             text = `${~~(this.castTimer / 16) + 1}`;
+        }
+
+        // рамка
+        _ctx.fillStyle = '#fff';
+        _ctx.beginPath();
+        Utils.RoundedRect(_ctx, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - w / 2, battle.bounds.y1 + 10, w, 48, 6);
+        _ctx.fill();
+        _ctx.closePath();
 
         let y = battle.bounds.y1 + 15 + 4;
+
         // тряска
         if(this.drawing && this.castTimer % 16 < 4)
         {
@@ -323,6 +322,9 @@ class DrawingMode extends TargettedBattleMode
             y -= 1;
         }
 
+        _ctx.fillStyle = '#ff0000';
+        _ctx.textAlign = 'center';
+        _ctx.textBaseline = 'top';
         _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y);
 
         DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, this.color);
@@ -995,7 +997,11 @@ class DrawMode extends DrawingMode
 
     PointerDown(e)
     {
-        this.targetEnemy.sprite.SetExpression(8);
+        if(this.targetEnemy.wtf > 3)
+            this.targetEnemy.sprite.SetExpression('B');
+        else
+            this.targetEnemy.sprite.SetExpression('8');
+
         super.PointerDown(e);
     }
 

@@ -92,11 +92,11 @@ class TypeWriter
         {
             let text = this.text[i];
 
-            let regex = /#\d+/.exec(text);
+            let regex = /#[\dA-Za-z]+/.exec(text);
             if(regex)
-                this.expressions[i] = regex[0].split('#')[1] * 1;
+                this.expressions[i] = regex[0].split('#')[1];
 
-            this.text[i] = text.replaceAll(/#\d+/g, '');
+            this.text[i] = text.replaceAll(/#[\dA-Za-z]+/g, '');
         }
 
         battle.ctx.font = `${this.textSize}px Pangolin`;
@@ -436,7 +436,7 @@ class SpeechBubble extends TypeWriter
         this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
         
         let x = this.textBounds.x1 - 10;
-        let y = this.textBounds.y1 - 10;
+        let y = this.textBounds.y1 - 14;
         let w = this.textBounds.x2 - x + 15;
         let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize, this.textBounds) + 20;
         let r = 6;
@@ -780,7 +780,7 @@ class GameResources
             bgm: {
                 url: 'DUCK IDK.mp3',
                 loop: true,
-                volume: 0.5,
+                volume: 0.7,
             },
             fail: {
                 url: 'fail.mp3',

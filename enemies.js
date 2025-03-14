@@ -95,7 +95,7 @@ class EnemySprite extends Entity
         this.state = STATE_NORMAL;
         this.animationTime = 0;
 
-        this.expression = 0;
+        this.expression = '0';
 
         this.speaking = false;
         this.speechBubble = new SpeechBubble(this, res.sfx.duck);
@@ -131,7 +131,7 @@ class EnemySprite extends Entity
     }
     ResetExpression()
     {
-        this.expression = 0;
+        this.expression = '0';
     }
 
     SetSpeechBubble(_text, _actions)
@@ -206,7 +206,7 @@ class PromoDuckSprite extends EnemySprite
         
         this.vandalismCanvas = document.createElement('canvas');
         this.vandalismCanvas.width = 360;
-        this.vandalismCanvas.height = 305 - 15;
+        this.vandalismCanvas.height = 305;
         this.vandalismCtx = this.vandalismCanvas.getContext('2d');
 
         //this.vandalismCtx.fillStyle = 'red';
@@ -216,7 +216,7 @@ class PromoDuckSprite extends EnemySprite
     ResetExpression()
     {
         if(this.enemy.drawAttempt == 2)
-            this.expression = 3;
+            this.expression = '3';
         else
             super.ResetExpression();
     }
@@ -354,8 +354,8 @@ class PromoDuckSprite extends EnemySprite
         else
         {
             let expression = this.expression;
-            if(harmed && this.expression == 0)
-                expression = 5;
+            if(harmed && this.expression == '0')
+                expression = '5';
 
             let headFrame = res.sheets.duck.GetTagFrame(`expression_${expression}`) || 0;
 
@@ -372,29 +372,42 @@ class PromoDuckSprite extends EnemySprite
             };
             switch(this.expression)
             {
-                case 0:
-                case 4:
+                case '0':
+                case '4':
                     if(mouthOpen)
                         hairOffset.y = -3;
                     break;
 
-                case 2:
+                case '9':
+                    if(mouthOpen)
+                    {
+                        hairOffset.x = 2;
+                        hairOffset.y = -2;
+                    }
+                    break;
+
+                case 'B':
+                    if(mouthOpen)
+                        hairOffset.x = -1;
+                    break;
+
+                case '2':
                     headWobble.x = 0;
                     headWobble.y = 0;
                     break;
             }
 
             res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
-            res.sheets.duck.Draw(_ctx, 'arm_back', harmed ? 2 : this.expression == 4 ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 'B' ? 3 : harmed ? 2 : this.expression == '4' ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'feet', harmed ? 2 : 0, this.x, this.y);
 
-            if(this.expression != 2)
+            if(this.expression != '2')
                 res.sheets.duck.Draw(_ctx, 'hair', harmed ? 1 : 0, this.x + hairOffset.x + headWobble.x, this.y + hairOffset.y + headWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'body', harmed ? 2 : 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
 
-            if(this.expression != 6)
-                res.sheets.duck.Draw(_ctx, 'arm_front', harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
+            if(this.expression != '6')
+                res.sheets.duck.Draw(_ctx, 'arm_front', this.expression == 'B' ? 3 : harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'head', headFrame, this.x + headWobble.x, this.y + headWobble.y);
         }
@@ -440,7 +453,7 @@ class PromoDuck extends Enemy
         this.index = {x: 0, y: 0};
 
         this.maxHP = 500;
-        this.resetCounter = 30;
+        this.resetCounter = 45;
 
         this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
         
@@ -454,7 +467,7 @@ class PromoDuck extends Enemy
             '~ПромоУтка чистит пёрышки.%~Залысину видно за километр.',
             '~9 из 36 538 Тунеров рекомендуют!',
             '~Пахнет грифелем.',
-            '~ПромоУтка считает свою прибыль.%~Для этого не нужен калькулятор.',
+            '~ПромоУтка считает свою прибыль.%~В уме.',
             '~ПромоУтка ковыряется в зубах.~Но, скорее, просто грызёт зубочистку...',
         ];
         this.dangerFlavourText = [
@@ -493,6 +506,8 @@ class PromoDuck extends Enemy
         this.call = 0;
 
         this.drawn = 0;
+        this.wtf = 0;
+        this.dontEvenThink = 0;
     }
 
     GetAttack(_counter)
@@ -562,10 +577,7 @@ class PromoDuck extends Enemy
         {
             this.weakened = 1;
             let message = {
-                speech: ['^П-послушай...^', 'Ты, вижу, мастер карандаша и всё такое...', 'Н-но я не ^груша для битья^, а живое существо.', 'П-просто дождись, когда сбросится ставка на Промотке...&0', '...Затем поставь свой мульт за один карандаш, и мы мирно разойдёмся.', 'Ты ведь за этим пришёл?'],
-                actions: [
-                    () => new StakeAction(this),
-                ]
+                speech: ['^П-послушай...^', 'Ты, вижу, мастер карандаша и всё такое...', 'Н-но я не ^груша для битья^, а живое существо.', 'П-просто дождись, когда сбросится ставка на Промотке, поставь свой несчастный карандаш, и мы мирно разойдёмся.', 'Т-ты ведь здесь для этого?'],
             }
             
             this.bet = 3;
@@ -657,8 +669,8 @@ class PromoDuck extends Enemy
     {
         this.drawn++;
         
-        let result = {text: ['Время ставки немного понижается!']};
-        let delta = 1;
+        let result = {text: ['...ничего не произошло.~(Постарайся нарисовать как можно больше, не отпуская карандаш!)']};
+        let delta = 0;
         
         if(_len >= 50)
         {
@@ -670,9 +682,60 @@ class PromoDuck extends Enemy
             delta = 2;
             result.text = ['Время ставки понижается!!'];
         }
+        else if(_len >= 5)
+        {
+            delta = 1;
+            result.text = ['Время ставки немного понижается!'];
+        }
 
-        if(this.drawn == 1)
-            result.speech = ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
+        if(delta == 0 && this.dontEvenThink == 0 && this.wtf < 3)
+        {
+            this.dontEvenThink = 1;
+            result.speech = ['#8Даже и не думай!'];
+        }
+        if(delta > 0)
+        {
+            this.wtf++;
+
+            switch(this.wtf)
+            {
+                case 1:
+                    result.speech = ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
+                    break;
+
+                case 2:
+                    result.speech = ['Буду ли я оттирать твою мазню?', 'Хороший вопрос.'];
+                    break;
+
+                case 3:
+                    result.speech = ['И вот ответ...', '#9...%^МНОГО ЧЕСТИ!!!^*', '#2* Договор о Промотке не предусматривает страховку от возможного ущерба.'];
+                    break;
+
+                case 4:
+                    result.speech = ['#BПока место приносит мне бабки, мне абсолютно всё равно.', '#BРазвлекайся!'];
+                    break;
+
+                case 5: 
+                    result.speech = ['#1Что-что? ^Репутационные потери?^~Расскажешь всю правду ^своим друзьям^???', '#1.%.%.%', '#9^ТЕБЕ ВСЁ РАВНО НИКТО НЕ ПОВЕРИТ!!!^'];
+                    break;
+
+                case 6:
+                    result.speech = ['У меня есть огромный козырь в отсутствующем рукаве.', 'Я даю людям надежду, что благодаря Промотке их творчество хоть кто-нибудь, да увидит.'];
+                    break;
+                
+                case 7: 
+                    result.speech = ['И пока они в это верят, они будут нести мне свои Карандаши.', 'Ты в том числе.'];
+                    break;
+
+                case 8:
+                    if(this.weakened > 0)
+                        result.speech = ['Если, конечно, ты здесь не ^за моей смертью^.'];
+                    break;
+
+                default:
+                    break;
+            }
+        }
 
         this.DecreaseResetCounter(delta);
 
@@ -684,7 +747,8 @@ class PromoDuck extends Enemy
         this.resetCounter -= _delta;
         if(this.resetCounter <= 0)
         {
-            alert('ВАУ!');
+            this.resetCounter = 0;
+            console.log('ВАУ!');
         }
     }
 
@@ -759,16 +823,13 @@ class PromoDuck extends Enemy
                 this.betShown = true;
                 return {
                     text: ['~Ты предлагаешь свой карандаш ПромоУтке.'],
-                    speech: ['Один карандаш???? НЕ СМЕШИ, Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!', 'Короч, смотри...&0', '@2Триста тыщ@ карандашей против @2одного@ твоего. Сечёшь, почему это не сработает?'],
-                    actions: [
-                        () => new StakeAction(this)
-                    ]
+                    speech: ['#9Один карандаш????~НЕ СМЕШИ!!! Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!!!', 'Не, ну ты конечно можешь ДОЖДАТЬСЯ @2сброса ставки@...', '...но я СИЛЬНО сомневаюсь, что твой карандаш выдержит мои атаки!!!'],
                 };
                 
             case 2:
                 return {
                     text: ['~У тебя всё ещё один карандаш, но ты не сдаёшься.'],
-                    speech: ['ТЫ ПОНИМАЕШЬ КАК РАБОТАЕТ АУКЦИОН??? ТВОИМ КАРАНДАШОМ ТОЛЬКО КАРАКУЛИ РИСОВАТЬ!!!', 'Не, ну ты конечно можешь ДОЖДАТЬСЯ @2сброса ставки@...', '...но я СИЛЬНО сомневаюсь, что твой твёрдо-мягкий друг переживёт все мои атаки!!!']
+                    speech: ['Жди, когда закончится ставка, или уматывай за карандашами!*', '#2* Текущая ставка: 324905 Карандашей.~Минимальная ставка для перекупа: 324906 Карандашей.~У Вас Карандашей: 1. @1(недостаточно)@']
                 };
 
             default:
