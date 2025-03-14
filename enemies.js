@@ -825,12 +825,21 @@ class DrawAction extends TriggerAction
 
     Start()
     {
+        this.soundPlayed = false;
         this.parent.sprite.SetAnimation(STATE_DRAW, 0);
     }
     GameLoop(_delta)
     {
         this.animationTimer -= 1 * _delta;
-        this.parent.sprite.SetAnimation(STATE_DRAW, 1 - this.animationTimer / this.animationTime);
+
+        let t = 1 - this.animationTimer / this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_DRAW, t);
+
+        if(t >= .3 && !this.soundPlayed)
+        {
+            this.soundPlayed = true;
+            res.sfx.scribble1.play();
+        }
         
         if(this.animationTimer <= 0)
             this.Finish();

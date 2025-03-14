@@ -793,9 +793,6 @@ class GameResources
                 url: 'duck.ogg',
                 volume: 1
             },
-            jump: {
-                url: 'jump.ogg'
-            },
             hurt: {
                 url: 'hurt.wav',
                 volume: 0.6
@@ -845,6 +842,20 @@ class GameResources
             scribble2:
             {
                 url: 'scribble_2.wav',
+            },
+            tick:
+            {
+                url: 'tick.wav',
+            },
+            hop:
+            {
+                url: 'hop.wav',
+                volume: .5,
+            },
+            hop2:
+            {
+                url: 'hop2.wav',
+                volume: .6,
             }
         };
 

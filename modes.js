@@ -242,6 +242,9 @@ class DrawingMode extends TargettedBattleMode
 
         this.castTimer -= 1 * _delta;
 
+        if(this.castTimer % 16 < 1)
+            res.sfx.tick.play();
+
         if(this.castTimer <= 0)
             this.Finish();
     }
@@ -289,6 +292,20 @@ class DrawingMode extends TargettedBattleMode
             return;
         }
         
+        _ctx.save();
+
+        // уголки
+        _ctx.beginPath();
+        Utils.RoundedRect(_ctx, battle.bounds.x1 + 2, battle.bounds.y1 + 2, battle.bounds.x2 - battle.bounds.x1 - 4, battle.bounds.y2 - battle.bounds.y1 - 4, 3);
+        _ctx.clip();
+
+        _ctx.fillStyle = '#fff';
+        _ctx.globalAlpha = .8;
+        _ctx.fillRect(battle.bounds.x1, battle.bounds.y1, battle.bounds.x2 - battle.bounds.x1, 64);
+        
+        _ctx.restore();
+
+        // текст
         _ctx.font = '36px Pangolin';
         _ctx.fillStyle = '#ff0000';
         _ctx.textAlign = 'center';
@@ -296,8 +313,17 @@ class DrawingMode extends TargettedBattleMode
 
         let text = 'РИСУЙ!!!';
         if(this.drawing)
-            text = `${~~this.castTimer}`;
-        _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
+            text = `${~~(this.castTimer / 16) + 1}`;
+
+        let y = battle.bounds.y1 + 15 + 4;
+        // тряска
+        if(this.drawing && this.castTimer % 16 < 4)
+        {
+            _ctx.font = '38px Pangolin';
+            y -= 1;
+        }
+
+        _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y);
 
         DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, this.color);
     }

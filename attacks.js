@@ -424,6 +424,8 @@ class ScribbleProjectile extends Projectile
 
         this.honingTime = 30;
         this.destroyTime = 15;
+
+        this.hop = 0;
     }
 
     Start()
@@ -433,7 +435,7 @@ class ScribbleProjectile extends Projectile
         this.destroyTimer = this.destroyTime;
         this.destroyLaunch = false;
 
-        res.sfx.jump.play();
+        res.sfx.scribble2.play();
     }
 
     GameLoop(_delta)
@@ -448,6 +450,12 @@ class ScribbleProjectile extends Projectile
             this.y = pos.y;
 
             return;
+        }
+
+        if(this.lifeTimer % 25 < 1)
+        {
+            (this.hop % 2 == 0 ? res.sfx.hop2 : res.sfx.hop).play();
+            this.hop++;
         }
 
         this.y = this.targetPos.y;
