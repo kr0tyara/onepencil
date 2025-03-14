@@ -201,11 +201,16 @@ class PromoDuckSprite extends EnemySprite
         
         this.stakeShown = true;
         this.drawnLines = [];
-    }
 
-    AddDrawing(_line)
-    {
-        this.drawnLines.push(_line);
+        this.positionLocked = false;
+        
+        this.vandalismCanvas = document.createElement('canvas');
+        this.vandalismCanvas.width = 360;
+        this.vandalismCanvas.height = 305 - 15;
+        this.vandalismCtx = this.vandalismCanvas.getContext('2d');
+
+        //this.vandalismCtx.fillStyle = 'red';
+        //this.vandalismCtx.fillRect(0, 0, this.vandalismCanvas.width, this.vandalismCanvas.height);
     }
 
     ResetExpression()
@@ -216,12 +221,25 @@ class PromoDuckSprite extends EnemySprite
             super.ResetExpression();
     }
 
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        if(this.positionLocked)
+        {
+            if(battle.mode.id != DRAW && battle.boundsReady)
+                this.positionLocked = false;
+        }
+    }
+
     Draw(_ctx, _dt)
     {
-        // todo: он не должен прыгать во время вандализма
-        this.y = battle.bounds.y1 - this.h;
-        if(this.y < 0)
-            this.y = 0;
+        if(!this.positionLocked)
+        {
+            this.y = battle.bounds.y1 - this.h;
+            if(this.y < 0)
+                this.y = 0;
+        }
 
         // промотка
         if(this.stakeShown)
@@ -270,18 +288,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillText(`До сброса: ${this.enemy.resetCounter} м.`, x + 250 / 2, y + h - 10);
             
             // вандализм
-            for(let j in this.drawnLines)
-            {
-                _ctx.lineWidth = this.drawnLines[j].width;
-                _ctx.strokeStyle = this.drawnLines[j].color;
-                _ctx.beginPath();
-
-                for(let i in this.drawnLines[j].points)
-                    _ctx.lineTo(this.drawnLines[j].points[i].x, this.drawnLines[j].points[i].y);
-
-                _ctx.stroke();
-                _ctx.closePath();
-            }
+            _ctx.drawImage(this.vandalismCanvas, battle.defaultBounds.x1 - 55, 0);
 
             // в режиме атаки
             if(this.alphaTimer >= 0)

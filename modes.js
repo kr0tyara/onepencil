@@ -218,18 +218,151 @@ class IdleMode extends BattleMode
         battle.ui.PointerUp(e);
     }
 }
-class OwnAttackMode extends TargettedBattleMode
+
+class DrawingMode extends TargettedBattleMode
+{
+    constructor(_mode)
+    {
+        super(_mode);
+
+        this.drawing = false;
+        this.drawnPoints = [];
+        
+        this.castTime = 80;
+        this.castTimer = 0;
+
+        this.lineWidth = 5;
+        this.color = '#000000';
+    }
+
+    GameLoop(_delta)
+    {
+        if(!this.drawing)
+            return;
+
+        this.castTimer -= 1 * _delta;
+
+        if(this.castTimer <= 0)
+            this.Finish();
+    }
+    
+    static DrawLine(_ctx, _points, _pos, _lineWidth = 5, _color = '#000')
+    {
+        _ctx.lineCap = _ctx.lineJoin = 'round';
+        _ctx.lineWidth = _lineWidth;
+        _ctx.strokeStyle = _color;
+        _ctx.beginPath();
+
+        let points = [..._points];
+        if(_points.length > 0 && _pos != null)
+            points.push(_pos);
+        
+        for(let i = 1; i < points.length; i++)
+        {
+            let dx = points[i].x;
+            let dy = points[i].y;
+
+            let lx = points[i - 1].x;
+            let ly = points[i - 1].y;
+
+            //chrome evil thing
+            if(lx == dx && ly == dy)
+            {
+                lx += .01;
+                ly += .01;
+            }
+
+            _ctx.quadraticCurveTo(lx, ly, (dx + lx) / 2, (dy + ly) / 2);
+        }
+        if(_points.length > 0 && _pos != null)
+            _ctx.lineTo(_pos.x, _pos.y);
+
+        _ctx.stroke();
+        _ctx.closePath();
+    }
+
+    Render(_ctx, _dt)
+    {
+        if(this.enemySelection)
+        {
+            super.Render(_ctx, _dt);
+            return;
+        }
+        
+        _ctx.font = '36px Pangolin';
+        _ctx.fillStyle = '#ff0000';
+        _ctx.textAlign = 'center';
+        _ctx.textBaseline = 'top';
+
+        let text = 'РИСУЙ!!!';
+        if(this.drawing)
+            text = `${~~this.castTimer}`;
+        _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
+
+        DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, this.color);
+    }
+
+    PointerDown(e)
+    {
+        if(this.enemySelection)
+        {
+            super.PointerDown(e);
+            return;
+        }
+
+        this.castTimer = this.castTime;
+
+        this.drawing = true;
+        this.drawnPoints = [];
+
+        // фикс рисования с мобилы
+        battle.TeleportSoulToCursor(e);
+
+        this.AddPoint();
+    }
+    PointerUp(e)
+    {
+        if(this.enemySelection)
+        {
+            super.PointerUp(e);
+            return;
+        }
+
+        this.AddPoint();
+        if(this.drawing)
+            this.Finish();
+
+        this.drawing = false;
+        this.drawnPoints = [];
+    }
+    PointerMove(e)
+    {
+        this.AddPoint();
+    }
+    AddPoint()
+    {
+        if(this.pending || !this.drawing)
+            return;
+
+        let pos = {x: ~~battle.soul.x, y: ~~battle.soul.y};
+        if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
+            this.drawnPoints.push(pos);
+    }
+
+    Finish()
+    {
+        this.drawing = false;
+        this.drawnPoints = [];
+    }
+}
+
+class OwnAttackMode extends DrawingMode
 {
     constructor()
     {
         super(OWN_ATTACK);
 
         this.dollar = new DollarRecognizer();
-        this.drawing = false;
-        this.drawnPoints = [];
-        
-        this.castTime = 80;
-        this.castTimer = 0;
 
         this.pendingTime = 130;
         this.transformTime = 50;
@@ -264,34 +397,13 @@ class OwnAttackMode extends TargettedBattleMode
     SelectTarget(_target)
     {
         super.SelectTarget(_target);
-        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
+        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550, a: 1});
     }
 
     Render(_ctx, _dt)
     {
-        // выбор цели
-        if(this.enemySelection)
+        if(!this.enemySelection && !this.pending)
         {
-            super.Render(_ctx, _dt);
-            return;
-        }
-
-        // рисуем
-        if(!this.pending)
-        {
-            _ctx.font = '36px Pangolin';
-            _ctx.fillStyle = '#ff0000';
-            _ctx.textAlign = 'center';
-            _ctx.textBaseline = 'top';
-
-            let text = 'РИСУЙ!!!';
-            if(this.drawing)
-                text = `${~~this.castTimer}`;
-            _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
-            
-            _ctx.lineCap = _ctx.lineJoin = 'round';
-            _ctx.lineWidth = 5;
-
             let template = this.attackType;
             if(template != null)
             {
@@ -302,112 +414,107 @@ class OwnAttackMode extends TargettedBattleMode
                 _ctx.globalAlpha = 1;
             }
 
-            _ctx.strokeStyle = '#000';
-            _ctx.beginPath();
-
-            for(let i in this.drawnPoints)
-            {
-                _ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
-            }
-            if(this.drawnPoints.length > 0)
-                _ctx.lineTo(battle.soul.x, battle.soul.y);
-
-            _ctx.stroke();
-            _ctx.closePath();
         }
-        // анимация нашей атаки
-        else
+
+        // выбор цели и рисовака
+        if(!this.pending)
         {
-            if(this.attackDamage <= 5)
+            super.Render(_ctx, _dt);
+            return;
+        }
+
+        // анимация нашей атаки
+        if(this.attackDamage <= 5)
+        {
+            // превращается в каракулю
+            if(this.pendingTimer <= this.transformTime)
             {
-                // превращается в каракулю
-                if(this.pendingTimer <= this.transformTime)
-                {
-                    let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
+                let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
 
-                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
-                }
-                else
-                {
-                    let t = Utils.Clamp((this.pendingTimer - this.transformTime) / (this.flyTime + this.damageTime), 0, 1);
-
-                    let pos = Utils.CurvePos({x: 0, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2}, {x: 0, y: _ctx.canvas.height + 150}, 300, t);
-
-                    _ctx.save();
-                    _ctx.translate(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
-                    _ctx.rotate(Math.PI * t);
-                    
-                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, -1, -1, true);
-
-                    _ctx.restore();
-                }
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
             }
             else
             {
-                // пуля транформируется
-                if(this.pendingTimer <= this.transformTime)
-                {
-                    let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
+                let t = Utils.Clamp((this.pendingTimer - this.transformTime) / (this.flyTime + this.damageTime), 0, 1);
 
-                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.attack[Math.round((this.attackAnimations.attack.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
-                }
-                // пуля летит
-                else if(this.pendingTimer - this.transformTime <= this.flyTime)
-                {
-                    let t = Utils.Clamp((this.pendingTimer - this.transformTime) / this.flyTime, 0, 1);
+                let pos = Utils.CurvePos({x: 0, y: battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2}, {x: 0, y: _ctx.canvas.height + 150}, 300, t);
 
-                    let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y - 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
-                    
-                    this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true);
-                    
-                    //_ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
-                }
-                // пуля прилетела
-                else
-                {
-                    // шкала здоровья
-                    let x = battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - 200 / 2;
-                    let y = battle.bounds.y1 - 50;
-            
-                    _ctx.save();
-                    _ctx.beginPath();
-                    Utils.RoundedRect(_ctx, x, y, 200, 32, 6);
-                    _ctx.clip();
-                    
-                    _ctx.fillStyle = '#aaa';
-                    _ctx.fillRect(x, y, 200, 32);
-                    _ctx.fillStyle = '#000';
+                _ctx.save();
+                _ctx.translate(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+                _ctx.rotate(Math.PI * t);
+                
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, -1, -1, true);
 
-                    let t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.damageTime, 0, 1);
-                    let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.data.hp) * t;
+                _ctx.restore();
+            }
+        }
+        else
+        {
+            // пуля транформируется
+            if(this.pendingTimer <= this.transformTime)
+            {
+                let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
 
-                    _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.data.maxHP, 32);
-            
-                    _ctx.restore();
-                    _ctx.stroke();
-                    _ctx.closePath();
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.attack[Math.round((this.attackAnimations.attack.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
+            }
+            // пуля летит
+            else if(this.pendingTimer - this.transformTime <= this.flyTime)
+            {
+                let t = Utils.Clamp((this.pendingTimer - this.transformTime) / this.flyTime, 0, 1);
 
-                    // дельта
-                    let strength = this.attackDamage / this.currentAttack.damage;
-                    _ctx.fillStyle = strength > .9 ? '#FF0000' : strength > .5 ? '#FF9F00' : '#808080';
-                    _ctx.textAlign = 'center';
-                    _ctx.textBaseline = 'bottom';
-                    _ctx.strokeStyle = '#000';
-                    _ctx.lineWidth = 5;
-                    _ctx.font = '50px Pangolin';
+                let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y - 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
+                
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true);
+                
+                //_ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
+            }
+            // пуля прилетела
+            else
+            {
+                // шкала здоровья
+                let x = battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - 200 / 2;
+                let y = battle.bounds.y1 - 50;
+        
+                _ctx.save();
+                _ctx.beginPath();
+                Utils.RoundedRect(_ctx, x, y, 200, 32, 6);
+                _ctx.clip();
+                
+                _ctx.fillStyle = '#aaa';
+                _ctx.fillRect(x, y, 200, 32);
+                _ctx.fillStyle = '#000';
 
-                    let pos = Utils.CurvePos({x: 0, y: y + 10}, {x: 0, y: y}, 25, t);
-                    _ctx.strokeText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
-                    _ctx.fillText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+                let t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.damageTime, 0, 1);
+                let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.data.hp) * t;
 
-                    t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.shakeTime, 0, 1);
-                    this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, 1 - t);
-                }
+                _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.data.maxHP, 32);
+        
+                _ctx.restore();
+                _ctx.stroke();
+                _ctx.closePath();
+
+                // дельта
+                let strength = this.attackDamage / this.currentAttack.damage;
+                _ctx.fillStyle = strength > .9 ? '#FF0000' : strength > .5 ? '#FF9F00' : '#808080';
+                _ctx.textAlign = 'center';
+                _ctx.textBaseline = 'bottom';
+                _ctx.strokeStyle = '#000';
+                _ctx.lineWidth = 5;
+                _ctx.font = '50px Pangolin';
+
+                let pos = Utils.CurvePos({x: 0, y: y + 10}, {x: 0, y: y}, 25, t);
+                _ctx.strokeText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+                _ctx.fillText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
+
+                t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.shakeTime, 0, 1);
+                this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, 1 - t);
             }
         }
     }
     GameLoop(_delta)
     {
+        super.GameLoop(_delta);
+
         if(this.pending)
         {
             if(this.pendingTimer <= this.pendingTime)
@@ -421,14 +528,6 @@ class OwnAttackMode extends TargettedBattleMode
 
                 this.currentAttack = null;
             }
-        }
-
-        if(this.drawing)
-        {
-            this.castTimer -= 1 * _delta;
-
-            if(this.castTimer <= 0)
-                this.FinishOwnAttack();
         }
 
         // пуля прилетела
@@ -449,52 +548,13 @@ class OwnAttackMode extends TargettedBattleMode
 
     PointerDown(e)
     {
-        if(this.enemySelection)
-        {
-            super.PointerDown(e);
-            return;
-        }
-
         if(!this.pending)
-        {
-            this.castTimer = this.castTime;
-
-            this.drawing = true;
-            this.drawnPoints = [];
-
-            // фикс рисования с мобилы
-            battle.TeleportSoulToCursor(e);
-
-            this.AddPoint();
-        }
+            super.PointerDown(e);
     }
     PointerUp(e)
     {
-        if(this.enemySelection)
-        {
+        if(!this.pending)
             super.PointerUp(e);
-            return;
-        }
-
-        this.AddPoint();
-        if(!this.pending && this.drawing)
-            this.FinishOwnAttack();
-
-        this.drawing = false;
-        this.drawnPoints = [];
-    }
-    PointerMove(e)
-    {
-        this.AddPoint();
-    }
-    AddPoint()
-    {
-        if(this.pending || !this.drawing)
-            return;
-
-        let pos = {x: ~~battle.soul.x, y: ~~battle.soul.y};
-        if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
-            this.drawnPoints.push(pos);
     }
 
     HurtAnimationEnd()
@@ -513,7 +573,7 @@ class OwnAttackMode extends TargettedBattleMode
         }
     }
 
-    FinishOwnAttack()
+    Finish()
     {
         this.hpBeforeAttack = this.targetEnemy.data.hp;
 
@@ -550,8 +610,7 @@ class OwnAttackMode extends TargettedBattleMode
         this.pendingTimer = 0;
         this.hurtAnimationFinished = false;
 
-        this.drawing = false;
-        this.drawnPoints = [];
+        super.Finish();
     }
 }
 class PreAttackMode extends BattleMode
@@ -886,18 +945,11 @@ class ActMode extends TargettedBattleMode
     }
 }
 
-class DrawMode extends BattleMode
+class DrawMode extends DrawingMode
 {
     constructor()
     {
         super(DRAW);
-        this.locked = true;
-        
-        this.castTime = 60;
-        this.castTimer = 0;
-        
-        this.drawing = false;
-        this.drawnPoints = [];
 
         this.lineWidth = 5;
         this.color = '#ff0000';
@@ -905,105 +957,39 @@ class DrawMode extends BattleMode
 
     Start()
     {
-        this.drawing = false;
-        this.drawnPoints = [];
+        this.SelectTarget(battle.lastActionResult.target);
+        this.targetEnemy.sprite.positionLocked = true;
 
         this.lineWidth = Utils.RandomRound(2, 20);
-        
         let hue = Utils.RandomRound(0, 36) * 10;
         this.color = `hsl(${hue}, 100%, 50%)`;
 
-        battle.SetBounds({x1: battle.defaultBounds.x1 - 25, y1: 15, x2: battle.defaultBounds.x1 + 295, y2: 305});
-    }
-
-    Render(_ctx, _dt)
-    {
-        _ctx.font = '36px Pangolin';
-        _ctx.textAlign = 'center';
-        _ctx.textBaseline = 'top';
-
-        let text = 'РИСУЙ!!!';
-        if(this.drawing)
-            text = `${~~this.castTimer}`;
-
-        _ctx.fillStyle = '#ff0000';
-        _ctx.strokeStyle = '#000';
-        _ctx.lineWidth = 8;
-        _ctx.strokeText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
-        _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
-        
-        _ctx.lineCap = _ctx.lineJoin = 'round';
-        _ctx.lineWidth = this.lineWidth;
-        _ctx.strokeStyle = this.color;
-        _ctx.beginPath();
-
-        for(let i in this.drawnPoints)
-        {
-            _ctx.lineTo(this.drawnPoints[i].x, this.drawnPoints[i].y);
-        }
-        if(this.drawnPoints.length > 0)
-            _ctx.lineTo(battle.soul.x, battle.soul.y);
-
-        _ctx.stroke();
-        _ctx.closePath();
+        battle.SetBounds({x1: battle.defaultBounds.x1 - 25, y1: 15, x2: battle.defaultBounds.x1 + 295, y2: 305, a: 0}, true);
     }
 
     PointerDown(e)
     {
-        battle.lastActionResult.target.sprite.SetExpression(8);
-        this.castTimer = this.castTime;
-
-        this.drawing = true;
-        this.drawnPoints = [];
-
-        // фикс рисования с мобилы
-        battle.TeleportSoulToCursor(e);
-
-        this.AddPoint();
-    }
-    PointerUp(e)
-    {
-        this.AddPoint();
-        if(this.drawing)
-            this.Finish();
-    }
-    PointerMove(e)
-    {
-        this.AddPoint();
-    }
-    AddPoint()
-    {
-        if(!this.drawing)
-            return;
-
-        let pos = {x: ~~battle.soul.x, y: ~~battle.soul.y};
-        if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
-            this.drawnPoints.push(pos);
-    }
-
-    GameLoop(_delta)
-    {
-        if(this.drawing)
-        {
-            this.castTimer -= 1 * _delta;
-
-            if(this.castTimer <= 0)
-                this.Finish();
-        }
+        this.targetEnemy.sprite.SetExpression(8);
+        super.PointerDown(e);
     }
 
     Finish()
     {
-        delete battle.lastActionResult.mode;
+        let res = battle.lastActionResult;
+        delete res.mode;
 
         // это очень говёно. хорошо что никто не смотрит!
-        battle.lastActionResult.target.sprite.AddDrawing({width: this.lineWidth, color: this.color, points: [...this.drawnPoints]});
-        battle.lastActionResult = {...battle.lastActionResult.target.Drawn(this.drawnPoints.length), target: battle.lastActionResult.target};
-
+        let draw = [];
+        for(let i in this.drawnPoints)
+        {
+            draw.push({x: this.drawnPoints[i].x - (battle.defaultBounds.x1 - 55), y: this.drawnPoints[i].y});
+        }
+        DrawingMode.DrawLine(this.targetEnemy.sprite.vandalismCtx, draw, null, this.lineWidth, this.color);
+        
+        battle.lastActionResult = {...this.targetEnemy.Drawn(this.drawnPoints.length), target: this.targetEnemy};
         battle.SetMode(PRE_ATTACK);
 
-        this.drawing = false;
-        this.drawnPoints = [];
+        super.Finish();
     }
 }
 

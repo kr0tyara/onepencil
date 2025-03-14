@@ -17,6 +17,8 @@ class Attack
         this.x = this.caster.x + this.caster.pivot.x;
         this.y = this.caster.y + this.caster.pivot.y;
         this.spawnedProjectiles = [];
+
+        this.startBounds = {x1: 515, y1: 300, x2: 765, y2: 550, a: 1};
     }
 
     Start()
@@ -28,6 +30,8 @@ class Attack
         this.attackTimer = this.attackTime;
         this.startTimer = this.startTime;
         this.endTimer = this.endTime;
+
+        battle.SetBounds(this.startBounds);
     }
 
     End()
@@ -199,7 +203,6 @@ class CardAttack extends Attack
     Start()
     {
         super.Start();
-        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
 
         let appearTime = 50;
         let count = 16;
@@ -325,12 +328,6 @@ class ThrowAttack extends Attack
         if(this.difficulty == 2)
             this.projectileTime = 25;
     }
-
-    Start()
-    {
-        super.Start();
-        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
-    }
     
     SpawnProjectile(_index)
     {
@@ -412,10 +409,7 @@ class ScribbleAttack extends Attack
     {
         super.Start();
 
-        let bounds = {x1: 515, y1: 300, x2: 765, y2: 550};
-        battle.SetBounds(bounds);
-
-        this.scribble = new ScribbleProjectile(this, 0, this.caster.x + 142 + 20, this.caster.y + 140 + 40, bounds.x2 + 25, bounds.y2 - 90);
+        this.scribble = new ScribbleProjectile(this, 0, this.caster.x + 142 + 20, this.caster.y + 140 + 40, this.startBounds.x2 + 25, this.startBounds.y2 - 90);
         battle.AddProjectile(this, this.scribble);
     }
 }
@@ -492,14 +486,6 @@ class MouthAttack extends Attack
         if(this.difficulty == 2)
             this.projectileTime = 20;
     }
-
-    Start()
-    {
-        super.Start();
-
-        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550});
-    }
-
     SpawnProjectile(_index)
     {
         let projectile = new MouthProjectile(this, _index, battle.soul.x - 32, battle.soul.y - 32);
@@ -574,11 +560,8 @@ class BallAttack extends Attack
     {
         super.Start();
 
-        let bounds = {x1: 515, y1: 300, x2: 765, y2: 550};
-        battle.SetBounds(bounds);
-
-        this.x = bounds.x1 + (bounds.x2 - bounds.x1) / 2;
-        this.y = bounds.y1 + (bounds.y2 - bounds.y1) / 2;
+        this.x = this.startBounds.x1 + (this.startBounds.x2 - this.startBounds.x1) / 2;
+        this.y = this.startBounds.y1 + (this.startBounds.y2 - this.startBounds.y1) / 2;
     }
 
     OnGameLoop(_delta)

@@ -280,7 +280,7 @@
     "duration": 100
    },
    "head_13": {
-    "frame": { "x": 792, "y": 515, "w": 113, "h": 149 },
+    "frame": { "x": 792, "y": 516, "w": 113, "h": 149 },
     "rotated": false,
     "trimmed": true,
     "spriteSourceSize": { "x": 70, "y": 32, "w": 113, "h": 149 },
@@ -352,10 +352,10 @@
     "duration": 100
    },
    "head_22": {
-    "frame": { "x": 792, "y": 338, "w": 126, "h": 175 },
+    "frame": { "x": 792, "y": 338, "w": 126, "h": 176 },
     "rotated": false,
     "trimmed": true,
-    "spriteSourceSize": { "x": 63, "y": 14, "w": 126, "h": 175 },
+    "spriteSourceSize": { "x": 63, "y": 13, "w": 126, "h": 176 },
     "sourceSize": { "w": 300, "h": 300 },
     "duration": 100
    }

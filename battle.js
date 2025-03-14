@@ -1070,10 +1070,11 @@ class Battle
         window.addEventListener('pointermove', this.pointerMoveBind);
         window.addEventListener('pointerup', this.pointerUpBind);
 
-        this.defaultBounds = {x1: 200, y1: 350, x2: 1080, y2: 550};
+        this.defaultBounds = {x1: 200, y1: 350, x2: 1080, y2: 550, a: 1};
         this.bounds = {...this.defaultBounds};
         this.targetBounds = {...this.bounds};
         this.boundsReady = true;
+        this.slowBounds = false;
         
         this.ui = new BattleUI();
 
@@ -1161,20 +1162,23 @@ class Battle
         }
     }
 
-    SetBounds(_bounds)
+    SetBounds(_bounds, _slow = false)
     {
+        this.slowBounds = _slow;
+
         this.targetBounds = {..._bounds};
         this.boundsReady = false;
 
         if(Utils.BoundsEqual(this.bounds, this.targetBounds))
         {
+            this.slowBounds = false;
             this.bounds = {...this.targetBounds};
             this.boundsReady = true;
         }
     }
-    ResetBounds()
+    ResetBounds(_slow = false)
     {
-        this.SetBounds({...this.defaultBounds});
+        this.SetBounds({...this.defaultBounds}, _slow);
     }
 
     Render(_dt)
@@ -1218,9 +1222,15 @@ class Battle
         
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#000';
+        this.ctx.fillStyle = '#fff';
 
         this.ctx.beginPath();
         Utils.RoundedRect(this.ctx, this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1, 6);
+        
+        this.ctx.globalAlpha = this.bounds.a;
+        this.ctx.fill();
+        this.ctx.globalAlpha = 1;
+
         this.ctx.stroke();
         this.ctx.closePath();
         
@@ -1288,13 +1298,16 @@ class Battle
 
         if(!this.boundsReady)
         {
-            this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, 0.3);
-            this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, 0.3);
-            this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, 0.3);
-            this.bounds.y2 = Utils.Lerp(this.bounds.y2, this.targetBounds.y2, 0.3);
+            let speed = this.slowBounds ? 0.15 : 0.2;
+            this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, speed);
+            this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, speed);
+            this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, speed);
+            this.bounds.y2 = Utils.Lerp(this.bounds.y2, this.targetBounds.y2, speed);
+            this.bounds.a = Utils.Lerp(this.bounds.a, this.targetBounds.a, speed);
 
             if(Utils.BoundsEqual(this.bounds, this.targetBounds))
             {
+                this.slowBounds = false;
                 this.bounds = {...this.targetBounds};
                 this.boundsReady = true;
             }
