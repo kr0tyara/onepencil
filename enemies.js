@@ -729,7 +729,7 @@ class PromoDuck extends Enemy
 
                 case 8:
                     if(this.weakened > 0)
-                        result.speech = ['Если, конечно, ты здесь не ^за моей смертью^.'];
+                        result.speech = ['Если, конечно, ты здесь не за ^моей смертью^.'];
                     break;
 
                 default:

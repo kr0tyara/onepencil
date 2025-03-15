@@ -483,10 +483,10 @@ class BattleUI
         if(!this.buttonsPrepared)
         {
             this.buttons = [
-                {name: 'Назад', mode: IDLE, index: {x: 1, y: 2}, action: battle.Back.bind(battle), back: true},
-                {name: 'Атака', mode: OWN_ATTACK, index: {x: 0, y: 0}, action: battle.OwnAttack.bind(battle)},
-                {name: 'Действие', mode: ACT, index: {x: 1, y: 0}, action: battle.Act.bind(battle)},
-                {name: 'Вещи', mode: ITEMS, index: {x: 0, y: 1}, action: battle.Items.bind(battle)},
+                {name: 'Назад', modes: [IDLE], index: {x: 1, y: 2}, action: battle.Back.bind(battle), back: true},
+                {name: 'Атака', modes: [OWN_ATTACK], index: {x: 0, y: 0}, action: battle.OwnAttack.bind(battle)},
+                {name: 'Действие', modes: [ACT, DRAW], index: {x: 1, y: 0}, action: battle.Act.bind(battle)},
+                {name: 'Вещи', modes: [ITEMS], index: {x: 0, y: 1}, action: battle.Items.bind(battle)},
             ];
 
             let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1 - (this.buttons.length - 2) * 20) / (this.buttons.length - 1);
@@ -510,7 +510,7 @@ class BattleUI
 
     TargetButton()
     {
-        if(battle.mode.id != IDLE && battle.mode.locked)
+        if(battle.mode.id != IDLE && (battle.mode.locked || battle.mode.drawingLocked))
             return null;
 
         if(battle.mousePos.y < battle.defaultBounds.y2 + 70 || battle.mousePos.y > battle.defaultBounds.y2 + 70 + 70)
@@ -554,12 +554,12 @@ class BattleUI
         for(let i in this.buttons)
         {
             let button = this.buttons[i];
-            if(button.back && (battle.mode.locked || battle.mode.id == IDLE))
+            if(button.back && (battle.mode.locked || battle.mode.drawingLocked || battle.mode.id == IDLE))
                 continue;
 
-            if(target == button || battle.mode.id == button.mode)
+            if(target == button || button.modes.indexOf(battle.mode.id) != -1)
                 _ctx.fillStyle = _ctx.strokeStyle = '#0d85f3';
-            else if(battle.mode.id == IDLE || !battle.mode.locked)
+            else if(battle.mode.id == IDLE || !battle.mode.locked && !battle.mode.drawingLocked)
                 _ctx.fillStyle = _ctx.strokeStyle = '#000';
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
@@ -1309,7 +1309,7 @@ class Battle
 
         if(!this.boundsReady)
         {
-            let speed = this.slowBounds ? 0.15 : 0.2;
+            let speed = this.slowBounds ? 0.15 : 0.3;
             this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, speed);
             this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, speed);
             this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, speed);
@@ -1579,7 +1579,7 @@ class Battle
         let pos = Utils.MousePos(e, this.canvas);
         this.mousePos = pos;
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked) || this.mode.id == DRAW)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK || this.mode.id == DRAW) && this.mode.drawingLocked)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -1606,11 +1606,20 @@ class Battle
         this.soul.y = this.soul.targetPos.y;
     }
 
+    IsCursorInsideBounds()
+    {
+        if(battle.mousePos.x < battle.targetBounds.x1 || battle.mousePos.x > battle.targetBounds.x2 ||
+            battle.mousePos.y < battle.targetBounds.y1 || battle.mousePos.y > battle.targetBounds.y2)
+            return false;
+
+        return true;
+    }
+
     MoveSoul()
     {
         let pos = {...this.mousePos};
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK && this.mode.locked) || this.mode.id == DRAW)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK || this.mode.id == DRAW) && this.mode.drawingLocked)
         {
             if(pos.x < this.targetBounds.x1)
                 pos.x = this.targetBounds.x1;
@@ -1650,9 +1659,9 @@ class Battle
 
     DealDamage(_target, _damage)
     {
-        _target.data.hp -= _damage;
-        if(_target.data.hp < 0)
-            _target.data.hp = 0;
+        _target.hp -= _damage;
+        if(_target.hp < 0)
+            _target.hp = 0;
     }
 }
 

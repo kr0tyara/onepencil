@@ -78,7 +78,6 @@ class TargettedBattleMode extends BattleMode
     }
     SelectTarget(_target)
     {
-        this.locked = true;
         this.targetEnemy = _target;
         this.enemySelection = false;
     }
@@ -112,7 +111,7 @@ class TargettedBattleMode extends BattleMode
         if(target == this.targetClickTarget && target != null)
         {
             Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
-            this.SelectTarget(target);
+            this.SelectTarget(target.data);
         }
         else
             battle.ui.PointerUp(e);
@@ -224,15 +223,20 @@ class DrawingMode extends TargettedBattleMode
     constructor(_mode)
     {
         super(_mode);
-
-        this.drawing = false;
-        this.drawnPoints = [];
         
         this.castTime = 80;
-        this.castTimer = 0;
 
         this.lineWidth = 5;
         this.color = '#000000';
+    }
+
+    Start()
+    {
+        this.castTimer = 0;
+        this.drawingLocked = false;
+
+        this.drawing = false;
+        this.drawnPoints = [];
     }
 
     GameLoop(_delta)
@@ -338,6 +342,14 @@ class DrawingMode extends TargettedBattleMode
             return;
         }
 
+        if(!battle.IsCursorInsideBounds())
+        {
+            if(!this.locked)
+                battle.ui.PointerDown(e);
+            return;
+        }
+
+        this.drawingLocked = true;
         this.castTimer = this.castTime;
 
         this.drawing = true;
@@ -359,6 +371,11 @@ class DrawingMode extends TargettedBattleMode
         this.AddPoint();
         if(this.drawing)
             this.Finish();
+        else
+        {
+            if(!this.locked)
+                battle.ui.PointerUp(e);
+        }
 
         this.drawing = false;
         this.drawnPoints = [];
@@ -413,6 +430,9 @@ class OwnAttackMode extends DrawingMode
         super.Start();
         this.locked = false;
 
+        // супер фаст
+        this.SelectTarget(battle.enemies[0]);
+
         this.attackType = Object.values(battle.ownAttacks)[battle.ownAttackIndex];
         this.attackAnimations = 
         {
@@ -427,7 +447,7 @@ class OwnAttackMode extends DrawingMode
         super.SelectTarget(_target);
         battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550, a: 1});
     }
-
+    
     Render(_ctx, _dt)
     {
         if(!this.enemySelection && !this.pending)
@@ -490,7 +510,7 @@ class OwnAttackMode extends DrawingMode
             {
                 let t = Utils.Clamp((this.pendingTimer - this.transformTime) / this.flyTime, 0, 1);
 
-                let y = (this.targetEnemy.data.sprite.y + this.targetEnemy.data.sprite.pivot.y - 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
+                let y = (this.targetEnemy.sprite.y + this.targetEnemy.sprite.pivot.y - 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
                 
                 this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true);
                 
@@ -513,9 +533,9 @@ class OwnAttackMode extends DrawingMode
                 _ctx.fillStyle = '#000';
 
                 let t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.damageTime, 0, 1);
-                let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.data.hp) * t;
+                let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.hp) * t;
 
-                _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.data.maxHP, 32);
+                _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.maxHP, 32);
         
                 _ctx.restore();
                 _ctx.stroke();
@@ -535,7 +555,7 @@ class OwnAttackMode extends DrawingMode
                 _ctx.fillText(`${this.attackDamage}`, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
 
                 t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.shakeTime, 0, 1);
-                this.targetEnemy.data.sprite.SetAnimation(STATE_HURT, 1 - t);
+                this.targetEnemy.sprite.SetAnimation(STATE_HURT, 1 - t);
             }
         }
     }
@@ -550,7 +570,7 @@ class OwnAttackMode extends DrawingMode
             else
             {
                 this.pending = false;
-                this.targetEnemy.data.sprite.SetAnimation(STATE_NORMAL, 0);
+                this.targetEnemy.sprite.SetAnimation(STATE_NORMAL, 0);
 
                 battle.OnOwnAttackEnd();
 
@@ -594,16 +614,16 @@ class OwnAttackMode extends DrawingMode
         if(this.attackDamage > 5)
             res.sfx.hurt.play();
 
-        let result = this.targetEnemy.data.Hurt(this.attackDamage);
+        let result = this.targetEnemy.Hurt(this.attackDamage);
         battle.lastActionResult = {
             ...result,
-            target: this.targetEnemy.data,
+            target: this.targetEnemy,
         }
     }
 
     Finish()
     {
-        this.hpBeforeAttack = this.targetEnemy.data.hp;
+        this.hpBeforeAttack = this.targetEnemy.hp;
 
         let recognize = this.dollar.Recognize(this.drawnPoints, false);
         let attack = battle.ownAttacks[recognize.Name];
@@ -791,19 +811,21 @@ class ActMode extends TargettedBattleMode
     {
         super.Start();
 
+        // супер фаст
+        this.SelectTarget(battle.enemies[0]);
+
         this.typeWriter.Start();
         this.selectedAction = null;
     }
     SelectTarget(_target)
     {
         super.SelectTarget(_target);
-        this.locked = false;
         
         this.actions = [];
         
-        for(let i in this.targetEnemy.data.actions)
+        for(let i in this.targetEnemy.actions)
         {
-            let actionData = this.targetEnemy.data.actions[i];
+            let actionData = this.targetEnemy.actions[i];
             let action = {...actionData};
             this.actions.push(action);
         }
@@ -825,7 +847,7 @@ class ActMode extends TargettedBattleMode
             action.h = h;
         }
     }
-    Back()
+    /*Back()
     {
         if(this.enemySelection)
             super.Back();
@@ -834,7 +856,7 @@ class ActMode extends TargettedBattleMode
             this.enemySelection = true;
             this.targetEnemy = null;
         }
-    }
+    }*/
 
     TargetAction()
     {
@@ -915,7 +937,7 @@ class ActMode extends TargettedBattleMode
             this.typeWriter.SetText(result.text);
             battle.lastActionResult = {
                 ...result,
-                target: this.targetEnemy.data,
+                target: this.targetEnemy,
             }
             delete battle.lastActionResult.text;
 
@@ -985,6 +1007,9 @@ class DrawMode extends DrawingMode
 
     Start()
     {
+        super.Start();
+        this.locked = true;
+
         this.SelectTarget(battle.lastActionResult.target);
         this.targetEnemy.sprite.positionLocked = true;
 
@@ -997,6 +1022,9 @@ class DrawMode extends DrawingMode
 
     PointerDown(e)
     {
+        if(!battle.IsCursorInsideBounds())
+            return;
+        
         if(this.targetEnemy.wtf > 3)
             this.targetEnemy.sprite.SetExpression('B');
         else
