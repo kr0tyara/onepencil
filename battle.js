@@ -793,12 +793,19 @@ class EnemiesContainer
         if(this.alphaTimer >= 0)
         {
             if(this.alphaBack)
-                _ctx.globalAlpha = .5 + (this.alphaTime - this.alphaTimer) / this.alphaTime / 2;
+                this.enemiesCtx.globalAlpha = .5 - (this.alphaTime - this.alphaTimer) / this.alphaTime / 2;
             else
-                _ctx.globalAlpha = 1 - .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
+                this.enemiesCtx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
         }
+        
+        this.enemiesCtx.globalCompositeOperation = 'source-atop';
+        this.enemiesCtx.fillStyle = '#fff';
+        this.enemiesCtx.fillRect(0, 0, this.enemiesCanvas.width, this.enemiesCanvas.height);
+        this.enemiesCtx.globalCompositeOperation = 'source-over';
+
+        this.enemiesCtx.globalAlpha = 1;
+
         _ctx.drawImage(this.enemiesCanvas, 0, 0);
-        _ctx.globalAlpha = 1;
     }
 }
 
