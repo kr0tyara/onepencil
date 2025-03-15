@@ -574,7 +574,9 @@ class PromoDuck extends Enemy
             if(this.actualHurt >= 2 && this.mockery >= 3)
             {
                 if(this.mockAnnoyed)
-                    return {};
+                    return {
+                        speech: this.StoryFlow()
+                    };
 
                 this.mockAnnoyed = true;
                 return {
@@ -604,14 +606,16 @@ class PromoDuck extends Enemy
                         speech: ['Просто СРИСУЙ заклинание своим карандашом!!', 'И не отпускай его, пока не закончишь.']  
                     };
 
-                default:
+                case 5:
                     return {
                         speech: ['#7...']  
                     };
             }
         }
 
-        return {};
+        return {
+            speech: this.StoryFlow()
+        };
     }
     
     Drawn(_len)
@@ -646,8 +650,8 @@ class PromoDuck extends Enemy
         {
             this.wtf++;
             
-            let res = this.StoryFlow();
-            result = {...res, ...result};
+            let speech = this.StoryFlow();
+            result.speech = speech;
         }
 
         this.DecreaseResetCounter(delta);
@@ -657,50 +661,40 @@ class PromoDuck extends Enemy
 
     StoryFlow()
     {
-        this.story++;
-
-        let result = {};
+        let result = null;
         if(this.wtf < 1)
             return result;
 
+        this.story++;
         switch(this.story)
         {
             case 1:
-                result.speech = ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
-                result.text = ['опаа могостайл'];
-                break;
+                return ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
 
             case 2:
-                result.speech = ['Буду ли я оттирать твою мазню?', 'Хороший вопрос.'];
-                break;
+                return ['Буду ли я оттирать твою мазню?', 'Хороший вопрос.'];
 
             case 3:
-                result.speech = ['И вот ответ...', '#9...%^МНОГО ЧЕСТИ!!!^*', '#2* Договор о Промотке не предусматривает страховку от возможного ущерба.'];
-                break;
+                return ['И вот ответ...', '#9...%^МНОГО ЧЕСТИ!!!^*', '#2* Договор о Промотке не предусматривает страховку от возможного ущерба.'];
 
             case 4:
-                result.speech = ['#BПока место приносит мне бабки, мне абсолютно всё равно.', '#BРазвлекайся!'];
-                break;
+                return ['#BПока место приносит мне бабки, мне абсолютно всё равно.', '#BРазвлекайся!'];
 
             case 5: 
-                result.speech = ['#1Что-что? ^Репутационные потери?^~Расскажешь всю правду ^своим друзьям^???', '#1.%.%.%', '#9^ТЕБЕ ВСЁ РАВНО НИКТО НЕ ПОВЕРИТ!!!^'];
-                break;
+                return ['#1Что-что? ^Репутационные потери?^~Расскажешь всю правду ^своим друзьям^???', '#1.%.%.%', '#9^ТЕБЕ ВСЁ РАВНО НИКТО НЕ ПОВЕРИТ!!!^'];
 
             case 6:
-                result.speech = ['У меня есть огромный козырь в отсутствующем рукаве.', 'Я даю людям надежду, что благодаря Промотке их творчество хоть кто-нибудь, да увидит.'];
-                break;
+                return ['У меня есть огромный козырь в отсутствующем рукаве.', 'Я даю людям надежду, что благодаря Промотке их творчество хоть кто-нибудь, да увидит.'];
             
             case 7: 
-                result.speech = ['И пока они в это верят, они будут нести мне свои Карандаши.', 'Ты в том числе.'];
-                break;
+                return ['И пока они в это верят, они будут нести мне свои Карандаши.', 'Ты в том числе.'];
 
             case 8:
                 if(this.weakened > 0)
-                    result.speech = ['Если, конечно, ты здесь не за ^моей смертью^.'];
-                break;
+                    return ['Если, конечно, ты здесь не за ^моей смертью^.'];
         }
 
-        return result;
+        return null;
     }
 
     DecreaseResetCounter(_delta)
@@ -769,10 +763,19 @@ class PromoDuck extends Enemy
     {
         this.check++;
 
-        return {
-            text: ['~ПромоУтка — АТК 10 ЗЩТ 0~Рекламный бизнесмен.%~Древесный сомелье.%~КРАСАВЧИК. *'],
-            speech: ['#2* Выдержки из визитной карточки.~Могут не отражать действительное качество услуг.']
+        let result = {
+            text: ['~ПромоУтка — владелец Промотки.~Древесный сомелье и просто красавчик. *'],
+            speech: ['#2* Выдержки из визитной карточки.']
         };
+
+        if(this.check > 1)
+        {
+            delete result.speech;
+            result.text = ['~Промоутка — владелец Промотки.~Довольно жадный. %Имеет на удивление здоровые зубы. (у уток они вообще должны быть???)'];
+            result.speech = this.StoryFlow();
+        }
+
+        return result;
     }
     Bet()
     {
@@ -795,7 +798,8 @@ class PromoDuck extends Enemy
 
             default:
                 return {
-                    text: ['~Похоже, стоит дождаться сброса ставки и только после этого предложить карандаш.']
+                    text: ['~Похоже, стоит дождаться сброса ставки и только после этого предложить карандаш.'],
+                    speech: this.StoryFlow(),
                 };
         }
     }

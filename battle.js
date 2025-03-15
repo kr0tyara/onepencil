@@ -1310,7 +1310,7 @@ class Battle
         window.addEventListener('pointermove', this.pointerMoveBind);
         window.addEventListener('pointerup', this.pointerUpBind);
 
-        this.defaultBounds = {x1: 200, y1: 350, x2: 1080, y2: 550, a: 1};
+        this.defaultBounds = {x1: 200, y1: 340, x2: 1080, y2: 550, a: 1};
         this.bounds = {...this.defaultBounds};
         this.targetBounds = {...this.bounds};
         this.boundsReady = true;
