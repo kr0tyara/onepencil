@@ -538,6 +538,7 @@ class OwnAttackMode extends DrawingMode
                 _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.maxHP, 32);
         
                 _ctx.restore();
+                _ctx.strokeStyle = '#000';
                 _ctx.stroke();
                 _ctx.closePath();
 
@@ -813,6 +814,7 @@ class ActMode extends TargettedBattleMode
 
         // супер фаст
         this.SelectTarget(battle.enemies[0]);
+        battle.ResetBounds();
 
         this.typeWriter.Start();
         this.selectedAction = null;
@@ -1059,6 +1061,11 @@ class ItemsMode extends BattleMode
     {
         super(ITEMS);
         this.locked = false;
+    }
+
+    Start()
+    {
+        battle.ResetBounds();
     }
 
     PointerDown(e)

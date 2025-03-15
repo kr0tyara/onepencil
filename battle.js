@@ -564,16 +564,241 @@ class BattleUI
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
 
+            _ctx.fillStyle = '#fff';
             _ctx.beginPath();
             Utils.RoundedRect(_ctx, button.x, battle.defaultBounds.y2 + 70, button.w, 70, 6);
+            _ctx.fill();
             _ctx.stroke();
             _ctx.closePath();
 
+            _ctx.fillStyle = _ctx.strokeStyle;
             Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.buttons, button.index.x * 50, button.index.y * 50, 50, 50, button.x + 10, battle.defaultBounds.y2 + 70 + 70 / 2 - 25, 50, 50, _ctx.fillStyle);
 
             if(!button.back)
                 _ctx.fillText(button.name, button.x + 70, battle.defaultBounds.y2 + 70 + 70 / 2 + 4);
         }
+    }
+}
+
+class BattleBackground
+{
+    constructor()
+    {
+        this.distance = 125;
+        this.rowOffset = 50;
+
+        this.speed = .5;
+        this.scroll = {x: 0, y: 0};
+        this.patterns = [];
+
+        this.backgroundCanvas = document.createElement('canvas');
+        this.backgroundCtx = this.backgroundCanvas.getContext('2d');
+        this.backgroundCtx.imageSmoothingEnabled = false;
+    }
+
+    Start()
+    {
+        this.rows = 6;
+        this.columns = 4;
+
+        let len = res.sheets.patterns.parts['pattern'].length;
+
+        let j = 0;
+        for(let i = 0; i < this.rows * this.columns; i++)
+        {
+            let pattern = {};
+            
+            pattern.id = j % len;
+            j++;
+
+            pattern.x = i % this.rows * this.distance - ~~(i / this.rows) * this.rowOffset;
+            pattern.y = ~~(i / this.rows) * this.distance;
+            
+            if(pattern.x == 0 && pattern.y > 0)
+                j = Utils.RandomRound(j % len, len);
+            
+            pattern.rotation = Utils.Random(-Math.PI / 12, Math.PI / 12);
+
+            this.patterns.push(pattern);
+        }
+
+        this.backgroundCanvas.width = this.rows * this.distance;
+        this.backgroundCanvas.height = this.columns * this.distance;
+        
+        this.backgroundCtx.clearRect(0, 0, this.backgroundCanvas.width, this.backgroundCanvas.height);
+        this.backgroundCtx.globalAlpha = .25;
+
+        this.backgroundCtx.translate(this.distance / 4, this.distance / 4);
+        for(let i in this.patterns)
+        {
+            let pattern = this.patterns[i];
+            this.DrawPattern(this.backgroundCtx, pattern, pattern.x, pattern.y);
+        }
+
+        // зациклим первый ряд вертикально
+        for(let i = 0; i < this.patterns.length; i += this.rows)
+        {
+            let pattern = this.patterns[i];
+            this.DrawPattern(this.backgroundCtx, pattern, pattern.x + this.rows * this.distance, pattern.y);
+
+            if(i + 1 < this.patterns.length)
+            {
+                pattern = this.patterns[i + 1];
+                this.DrawPattern(this.backgroundCtx, pattern, pattern.x + this.rows * this.distance, pattern.y);
+            }
+        }
+
+        // и горизонтально
+        for(let i = 0; i < this.rows; i++)
+        {
+            let pattern = this.patterns[i];
+            this.DrawPattern(this.backgroundCtx, pattern, pattern.x, pattern.y + this.columns * this.distance);
+        }
+
+        // и по диагонали
+        let pattern = this.patterns[0];
+        this.DrawPattern(this.backgroundCtx, pattern, pattern.x + this.rows * this.distance, pattern.y + this.columns * this.distance);
+
+        // паттерн
+        this.pattern = battle.ctx.createPattern(this.backgroundCanvas, 'repeat');
+
+        let x = battle.canvas.width / 2;
+        let y = battle.canvas.height / 2 - 300;
+        this.gradient = battle.ctx.createRadialGradient(x, y, battle.canvas.width / 4, x, y, battle.canvas.width / 2);
+        this.gradient.addColorStop(0, 'rgba(237, 238, 240, 0)');
+        this.gradient.addColorStop(1, 'rgba(237, 238, 240, .8)');
+    }
+    Render(_ctx, delta)
+    {
+        _ctx.fillStyle = '#edeef0';
+        _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
+
+        this.scroll.x -= this.speed * delta;
+        if(this.scroll.x <= -this.backgroundCanvas.width)
+            this.scroll.x = 0;
+
+        this.scroll.y += this.speed * delta;
+        if(this.scroll.y >= this.backgroundCanvas.height)
+            this.scroll.y = 0;
+
+        _ctx.save();
+        _ctx.translate(this.scroll.x, this.scroll.y);
+
+        _ctx.fillStyle = this.pattern;
+        _ctx.fillRect(0, -_ctx.canvas.height, _ctx.canvas.width * 2, _ctx.canvas.height * 2);
+
+        _ctx.restore();
+
+        _ctx.fillStyle = this.gradient;
+        _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
+    }
+
+    DrawPattern(_ctx, _pattern, _x, _y)
+    {
+        _ctx.save();
+        _ctx.translate(_x, _y);
+        _ctx.rotate(_pattern.rotation);
+        res.sheets.patterns.Draw(_ctx, 'pattern', _pattern.id, 0, 0, -1, -1, true);
+        _ctx.restore();
+    }
+}
+
+class EnemiesContainer
+{
+    constructor()
+    {
+        this.enemiesCanvas = document.createElement('canvas');
+        this.enemiesCtx    = this.enemiesCanvas.getContext('2d');
+        this.enemiesCtx.imageSmoothingEnabled = false;
+
+        this.alphaTime = 10;
+        this.alphaTimer = 0;
+        this.alphaBack = true;
+
+        this.state = STATE_NORMAL;
+    }
+
+    Start()
+    {
+        this.enemiesCanvas.width = battle.canvas.width;
+        this.enemiesCanvas.height = battle.canvas.height;
+
+        this.AlignEnemies();
+    }
+
+    AlignEnemies()
+    {
+        let w = 0;
+        for(let i in battle.enemies)
+        {
+            let enemy = battle.enemies[i];
+            w += enemy.sprite.w;
+            if(i + 1 < battle.enemies.length)
+                w += 50;
+        }
+        let curX = battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1 - w) / 2;
+        for(let i in battle.enemies)
+        {
+            let enemy = battle.enemies[i];
+            enemy.sprite.x = curX;
+            
+            curX += enemy.sprite.w + 50;
+        }
+    }
+
+    GameLoop(_delta)
+    {
+        if(this.alphaTimer > 0)
+        {
+            this.alphaTimer -= 1 * _delta;
+            if(this.alphaTimer < 0)
+                this.alphaTimer = 0;
+        }
+
+        for(let i in battle.enemies)
+        {
+            battle.enemies[i].sprite.GameLoop(_delta);
+        }
+    }
+
+    SetState(_state)
+    {
+        let oldState = this.state;
+
+        this.state = _state;
+
+        if(this.state == STATE_ATTACKING)
+        {
+            this.alphaBack = false;
+            this.alphaTimer = this.alphaTime;
+        }
+        else if(oldState == STATE_ATTACKING)
+        {
+            this.alphaBack = true;
+            this.alphaTimer = this.alphaTime;
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        this.enemiesCtx.clearRect(0, 0, this.enemiesCanvas.width, this.enemiesCanvas.height);
+
+        // враги
+        for(let i in battle.enemies)
+        {
+            let enemy = battle.enemies[i];
+            enemy.sprite.Render(this.enemiesCtx, _dt);
+        }
+
+        if(this.alphaTimer >= 0)
+        {
+            if(this.alphaBack)
+                _ctx.globalAlpha = .5 + (this.alphaTime - this.alphaTimer) / this.alphaTime / 2;
+            else
+                _ctx.globalAlpha = 1 - .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
+        }
+        _ctx.drawImage(this.enemiesCanvas, 0, 0);
+        _ctx.globalAlpha = 1;
     }
 }
 
@@ -769,6 +994,10 @@ class GameResources
             star: {
                 img: 'star.png',
                 json: 'star.json'
+            },
+            patterns: {
+                img: 'patterns.png',
+                json: 'patterns.json'
             }
         };
 
@@ -1098,7 +1327,6 @@ class Battle
             let enemy = this.enemies[i];
             enemy.CreateSprite(0, 0);
         }
-        this.AlignEnemies();
 
         this.lastActionResult = null;
 
@@ -1112,9 +1340,9 @@ class Battle
         this.ownAttacks = 
         {
             '':         {id: '', damage: 0, sheet: res.sheets.triangle},
-            'triangle': {id: 'triangle', damage: 30, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
             'circle':   {id: 'circle', damage: 50, sheet: res.sheets.circle, sfx: [res.sfx.circle1, res.sfx.circle2]},
-            'star':     {id: 'star', damage: 120, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
+            'triangle': {id: 'triangle', damage: 70, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
+            'star':     {id: 'star', damage: 100, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
         };
         this.ownAttackIndex = 1;
 
@@ -1122,6 +1350,9 @@ class Battle
         this.attackCounter = 0;
 
         this.projectiles = [];
+
+        this.background = new BattleBackground();
+        this.enemiesContainer = new EnemiesContainer();
 
         this.lastRender = 0;
         this.render = requestAnimationFrame(this.Render.bind(this));
@@ -1143,7 +1374,10 @@ class Battle
     {
         //res.sfx.bgm.play();
 
+        this.background.Start();
+        this.enemiesContainer.Start();
         this.ui.Start();
+
         for(let i in this.enemies)
             this.enemies[i].Start();
 
@@ -1151,26 +1385,6 @@ class Battle
 
         //this.SetMode(ATTACK);
         //this.Attack();
-    }
-
-    AlignEnemies()
-    {
-        let w = 0;
-        for(let i in this.enemies)
-        {
-            let enemy = this.enemies[i];
-            w += enemy.sprite.w;
-            if(i + 1 < this.enemies.length)
-                w += 50;
-        }
-        let curX = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1 - w) / 2;
-        for(let i in this.enemies)
-        {
-            let enemy = this.enemies[i];
-            enemy.sprite.x = curX;
-            
-            curX += enemy.sprite.w + 50;
-        }
     }
 
     SetBounds(_bounds, _slow = false)
@@ -1210,13 +1424,9 @@ class Battle
             this.mode.Render(this.ctx, _dt);
             return;
         }
-
-        // утка
-        for(let i in this.enemies)
-        {
-            let enemy = this.enemies[i];
-            enemy.sprite.Render(this.ctx, _dt);
-        }
+        
+        this.background.Render(this.ctx, delta);
+        this.enemiesContainer.Render(this.ctx, _dt);
 
         // спич баболы
         for(let i in this.enemies)
@@ -1272,11 +1482,11 @@ class Battle
         this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, this.defaultBounds.y2 + 10 + 10 + 32 / 2);
         this.ctx.globalCompositeOperation = 'source-over';
 
-        // текущий режим
-        this.mode.Render(this.ctx, _dt);
-
         // кнопки
         this.ui.Render(this.ctx, _dt);
+
+        // текущий режим
+        this.mode.Render(this.ctx, _dt);
 
         // душа, проджектайлы и атака
         this.soul.Render(this.ctx, _dt);
@@ -1324,10 +1534,7 @@ class Battle
             }
         }
 
-        for(let i in this.enemies)
-        {
-            this.enemies[i].sprite.GameLoop(_delta);
-        }
+        this.enemiesContainer.GameLoop(_delta);
         this.mode.GameLoop(_delta);
 
         if(this.attack != null)
@@ -1525,11 +1732,10 @@ class Battle
             if(!enemy.alive)
                 continue;
 
-            if(_id == ATTACK)
-                enemy.sprite.SetAnimation(STATE_ATTACKING, 0);
-            else
-                enemy.sprite.SetAnimation(STATE_NORMAL, 0);
+            enemy.sprite.SetAnimation(_id == ATTACK ? STATE_ATTACKING : STATE_NORMAL, 0);
         }
+
+        this.enemiesContainer.SetState(_id == ATTACK ? STATE_ATTACKING : STATE_NORMAL);
     }
 
     AddProjectile(_attack, _projectile)

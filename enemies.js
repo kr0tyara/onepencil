@@ -99,10 +99,6 @@ class EnemySprite extends Entity
 
         this.speaking = false;
         this.speechBubble = new SpeechBubble(this, res.sfx.duck);
-
-        this.alphaTime = 10;
-        this.alphaTimer = 0;
-        this.alphaBack = true;
     }
 
     Start()
@@ -112,18 +108,8 @@ class EnemySprite extends Entity
 
     SetAnimation(_state, _time)
     {
-        let oldState = this.state;
-
         this.state = _state;
         this.animationTime = _time;
-
-        if(this.state == STATE_ATTACKING)
-        {
-            this.alphaBack = false;
-            this.alphaTimer = this.alphaTime;
-        }
-        else if(oldState == STATE_ATTACKING)
-            this.alphaBack = true;
     }
     SetExpression(_index)
     {
@@ -150,35 +136,11 @@ class EnemySprite extends Entity
             if(this.speechBubble.finished)
                 this.speaking = false;
         }
-
-        if(this.alphaTimer > 0)
-        {
-            this.alphaTimer -= 1 * _delta;
-            if(this.alphaTimer < 0)
-                this.alphaTimer = 0;
-        }
     }
 
     Render(_ctx, _dt)
     {
         this.Draw(_ctx, _dt);
-
-        if(this.state == STATE_DEAD)
-            _ctx.globalAlpha = .05;
-        else if(this.alphaTimer >= 0)
-        {
-            if(this.alphaBack)
-                _ctx.globalAlpha = 1 - (this.alphaTime - this.alphaTimer) / this.alphaTime;
-            else
-                _ctx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
-        }
-        else
-            _ctx.globalAlpha = 0;
-
-        _ctx.fillStyle = '#fff';
-        _ctx.fillRect(this.x, this.y, this.w, this.h);
-
-        _ctx.globalAlpha = 1;
     }
     
     Draw(_ctx, _dt)
@@ -208,6 +170,7 @@ class PromoDuckSprite extends EnemySprite
         this.vandalismCanvas.width = 360;
         this.vandalismCanvas.height = 305;
         this.vandalismCtx = this.vandalismCanvas.getContext('2d');
+        this.vandalismCtx.imageSmoothingEnabled = false;
 
         //this.vandalismCtx.fillStyle = 'red';
         //this.vandalismCtx.fillRect(0, 0, this.vandalismCanvas.width, this.vandalismCanvas.height);
@@ -289,22 +252,6 @@ class PromoDuckSprite extends EnemySprite
             
             // вандализм
             _ctx.drawImage(this.vandalismCanvas, battle.defaultBounds.x1 - 55, 0);
-
-            // в режиме атаки
-            if(this.alphaTimer >= 0)
-            {
-                if(this.alphaBack)
-                    _ctx.globalAlpha = 1 - (this.alphaTime - this.alphaTimer) / this.alphaTime;
-                else
-                    _ctx.globalAlpha = .5 * (this.alphaTime - this.alphaTimer) / this.alphaTime;
-            }
-            else
-                _ctx.globalAlpha = 0;
-    
-            _ctx.fillStyle = '#fff';
-            _ctx.fillRect(x - 55, 0, 360, y + h + 20);
-    
-            _ctx.globalAlpha = 1;
         }
 
         let harmed = this.enemy.weakened > 0;
@@ -453,7 +400,6 @@ class PromoDuck extends Enemy
         this.index = {x: 0, y: 0};
 
         this.maxHP = 500;
-        this.resetCounter = 45;
 
         this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
         
@@ -468,7 +414,7 @@ class PromoDuck extends Enemy
             '~9 из 36 538 Тунеров рекомендуют!',
             '~Пахнет грифелем.',
             '~ПромоУтка считает свою прибыль.%~В уме.',
-            '~ПромоУтка ковыряется в зубах.~Но, скорее, просто грызёт зубочистку...',
+            '~ПромоУтка ковыряется в зубах.~Или, скорее, просто грызёт зубочистку...',
         ];
         this.dangerFlavourText = [
             '~ПромоУтка нервно глядит по сторонам.',
@@ -488,6 +434,9 @@ class PromoDuck extends Enemy
     Start()
     {
         super.Start();
+
+        this.resetCounter = 45;
+        this.story = 0;
 
         this.check = 0;
 
@@ -696,48 +645,60 @@ class PromoDuck extends Enemy
         if(delta > 0)
         {
             this.wtf++;
-
-            switch(this.wtf)
-            {
-                case 1:
-                    result.speech = ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
-                    break;
-
-                case 2:
-                    result.speech = ['Буду ли я оттирать твою мазню?', 'Хороший вопрос.'];
-                    break;
-
-                case 3:
-                    result.speech = ['И вот ответ...', '#9...%^МНОГО ЧЕСТИ!!!^*', '#2* Договор о Промотке не предусматривает страховку от возможного ущерба.'];
-                    break;
-
-                case 4:
-                    result.speech = ['#BПока место приносит мне бабки, мне абсолютно всё равно.', '#BРазвлекайся!'];
-                    break;
-
-                case 5: 
-                    result.speech = ['#1Что-что? ^Репутационные потери?^~Расскажешь всю правду ^своим друзьям^???', '#1.%.%.%', '#9^ТЕБЕ ВСЁ РАВНО НИКТО НЕ ПОВЕРИТ!!!^'];
-                    break;
-
-                case 6:
-                    result.speech = ['У меня есть огромный козырь в отсутствующем рукаве.', 'Я даю людям надежду, что благодаря Промотке их творчество хоть кто-нибудь, да увидит.'];
-                    break;
-                
-                case 7: 
-                    result.speech = ['И пока они в это верят, они будут нести мне свои Карандаши.', 'Ты в том числе.'];
-                    break;
-
-                case 8:
-                    if(this.weakened > 0)
-                        result.speech = ['Если, конечно, ты здесь не за ^моей смертью^.'];
-                    break;
-
-                default:
-                    break;
-            }
+            
+            let res = this.StoryFlow();
+            result = {...res, ...result};
         }
 
         this.DecreaseResetCounter(delta);
+
+        return result;
+    }
+
+    StoryFlow()
+    {
+        this.story++;
+
+        let result = {};
+        if(this.wtf < 1)
+            return result;
+
+        switch(this.story)
+        {
+            case 1:
+                result.speech = ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
+                result.text = ['опаа могостайл'];
+                break;
+
+            case 2:
+                result.speech = ['Буду ли я оттирать твою мазню?', 'Хороший вопрос.'];
+                break;
+
+            case 3:
+                result.speech = ['И вот ответ...', '#9...%^МНОГО ЧЕСТИ!!!^*', '#2* Договор о Промотке не предусматривает страховку от возможного ущерба.'];
+                break;
+
+            case 4:
+                result.speech = ['#BПока место приносит мне бабки, мне абсолютно всё равно.', '#BРазвлекайся!'];
+                break;
+
+            case 5: 
+                result.speech = ['#1Что-что? ^Репутационные потери?^~Расскажешь всю правду ^своим друзьям^???', '#1.%.%.%', '#9^ТЕБЕ ВСЁ РАВНО НИКТО НЕ ПОВЕРИТ!!!^'];
+                break;
+
+            case 6:
+                result.speech = ['У меня есть огромный козырь в отсутствующем рукаве.', 'Я даю людям надежду, что благодаря Промотке их творчество хоть кто-нибудь, да увидит.'];
+                break;
+            
+            case 7: 
+                result.speech = ['И пока они в это верят, они будут нести мне свои Карандаши.', 'Ты в том числе.'];
+                break;
+
+            case 8:
+                if(this.weakened > 0)
+                    result.speech = ['Если, конечно, ты здесь не за ^моей смертью^.'];
+                break;
+        }
 
         return result;
     }
