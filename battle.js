@@ -1394,14 +1394,14 @@ class Battle
         //this.Attack();
     }
 
-    SetBounds(_bounds, _slow = false)
+    SetBounds(_bounds, _slow = false, _instant = false)
     {
         this.slowBounds = _slow;
 
         this.targetBounds = {..._bounds};
         this.boundsReady = false;
 
-        if(Utils.BoundsEqual(this.bounds, this.targetBounds))
+        if(Utils.BoundsEqual(this.bounds, this.targetBounds) || _instant)
         {
             this.slowBounds = false;
             this.bounds = {...this.targetBounds};

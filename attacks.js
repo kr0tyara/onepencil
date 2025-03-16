@@ -62,14 +62,14 @@ class Attack
             if(!this.timeOut)
                 this.OnTimeOut();
 
+            this.OnGameLoop(_delta);
+
             if(this.spawnedProjectiles.length == 0)
             {
                 this.endTimer -= 1 * _delta;
                 if(this.endTimer <= 0)
                     this.End();
             }
-
-            this.OnGameLoop(_delta);
             return;
         }
 
@@ -641,6 +641,53 @@ class BallProjectile extends Projectile
         _ctx.globalAlpha = 1;
     }
 }
+
+class PopsicleAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 300, 300);
+    }
+
+    OnGameLoop(_delta)
+    {
+        
+    }
+}
+
+/*
+class PenisAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 300, 300);
+    }
+
+    Start()
+    {
+        this.startBounds = {x1: battle.defaultBounds.x1, y1: this.startBounds.y1, x2: battle.defaultBounds.x1 + 200, y2: this.startBounds.y1 + 200};
+        this.bounds = {...this.startBounds};
+
+        super.Start();
+
+        this.caster.positionLocked = true;
+    }
+
+    OnGameLoop(_delta)
+    {
+        super.OnGameLoop(_delta);
+
+        let sin = Math.sin((this.attackTime - this.attackTimer) / 12) * 50;
+        
+        this.bounds.x1 += 1 * _delta;
+        this.bounds.x2 += 1 * _delta;
+
+        this.bounds.y1 = ~~(this.startBounds.y1 + sin);
+        this.bounds.y2 = this.bounds.y1 + 200;
+        
+        battle.SetBounds(this.bounds, false, true);
+    }
+}*/
 
 
 /*

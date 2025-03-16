@@ -384,13 +384,13 @@ class DrawingMode extends TargettedBattleMode
     {
         this.AddPoint();
     }
-    AddPoint()
+    AddPoint(_manually = false)
     {
         if(this.pending || !this.drawing)
             return;
 
         let pos = {x: ~~battle.soul.x, y: ~~battle.soul.y};
-        if(this.drawnPoints.length == 0 || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
+        if(this.drawnPoints.length == 0 || _manually || Utils.Distance(this.drawnPoints[this.drawnPoints.length - 1], pos) >= 15)
             this.drawnPoints.push(pos);
     }
 
@@ -624,6 +624,7 @@ class OwnAttackMode extends DrawingMode
 
     Finish()
     {
+        this.AddPoint(true);
         this.hpBeforeAttack = this.targetEnemy.hp;
 
         let recognize = this.dollar.Recognize(this.drawnPoints, false);
@@ -833,7 +834,7 @@ class ActMode extends TargettedBattleMode
         }
 
         let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 25 * 3 / 4;
-        let h = 80; //Math.min(80, (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4);
+        let h = Math.min(85, (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.actions.length / 2) - 25 * 3 / 4);
 
         for(let i in this.actions)
         {
@@ -1015,11 +1016,11 @@ class DrawMode extends DrawingMode
         this.SelectTarget(battle.lastActionResult.target);
         this.targetEnemy.sprite.positionLocked = true;
 
-        this.lineWidth = Utils.RandomRound(2, 20);
-        let hue = Utils.RandomRound(0, 36) * 10;
+        this.lineWidth = Utils.RandomRound(5, 20);
+        let hue = Utils.RandomRound(0, 9) * 40;
         this.color = `hsl(${hue}, 100%, 50%)`;
 
-        battle.SetBounds({x1: battle.defaultBounds.x1 - 25, y1: 15, x2: battle.defaultBounds.x1 + 295, y2: 305, a: 0}, true);
+        battle.SetBounds({x1: battle.defaultBounds.x1 - 25, y1: 15, x2: battle.defaultBounds.x1 + 295, y2: 290, a: 0}, true);
     }
 
     PointerDown(e)
@@ -1037,6 +1038,7 @@ class DrawMode extends DrawingMode
 
     Finish()
     {
+        this.AddPoint(true);
         let res = battle.lastActionResult;
         delete res.mode;
 

@@ -1,0 +1,116 @@
+{ "frames": {
+   "popsicle_0": {
+    "frame": { "x": 1, "y": 509, "w": 33, "h": 175 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 145, "y": 82, "w": 33, "h": 175 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_1": {
+    "frame": { "x": 1, "y": 509, "w": 33, "h": 175 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 145, "y": 82, "w": 33, "h": 175 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_2": {
+    "frame": { "x": 259, "y": 458, "w": 127, "h": 175 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 82, "w": 127, "h": 175 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_3": {
+    "frame": { "x": 130, "y": 495, "w": 127, "h": 175 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 82, "w": 127, "h": 175 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_4": {
+    "frame": { "x": 259, "y": 255, "w": 127, "h": 201 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 56, "w": 127, "h": 201 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_5": {
+    "frame": { "x": 130, "y": 255, "w": 127, "h": 238 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 19, "w": 127, "h": 238 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_6": {
+    "frame": { "x": 1, "y": 1, "w": 127, "h": 252 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 5, "w": 127, "h": 252 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_7": {
+    "frame": { "x": 1, "y": 1, "w": 127, "h": 252 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 5, "w": 127, "h": 252 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_8": {
+    "frame": { "x": 130, "y": 1, "w": 127, "h": 252 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 5, "w": 127, "h": 252 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_9": {
+    "frame": { "x": 259, "y": 1, "w": 127, "h": 252 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 5, "w": 127, "h": 252 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_10": {
+    "frame": { "x": 1, "y": 255, "w": 127, "h": 252 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 98, "y": 5, "w": 127, "h": 252 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   },
+   "popsicle_11": {
+    "frame": { "x": 36, "y": 509, "w": 33, "h": 175 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 145, "y": 82, "w": 33, "h": 175 },
+    "sourceSize": { "w": 312, "h": 305 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.13-x64",
+  "image": "popsicle.png",
+  "format": "RGBA8888",
+  "size": { "w": 387, "h": 685 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "form", "from": 1, "to": 6, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "Layer 2", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 3", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

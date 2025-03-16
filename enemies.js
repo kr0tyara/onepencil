@@ -190,7 +190,7 @@ class PromoDuckSprite extends EnemySprite
 
         if(this.positionLocked)
         {
-            if(battle.mode.id != DRAW && battle.boundsReady)
+            if(battle.mode.id != DRAW && battle.mode.id != ATTACK && battle.boundsReady)
                 this.positionLocked = false;
         }
     }
@@ -401,12 +401,13 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
+        this.attacks = [PopsicleAttack, CardAttack, ThrowAttack, MouthAttack, BallAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
             {name: 'Ставка', index: {x: 0, y: 1}, action: this.Bet.bind(this)},
             {name: 'Вандализм', index: {x: 1, y: 1}, action: this.Vandalize.bind(this)},
+            {name: 'Ничего', index: {x: 1, y: 0}, action: this.Nothing.bind(this)},
         ];
         
         this.flavourText = [
@@ -809,6 +810,12 @@ class PromoDuck extends Enemy
             text: ['Нарисуй что угодно, чтобы ускорить сброс ставки!'],
             mode: DRAW
         }
+    }
+    Nothing()
+    {
+        return {
+            text: ['']
+        };
     }
 }
 
