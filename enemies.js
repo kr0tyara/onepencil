@@ -652,10 +652,15 @@ class PromoDuck extends Enemy
             result.text = ['Время ставки немного понижается!'];
         }
 
-        if(delta == 0 && this.dontEvenThink == 0 && this.wtf < 3)
+        if(delta == 0)
         {
-            this.dontEvenThink = 1;
-            result.speech = ['#8Даже и не думай!'];
+            if(this.dontEvenThink == 0 && this.wtf < 3)
+            {
+                this.dontEvenThink = 1;
+                result.speech = ['#8Даже и не думай!'];
+            }
+            else
+                result.speech = this.StoryFlow();
         }
         if(delta > 0)
         {

@@ -815,7 +815,7 @@ class ActMode extends TargettedBattleMode
 
         // супер фаст
         this.SelectTarget(battle.enemies[0]);
-        battle.ResetBounds();
+        battle.ResetBounds(false, true);
 
         this.typeWriter.Start();
         this.selectedAction = null;
@@ -1067,7 +1067,7 @@ class ItemsMode extends BattleMode
 
     Start()
     {
-        battle.ResetBounds();
+        battle.ResetBounds(false, true);
     }
 
     PointerDown(e)
