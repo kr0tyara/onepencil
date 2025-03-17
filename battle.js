@@ -1635,9 +1635,6 @@ class Battle
     }
     PreAttack()
     {
-        if(this.mode.id == GAME_OVER)
-            return;
-
         if(this.lastActionResult != null && (this.lastActionResult.text != null || this.lastActionResult.speech || this.lastActionResult.mode != null))
         { 
             if(this.lastActionResult.text != null || this.lastActionResult.speech != null)
@@ -1650,9 +1647,6 @@ class Battle
     }
     Attack()
     {
-        if(this.mode.id == GAME_OVER)
-            return;
-
         for(let i in battle.enemies)
             battle.enemies[i].sprite.ResetExpression();
 
@@ -1685,9 +1679,6 @@ class Battle
 
     OwnAttack()
     {
-        if(this.mode.id == GAME_OVER)
-            return;
-
         if(this.mode.id == OWN_ATTACK)
             this.Idle();
         else
@@ -1724,9 +1715,6 @@ class Battle
 
     Act()
     {
-        if(this.mode.id == GAME_OVER)
-            return;
-
         if(this.mode.id == ACT)
             this.Idle();
         else
@@ -1734,9 +1722,6 @@ class Battle
     }
     Items()
     {
-        if(this.mode.id == GAME_OVER)
-            return;
-
         if(this.mode.id == ITEMS)
             this.Idle();
         else
@@ -1744,9 +1729,6 @@ class Battle
     }
     Idle()
     {
-        if(this.mode.id == GAME_OVER)
-            return;
-        
         this.SetMode(IDLE);
         this.ResetBounds();
         
@@ -1759,6 +1741,9 @@ class Battle
 
     SetMode(_id)
     {
+        if(this.mode != null && this.mode.id == GAME_OVER)
+            return;
+
         this.attack = null;
         this.projectiles = [];
 
@@ -1988,7 +1973,7 @@ class Soul extends Entity
         
         this.slowed = false;
         this.maxSpeed = 15;
-        this.damping = 0.7;
+        this.damping = 0.5;
         this.mass = 7;
         this.velocity = {x: 0, y: 0};
     }

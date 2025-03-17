@@ -709,21 +709,14 @@ class PromoDuck extends Enemy
             case 8:
                 if(this.weakened > 0)
                     return ['Если, конечно, ты здесь не за ^моей смертью^.'];
-
-                if(this.popsicle == 0 && this.weakened == 0 && this.call == 0)
-                {
-                    this.popsicle = 1;
-                    this.popsicleHP = battle.hp;
-                    return ['Надо же, ты ещё здесь.', 'Эт самое...~У меня кончаются идеи для атак.', '#CКак насчёт перерыва на мороженку?*', '#2* Мороженку есть буду я.'];
-                }
                 break;
+        }
 
-        if(battle.attackCounter >= 6 && this.popsicle == 0 && this.weakened == 0 && this.call == 0)
+        if(this.popsicle == 0 && this.weakened == 0 && this.call == 0)
         {
             this.popsicle = 1;
             this.popsicleHP = battle.hp;
             return ['Надо же, ты ещё здесь.', 'Эт самое...~У меня кончаются идеи для атак.', '#CКак насчёт перерыва на мороженку?*', '#2* Мороженку есть буду я.'];
-        }
         }
 
         return null;
