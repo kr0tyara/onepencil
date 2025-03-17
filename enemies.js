@@ -190,7 +190,7 @@ class PromoDuckSprite extends EnemySprite
 
         if(this.positionLocked)
         {
-            if(battle.mode.id != DRAW && battle.mode.id != ATTACK && battle.boundsReady)
+            if(battle.mode.id != DRAW && battle.mode.id != ATTACK && battle.mode.id != POST_ATTACK && battle.boundsReady)
                 this.positionLocked = false;
         }
     }
@@ -321,6 +321,8 @@ class PromoDuckSprite extends EnemySprite
             {
                 case '0':
                 case '4':
+                case 'C':
+                case 'D':
                     if(mouthOpen)
                         hairOffset.y = -3;
                     break;
@@ -354,7 +356,7 @@ class PromoDuckSprite extends EnemySprite
             res.sheets.duck.Draw(_ctx, 'body', harmed ? 2 : 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
 
             if(this.expression != '6')
-                res.sheets.duck.Draw(_ctx, 'arm_front', this.expression == 'B' ? 3 : harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
+                res.sheets.duck.Draw(_ctx, 'arm_front', this.expression == 'C' ? 4 : this.expression == 'B' ? 3 : harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'head', headFrame, this.x + headWobble.x, this.y + headWobble.y);
         }
@@ -401,7 +403,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [PopsicleAttack, CardAttack, ThrowAttack, MouthAttack, BallAttack];
+        this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -451,6 +453,8 @@ class PromoDuck extends Enemy
         this.mockAnnoyed = false;
 
         this.drawAttempt = 0;
+        this.popsicle = 0;
+        this.popsicleHP = 0;
 
         this.weakened = 0;
         this.call = 0;
@@ -465,6 +469,12 @@ class PromoDuck extends Enemy
         if(this.drawAttempt == 2)
             return {
                 attackClass: ScribbleAttack,
+                difficulty: 1
+            };
+
+        if(this.popsicle == 1)
+            return {
+                attackClass: PopsicleAttack,
                 difficulty: 1
             };
 
@@ -663,6 +673,7 @@ class PromoDuck extends Enemy
     StoryFlow()
     {
         let result = null;
+
         if(this.wtf < 1)
             return result;
 
@@ -693,6 +704,21 @@ class PromoDuck extends Enemy
             case 8:
                 if(this.weakened > 0)
                     return ['Если, конечно, ты здесь не за ^моей смертью^.'];
+
+                if(this.popsicle == 0 && this.weakened == 0 && this.call == 0)
+                {
+                    this.popsicle = 1;
+                    this.popsicleHP = battle.hp;
+                    return ['Надо же, ты ещё здесь.', 'Эт самое...~У меня кончаются идеи для атак.', '#CКак насчёт перерыва на мороженку?*', '#2* Мороженку есть буду я.'];
+                }
+                break;
+
+        if(battle.attackCounter >= 6 && this.popsicle == 0 && this.weakened == 0 && this.call == 0)
+        {
+            this.popsicle = 1;
+            this.popsicleHP = battle.hp;
+            return ['Надо же, ты ещё здесь.', 'Эт самое...~У меня кончаются идеи для атак.', '#CКак насчёт перерыва на мороженку?*', '#2* Мороженку есть буду я.'];
+        }
         }
 
         return null;
@@ -723,6 +749,22 @@ class PromoDuck extends Enemy
 
             return {
                 speech: ['#3.....', '#3..................', '#4Карандаш плохой попался.'],
+            };
+        }
+
+        if(this.popsicle == 1)
+        {
+            this.popsicle = 2;
+
+            if(battle.hp < this.popsicleHP)
+            {
+                return {
+                    speech: ['#DНям-ням!'],
+                };
+            }
+
+            return {
+                speech: ['#DПалочкой обойдусь!']
             };
         }
 
@@ -814,7 +856,8 @@ class PromoDuck extends Enemy
     Nothing()
     {
         return {
-            text: ['']
+            text: [''],
+            speech: this.StoryFlow(),
         };
     }
 }

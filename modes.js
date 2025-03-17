@@ -457,7 +457,7 @@ class OwnAttackMode extends DrawingMode
             {
                 _ctx.globalAlpha = .5;
 
-                this.attackType.sheet.Draw(_ctx, 'attack', Utils.GetAnimationFrame(_dt, 200, this.attackAnimations.drawing), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
+                this.attackType.sheet.Draw(_ctx, 'attack', Utils.GetAnimationFrame(_dt, 200, this.attackAnimations.drawing), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true, true);
 
                 _ctx.globalAlpha = 1;
             }
@@ -479,7 +479,7 @@ class OwnAttackMode extends DrawingMode
             {
                 let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
 
-                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true, true);
             }
             else
             {
@@ -491,7 +491,7 @@ class OwnAttackMode extends DrawingMode
                 _ctx.translate(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
                 _ctx.rotate(Math.PI * t);
                 
-                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, -1, -1, true);
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, -1, -1, true, true);
 
                 _ctx.restore();
             }
@@ -503,7 +503,7 @@ class OwnAttackMode extends DrawingMode
             {
                 let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
 
-                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.attack[Math.round((this.attackAnimations.attack.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true);
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.attack[Math.round((this.attackAnimations.attack.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true, true);
             }
             // пуля летит
             else if(this.pendingTimer - this.transformTime <= this.flyTime)
@@ -512,7 +512,7 @@ class OwnAttackMode extends DrawingMode
 
                 let y = (this.targetEnemy.sprite.y + this.targetEnemy.sprite.pivot.y - 50 - (battle.bounds.y1 + (battle.bounds.y2 - battle.defaultBounds.y1) / 2 - 50)) * t;
                 
-                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true);
+                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.loop[Math.round((this.attackAnimations.loop.length - 1) * 2 * t) % this.attackAnimations.loop.length], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + y, -1, -1, true, true);
                 
                 //_ctx.drawImage(res.sprites.ownAttacks, 100 * this.currentAttack.index.x, 100 * this.currentAttack.index.y, 100, 100, battle.defaultBounds.x1 + (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 50, battle.defaultBounds.y1 + (battle.defaultBounds.y2 - battle.defaultBounds.y1) / 2 - 50 + y, 100, 100);
             }

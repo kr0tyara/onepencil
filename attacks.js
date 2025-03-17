@@ -646,12 +646,214 @@ class PopsicleAttack extends Attack
 {
     constructor(_caster, _difficulty)
     {
-        super(_caster, _difficulty, 300, 300);
+        super(_caster, _difficulty, 1000, 1000);
+
+        this.stickTime = 25;
+        this.stickWait = 25;
+        this.formTime = 25;
+        this.formWait = 50;
+        this.crackWait = 40;
+
+        this.tipTime = 200;
+        this.tipTimer = 0;
+
+        this.velocityThreshold = 7;
+
+        this.attackAnimations = 
+        {
+            bare: res.sheets.popsicle.GetTagFrames('bare'),
+            form: res.sheets.popsicle.GetTagFrames('form'),
+            break: res.sheets.popsicle.GetTagFrames('break'),
+            wet: res.sheets.popsicle.GetTagFrames('wet'),
+            parts: res.sheets.popsicle.GetTagFrames('parts'),
+        };
+
+        this.wallDistance = 3;
+        this.breaksPerFrame = 8;
+        this.breaksToCrack = this.breaksPerFrame * this.attackAnimations.break.length;
+    }
+
+    Start()
+    {
+        super.Start();
+        
+        this.break = 0;
+        this.broken = false;
+        this.boundsSet = false;
+
+        this.tipTimer = this.tipTime;
+
+        this.wasTouchingX = false;
+        this.wasTouchingY = false;
+
+        let bounds = {x1: 578, y1: 352, x2: 702, y2: 550, a: 1};
+        battle.SetBounds(bounds);
+        battle.SetFakeBounds({x1: (bounds.x2 - bounds.x1) / 2, y1: (bounds.y2 - bounds.y1) / 2, x2: -(bounds.x2 - bounds.x1) / 2 + battle.soul.radius, y2: -(bounds.y2 - bounds.y1) / 2 - 55});
+
+        this.startPos = {x: bounds.x1 + (bounds.x2 - bounds.x1) / 2, y: bounds.y2};
     }
 
     OnGameLoop(_delta)
     {
-        
+        super.OnGameLoop(_delta);
+
+        if(this.boundsSet && this.tipTimer > 0)
+            this.tipTimer -= 1 * _delta;
+
+        if(this.attackTime - this.attackTimer >= this.stickTime + this.formTime + this.formWait && !this.boundsSet)
+        {
+            this.boundsSet = true;
+            battle.SetBounds(this.startBounds);
+            battle.SetFakeBounds({x1: 52, y1: 24, x2: -52, y2: -158});
+
+            battle.soul.locked = false;
+            battle.soul.SetSlowed(true);
+        }
+
+        if(!this.boundsSet)
+            return;
+
+        if(!this.broken)
+        {
+            let bounds = battle.SoulBounds();
+            
+            let isTouchingX = false;
+            let isTouchingY = false;
+
+            let d = {x: 0, y: 0};
+
+            if(bounds.x1 <= battle.fakeBounds.x1 + this.wallDistance)
+            {
+                d.x = -1;
+                isTouchingX = true;
+            }
+            else if(bounds.x2 >= battle.fakeBounds.x2 - this.wallDistance)
+            {
+                d.x = 1;
+                isTouchingX = true;
+            }
+            if(bounds.y1 <= battle.fakeBounds.y1 + this.wallDistance)
+            {
+                d.y = -1;
+                isTouchingY = true;
+            }
+            else if(bounds.y2 >= battle.fakeBounds.y2 - this.wallDistance)
+            {
+                d.y = 1;
+                isTouchingY = true;
+            }
+
+            if(isTouchingX && this.wasTouchingX)
+                d.x = 0;
+            if(isTouchingY && this.wasTouchingY)
+                d.y = 0;
+
+            d.x *= 5;
+            d.y *= 5;
+            
+            if(isTouchingX && !this.wasTouchingX || isTouchingY && !this.wasTouchingY)
+            {
+                let v = Math.sqrt(battle.soul.velocity.x * battle.soul.velocity.x + battle.soul.velocity.y * battle.soul.velocity.y);
+                if(v >= this.velocityThreshold)
+                {
+                    this.break++;
+
+                    if(this.break % this.breaksPerFrame == 0)
+                        res.sfx.crack.play();
+                    else
+                        res.sfx.tick.play();
+
+                    battle.SetBounds({x1: battle.bounds.x1 + d.x, y1: battle.bounds.y1 + d.y, x2: battle.bounds.x2 + d.x, y2: battle.bounds.y2 + d.y}, false, true);
+                    battle.fakeBounds = {x1: battle.fakeBounds.x1 + d.x, y1: battle.fakeBounds.y1 + d.y, x2: battle.fakeBounds.x2 + d.x, y2: battle.fakeBounds.y2 + d.y};
+                }
+            }
+
+            this.wasTouchingX = isTouchingX;
+            this.wasTouchingY = isTouchingY;
+        }
+
+        if(this.break >= this.breaksToCrack && !this.broken)
+        {
+            this.broken = true;
+
+            res.sfx.break.play();
+            battle.soul.SetSlowed(false);
+
+            this.crackTime = this.attackTime - this.attackTimer;
+            this.crackPos = {x: battle.soul.x + battle.soul.radius, y: battle.soul.y - 30};
+
+            battle.ResetFakeBounds();
+        }
+
+        if(this.broken && this.attackTime - this.attackTimer - this.crackTime >= this.crackWait)
+        {
+            this.Finish();
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        let pos = {x: battle.soul.x + battle.soul.radius, y: battle.soul.y - 30};
+
+        if(this.attackTime - this.attackTimer <= this.stickTime + this.stickWait)
+        {
+            let t = (this.attackTime - this.attackTimer) / this.stickTime;
+            t = Utils.Clamp(t, 0, 1);
+
+            _ctx.globalAlpha = t;
+            res.sheets.popsicle.Draw(_ctx, 'popsicle', this.attackAnimations.bare[0], this.startPos.x, this.startPos.y - (this.startPos.y - pos.y) * t, -1, -1, true, false);
+            _ctx.globalAlpha = 1;
+        }
+        else if(this.attackTime - this.attackTimer <= this.stickTime + this.stickWait + this.formTime)
+        {
+            res.sheets.popsicle.Draw(_ctx, 'popsicle', this.attackAnimations.form[Math.round((this.attackAnimations.form.length - 1) * (this.attackTime - this.attackTimer - this.stickTime - this.stickWait) / this.formTime)], pos.x, pos.y, -1, -1, true, false);
+        }
+        else if(!this.broken)
+        {
+            res.sheets.popsicle.Draw(_ctx, 'popsicle', this.attackAnimations.break[~~(this.break / this.breaksPerFrame)], pos.x, pos.y, -1, -1, true, false);
+        }
+        else
+        {
+            let t = (this.attackTime - this.attackTimer - this.crackTime) / this.crackWait;
+
+            let p = Utils.CurvePos({x: this.crackPos.x, y: this.crackPos.y}, {x: this.crackPos.x, y: _ctx.canvas.height}, 200, t);
+            res.sheets.popsicle.Draw(_ctx, 'popsicle', this.attackAnimations.wet[0], p.x, p.y, -1, -1, true, false, Math.PI / 180 * _dt / 10);
+
+            for(let i in this.attackAnimations.parts)
+            {
+                let p = Utils.CurvePos({x: this.crackPos.x - 162, y: this.crackPos.y}, {x: this.crackPos.x - 162 + (-50 + (100 / this.attackAnimations.parts.length) * i), y: _ctx.canvas.height}, 300 - i * 10, t);
+
+                res.sheets.popsicle.Draw(_ctx, 'popsicle', this.attackAnimations.parts[i], p.x, p.y, -1, -1, false, false, Math.PI / 180 * _dt / 30 * i);
+            }
+        }
+
+        if(this.tipTimer <= 0 && this.break <= 2)
+        {
+            _ctx.font = '36px Pangolin';
+            _ctx.font = 'Pangolin'
+            _ctx.fillStyle = '#ff0000';
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'top';
+
+            let offset = {};
+            offset.x = (Math.random() - .5) * 2;
+            offset.y = (Math.random() - .5) * 2;
+
+            _ctx.fillText('ТРЯСИ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
+        }
+    }
+
+    End()
+    {
+        if(!this.broken)
+        {
+            battle.Hurt(7);
+        }
+
+        battle.soul.locked = false;
+        battle.soul.SetSlowed(false);
+
+        super.End();
     }
 }
 

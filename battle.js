@@ -698,7 +698,7 @@ class BattleBackground
         _ctx.save();
         _ctx.translate(_x, _y);
         _ctx.rotate(_pattern.rotation);
-        res.sheets.patterns.Draw(_ctx, 'pattern', _pattern.id, 0, 0, -1, -1, true);
+        res.sheets.patterns.Draw(_ctx, 'pattern', _pattern.id, 0, 0, -1, -1, true, true);
         _ctx.restore();
     }
 }
@@ -928,7 +928,7 @@ class Sheet
         }
     }
 
-    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1, _center = false)
+    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1, _centerX = false, _centerY = false, _rotation = 0)
     {
         let part = this.parts[_part];
 
@@ -940,18 +940,21 @@ class Sheet
         let w = _w > 0 ? _w : frame.w;
         let h = _h > 0 ? _h : frame.h;
 
-        if(_center)
-        {
+        if(_centerX)
             _x -= w / 2;
-            _y -= h / 2;
-        }
         else
-        {
             _x += part[_frame].spriteSourceSize.x;
-            _y += part[_frame].spriteSourceSize.y;
-        }
 
-        _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, _x, _y, w, h);
+        if(_centerY)
+            _y -= h / 2;
+        else
+            _y += part[_frame].spriteSourceSize.y;
+
+        _ctx.save();
+        _ctx.translate(_x + w / 2, _y + h / 2);
+        _ctx.rotate(_rotation);
+        _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, -w / 2, -h / 2, w, h);
+        _ctx.restore();
     }
 }
 
@@ -1005,6 +1008,10 @@ class GameResources
             patterns: {
                 img: 'patterns.png',
                 json: 'patterns.json'
+            },
+            popsicle: {
+                img: 'popsicle.png',
+                json: 'popsicle.json'
             }
         };
 
@@ -1092,6 +1099,16 @@ class GameResources
             {
                 url: 'hop2.wav',
                 volume: .6,
+            },
+            crack:
+            {
+                url: 'crack.wav',
+                volume: .8,
+            },
+            break:
+            {
+                url: 'break.wav',
+                volume: .5,
             }
         };
 
@@ -1320,6 +1337,8 @@ class Battle
         this.defaultBounds = {x1: 200, y1: 340, x2: 1080, y2: 550, a: 1};
         this.bounds = {...this.defaultBounds};
         this.targetBounds = {...this.bounds};
+        this.fakeBounds = null;
+
         this.boundsReady = true;
         this.slowBounds = false;
         
@@ -1411,6 +1430,16 @@ class Battle
     ResetBounds(_slow = false)
     {
         this.SetBounds({...this.defaultBounds}, _slow);
+        this.ResetFakeBounds();
+    }
+
+    SetFakeBounds(_bounds)
+    {
+        this.fakeBounds = {x1: this.targetBounds.x1 + _bounds.x1, x2: this.targetBounds.x2 + _bounds.x2, y1: this.targetBounds.y1 + _bounds.y1, y2: this.targetBounds.y2 + _bounds.y2};
+    }
+    ResetFakeBounds()
+    {
+        this.fakeBounds = null;
     }
 
     Render(_dt)
@@ -1443,6 +1472,40 @@ class Battle
             if(enemy.sprite.speaking)
                 enemy.sprite.speechBubble.Render(this.ctx, _dt);
         }
+        
+        // здоровье
+        let x = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 200 / 2;
+        let y = this.defaultBounds.y2 + 10 + 9;
+
+        this.ctx.save();
+        this.ctx.beginPath();
+        Utils.RoundedRect(this.ctx, x, y, 200, 32, 6);
+        this.ctx.clip();
+        
+        this.ctx.fillStyle = '#aaa';
+        this.ctx.fillRect(x, y, 200, 32);
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(x, y, 200 * this.hp / this.maxHP, 32);
+
+        this.ctx.restore();
+
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeStyle = '#000';
+        this.ctx.stroke();
+
+        this.ctx.closePath();
+
+        this.ctx.font = '24px Pangolin';
+        this.ctx.fillStyle = '#fff';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.textAlign = 'center';
+        
+        this.ctx.globalCompositeOperation = 'difference';
+        this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, this.defaultBounds.y2 + 10 + 10 + 32 / 2);
+        this.ctx.globalCompositeOperation = 'source-over';
+
+        // кнопки
+        this.ui.Render(this.ctx, _dt);
 
         // поле боя
         this.ctx.lineCap = 'round';
@@ -1461,36 +1524,6 @@ class Battle
 
         this.ctx.stroke();
         this.ctx.closePath();
-        
-        // здоровье
-        let x = this.defaultBounds.x1 + (this.defaultBounds.x2 - this.defaultBounds.x1) / 2 - 200 / 2;
-        let y = this.defaultBounds.y2 + 10 + 9;
-
-        this.ctx.save();
-        this.ctx.beginPath();
-        Utils.RoundedRect(this.ctx, x, y, 200, 32, 6);
-        this.ctx.clip();
-        
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.fillRect(x, y, 200, 32);
-        this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(x, y, 200 * this.hp / this.maxHP, 32);
-
-        this.ctx.restore();
-        this.ctx.stroke();
-        this.ctx.closePath();
-
-        this.ctx.font = '24px Pangolin';
-        this.ctx.fillStyle = '#fff';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.textAlign = 'center';
-        
-        this.ctx.globalCompositeOperation = 'difference';
-        this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, this.defaultBounds.y2 + 10 + 10 + 32 / 2);
-        this.ctx.globalCompositeOperation = 'source-over';
-
-        // кнопки
-        this.ui.Render(this.ctx, _dt);
 
         // текущий режим
         this.mode.Render(this.ctx, _dt);
@@ -1526,7 +1559,7 @@ class Battle
 
         if(!this.boundsReady)
         {
-            let speed = this.slowBounds ? 0.15 : 0.3;
+            let speed = (this.slowBounds ? 0.15 : 0.3) * _delta;
             this.bounds.x1 = Utils.Lerp(this.bounds.x1, this.targetBounds.x1, speed);
             this.bounds.y1 = Utils.Lerp(this.bounds.y1, this.targetBounds.y1, speed);
             this.bounds.x2 = Utils.Lerp(this.bounds.x2, this.targetBounds.x2, speed);
@@ -1796,7 +1829,8 @@ class Battle
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
-                pos.y >= this.bounds.y1 && pos.y <= this.bounds.y2
+                pos.y >= this.bounds.y1 && pos.y <= this.bounds.y2 &&
+                !this.soul.locked && !this.soul.slowed
             )
                 this.canvas.style.cursor = 'none';
             else if(this.canvas.style.cursor != '')
@@ -1827,6 +1861,15 @@ class Battle
 
         return true;
     }
+    SoulBounds()
+    {
+        return {
+            x1: this.soul.x,
+            y1: this.soul.y,
+            x2: this.soul.x + this.soul.w + this.soul.pivot.x + this.soul.radius,
+            y2: this.soul.y + this.soul.h + this.soul.pivot.y + this.soul.radius,
+        }
+    }
 
     MoveSoul()
     {
@@ -1834,18 +1877,31 @@ class Battle
 
         if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK || this.mode.id == DRAW) && this.mode.drawingLocked)
         {
-            if(pos.x < this.targetBounds.x1)
-                pos.x = this.targetBounds.x1;
-            if(pos.x > this.targetBounds.x2 - this.soul.w - this.soul.pivot.x - this.soul.radius)
-                pos.x = this.targetBounds.x2 - this.soul.w - this.soul.pivot.x - this.soul.radius;
-
-            if(pos.y < this.targetBounds.y1)
-                pos.y = this.targetBounds.y1;
-            if(pos.y > this.targetBounds.y2 - this.soul.h - this.soul.pivot.y - this.soul.radius)
-                pos.y = this.targetBounds.y2 - this.soul.h - this.soul.pivot.y - this.soul.radius;
+            pos = this.BoundSoulPos(pos);
         }
 
         this.soul.targetPos = pos;
+    }
+    BoundSoulPos(_pos)
+    {
+        let pos = {..._pos};
+        
+        let bounds = this.targetBounds;
+
+        if(this.fakeBounds != null)
+            bounds = this.fakeBounds;
+
+        if(pos.x < bounds.x1)
+            pos.x = bounds.x1;
+        if(pos.x > bounds.x2 - this.soul.w - this.soul.pivot.x - this.soul.radius)
+            pos.x = bounds.x2 - this.soul.w - this.soul.pivot.x - this.soul.radius;
+
+        if(pos.y < bounds.y1)
+            pos.y = bounds.y1;
+        if(pos.y > bounds.y2 - this.soul.h - this.soul.pivot.y - this.soul.radius)
+            pos.y = bounds.y2 - this.soul.h - this.soul.pivot.y - this.soul.radius;
+
+        return pos;
     }
 
     Graze(_projectile)
@@ -1918,6 +1974,8 @@ class Soul extends Entity
     {
         super(_x, _y, 0, 0);
 
+        this.locked = false;
+
         this.targetPos = {x: this.x, y: this.y};
 
         this.radius = 10;
@@ -1927,6 +1985,12 @@ class Soul extends Entity
         this.invinsibleTime = 50;
         this.invinsibleTimer = 0;
         this.invinsible = false;
+        
+        this.slowed = false;
+        this.maxSpeed = 15;
+        this.damping = 0.7;
+        this.mass = 7;
+        this.velocity = {x: 0, y: 0};
     }
 
     Hurt()
@@ -1935,6 +1999,13 @@ class Soul extends Entity
         this.invinsible = true;
 
         Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
+    }
+
+    SetSlowed(_value)
+    {
+        this.slowed = _value;
+        this.velocity.x = 0;
+        this.velocity.y = 0;
     }
 
     GameLoop(_delta)
@@ -1947,8 +2018,36 @@ class Soul extends Entity
                 this.invinsible = false;
         }
 
-        this.x = Utils.Lerp(this.x, this.targetPos.x, 0.5 * _delta);
-        this.y = Utils.Lerp(this.y, this.targetPos.y, 0.5 * _delta);
+        if(!this.locked)
+        {
+            if(this.slowed)
+            {
+                let acceleration = {x: (battle.mousePos.x - this.x) / this.mass, y: (battle.mousePos.y - this.y) / this.mass};
+
+                this.velocity.x += acceleration.x;
+                this.velocity.y += acceleration.y;
+
+                this.velocity.x = Math.min(Math.max(this.velocity.x, -this.maxSpeed), this.maxSpeed);
+                this.velocity.y = Math.min(Math.max(this.velocity.y, -this.maxSpeed), this.maxSpeed);
+
+                let pos = {
+                    x: this.x + this.velocity.x * _delta,
+                    y: this.y + this.velocity.y * _delta,
+                };
+                pos = battle.BoundSoulPos(pos);
+                this.x = pos.x;
+                this.y = pos.y;
+
+                this.velocity.x *= this.damping;
+                this.velocity.y *= this.damping;
+            }
+            else
+            {
+                let speed = 0.5 * _delta;
+                this.x = Utils.Lerp(this.x, this.targetPos.x, speed);
+                this.y = Utils.Lerp(this.y, this.targetPos.y, speed);
+            }
+        }
 
         if(Utils.Distance({x: this.x, y: this.y}, this.targetPos) <= 1)
         {
