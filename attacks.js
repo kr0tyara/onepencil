@@ -831,7 +831,7 @@ class PopsicleAttack extends Attack
         {
             _ctx.font = '36px Pangolin';
             _ctx.font = 'Pangolin'
-            _ctx.fillStyle = '#ff0000';
+            _ctx.fillStyle = '#666';
             _ctx.textAlign = 'center';
             _ctx.textBaseline = 'top';
 
@@ -839,7 +839,7 @@ class PopsicleAttack extends Attack
             offset.x = (Math.random() - .5) * 2;
             offset.y = (Math.random() - .5) * 2;
 
-            _ctx.fillText('ТРЯСИ!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
+            _ctx.fillText('Тряси!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
         }
     }
 

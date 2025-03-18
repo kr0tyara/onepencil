@@ -171,6 +171,7 @@ class PromoDuckSprite extends EnemySprite
         this.vandalismCanvas.height = 305;
         this.vandalismCtx = this.vandalismCanvas.getContext('2d');
         this.vandalismCtx.imageSmoothingEnabled = false;
+        this.vandalismCtx.translate(.5, .5);
 
         //this.vandalismCtx.fillStyle = 'red';
         //this.vandalismCtx.fillRect(0, 0, this.vandalismCanvas.width, this.vandalismCanvas.height);
@@ -216,39 +217,52 @@ class PromoDuckSprite extends EnemySprite
 
             _ctx.lineCap = _ctx.lineJoin = 'round';
             
-            _ctx.lineWidth = 3;
+            _ctx.lineWidth = 6;
             _ctx.strokeStyle = '#000';
             _ctx.fillStyle = '#fff';
 
+            _ctx.save();
             _ctx.beginPath();
             Utils.RoundedRect(_ctx, x, y, 250, h, 6);
             _ctx.fill();
-            _ctx.stroke();
-            _ctx.closePath();
-            
-            _ctx.drawImage(res.sprites.promote, 0, _dt % 500 < 250 ? 0 : 162, 244, 162, x, y, 244, 162);
+            _ctx.clip();
 
-            _ctx.font = '48px Pangolin';
+            _ctx.fillStyle = '#edeef0';
+            _ctx.fillRect(x, y, 250, 45);
+
+            _ctx.font = '24px Pangolin';
             _ctx.fillStyle = '#000';
-    
-            let text = `324905`;
-            let w = _ctx.measureText(text).width;
-
             _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'top';
+
+            // заголовок
+            let txt = 'Промотка';
+            let w = _ctx.measureText(txt).width;
+            _ctx.drawImage(res.sprites.ducky, x + (250 - w) / 2 - 12 - 6, y + 10);
+            _ctx.fillText(txt, x + 250 / 2 + 16, y + 8 + 4);
+
+            // мульт
+            res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 100, res.sheets.promo1.GetTagFrames('idle')), x, y + 45);
+
+            // цена
+            _ctx.fillStyle = '#edeef0';
+            _ctx.fillRect(x, y + h - 80, 250, 80);
+
+            _ctx.fillStyle = '#000';
+            _ctx.font = '36px Pangolin';
+            txt = `324905`;
+            w = _ctx.measureText(txt).width;
             _ctx.textBaseline = 'bottom';
 
-            _ctx.save();
-            _ctx.translate(x + 250 / 2, y + h - 30);
+            _ctx.drawImage(res.sprites.minipencil, x + 250 / 2 + w / 2 + 5 - 12, y + h - 70);
+            _ctx.fillText(txt, x + 250 / 2 - 16, y + h - 35);
 
-            _ctx.fillText(text, 0, 0);
-            _ctx.translate(w / 2 + 5, -16);
-            _ctx.rotate(Math.PI * 1.5);
-            _ctx.drawImage(res.sprites.soul, 0, 0);
-
-            _ctx.restore();
-            
             _ctx.font = '24px Pangolin';
             _ctx.fillText(`До сброса: ${this.enemy.resetCounter} м.`, x + 250 / 2, y + h - 10);
+
+            _ctx.stroke();
+            _ctx.closePath();
+            _ctx.restore();
             
             // вандализм
             _ctx.drawImage(this.vandalismCanvas, battle.defaultBounds.x1 - 55, 0);

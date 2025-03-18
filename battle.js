@@ -973,8 +973,8 @@ class GameResources
             soul: 'soul.png',
             soulbreak: 'soulbreak.png',
             
-            robot: 'robot.png',
-            promote: 'promote.png',
+            ducky: 'ducky.png',
+            minipencil: 'minipencil.png',
 
             card: 'card.png',
             pencils: 'pencils.png',
@@ -1012,6 +1012,10 @@ class GameResources
             popsicle: {
                 img: 'popsicle.png',
                 json: 'popsicle.json'
+            },
+            promo1: {
+                img: 'promo1.png',
+                json: 'promo1.json'
             }
         };
 
@@ -1306,6 +1310,7 @@ class Battle
         this.canvas = document.querySelector('#battle');
         this.ctx    = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
+        this.ctx.translate(.5, .5);
 
         this.tempCanvas = document.createElement('canvas');
         this.tempCtx    = this.tempCanvas.getContext('2d');

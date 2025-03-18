@@ -299,9 +299,11 @@ class DrawingMode extends TargettedBattleMode
             return;
         }
 
+        DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, this.color);
+
         // текст
         _ctx.font = '36px Pangolin';
-        let text = 'РИСУЙ!!!';
+        let text = 'Рисуй!';
         let w = _ctx.measureText(text).width + 24;
         
         if(this.drawing)
@@ -310,12 +312,15 @@ class DrawingMode extends TargettedBattleMode
             text = `${~~(this.castTimer / 16) + 1}`;
         }
 
-        // рамка
-        _ctx.fillStyle = '#fff';
-        _ctx.beginPath();
-        Utils.RoundedRect(_ctx, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - w / 2, battle.bounds.y1 + 10, w, 48, 6);
-        _ctx.fill();
-        _ctx.closePath();
+        if(battle.bounds.a < 1)
+        {
+            // рамка
+            _ctx.fillStyle = '#fff';
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 - w / 2, battle.bounds.y1 + 10, w, 48, 6);
+            _ctx.fill();
+            _ctx.closePath();
+        }
 
         let y = battle.bounds.y1 + 15 + 4;
 
@@ -326,12 +331,10 @@ class DrawingMode extends TargettedBattleMode
             y -= 1;
         }
 
-        _ctx.fillStyle = '#ff0000';
+        _ctx.fillStyle = '#666';
         _ctx.textAlign = 'center';
         _ctx.textBaseline = 'top';
         _ctx.fillText(text, battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, y);
-
-        DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, this.color);
     }
 
     PointerDown(e)
