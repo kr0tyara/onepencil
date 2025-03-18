@@ -162,7 +162,10 @@ class PromoDuckSprite extends EnemySprite
         super(_x, _y, 300, 300, _enemy);
         
         this.stakeShown = true;
-        this.drawnLines = [];
+
+        this.deltaTime = 60;
+        this.deltaStickTime = 30;
+        this.deltas = [];
 
         this.positionLocked = false;
         
@@ -194,6 +197,19 @@ class PromoDuckSprite extends EnemySprite
             if(battle.mode.id != DRAW && battle.mode.id != ATTACK && battle.mode.id != POST_ATTACK && battle.boundsReady)
                 this.positionLocked = false;
         }
+
+        for(let i = this.deltas.length - 1; i >= 0; i--)
+        {
+            this.deltas[i].timer -= 1 * _delta;
+
+            if(this.deltas[i].timer <= 0)
+                this.deltas.splice(i, 1);
+        }
+    }
+
+    AddDelta(_delta)
+    {
+        this.deltas.push({delta: _delta, timer: this.deltaTime});
     }
 
     Draw(_ctx, _dt)
@@ -242,7 +258,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillText(txt, x + 250 / 2 + 16, y + 8 + 4);
 
             // мульт
-            res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 100, res.sheets.promo1.GetTagFrames('idle')), x, y + 45);
+            res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), x, y + 45);
 
             // цена
             _ctx.fillStyle = '#edeef0';
@@ -257,15 +273,39 @@ class PromoDuckSprite extends EnemySprite
             _ctx.drawImage(res.sprites.minipencil, x + 250 / 2 + w / 2 + 5 - 12, y + h - 70);
             _ctx.fillText(txt, x + 250 / 2 - 16, y + h - 35);
 
+            _ctx.textAlign = 'left';
             _ctx.font = '24px Pangolin';
-            _ctx.fillText(`До сброса: ${this.enemy.resetCounter} м.`, x + 250 / 2, y + h - 10);
+
+            txt = `До сброса:`;
+            w = _ctx.measureText(txt).width + 40;
+            _ctx.fillText(txt, x + 40, y + h - 10);
+            
+            txt = ` ${this.enemy.resetCounter} м.`;
+            _ctx.fillStyle = TEXT_COLORS[2];
+            _ctx.fillText(txt, x + w, y + h - 10);
+            w += _ctx.measureText(txt).width;
 
             _ctx.stroke();
             _ctx.closePath();
             _ctx.restore();
+
+            _ctx.font = '20px Pangolin';
+            _ctx.textAlign = 'left';
+            _ctx.textBaseline = 'bottom';
+            _ctx.fillStyle = TEXT_COLORS[2];
+            // дельты
+            for(let i in this.deltas)
+            {
+                let t = (this.deltaTime - this.deltas[i].timer - this.deltaStickTime) / (this.deltaTime - this.deltaStickTime);
+                t = Utils.Clamp(t, 0, 1);
+                
+                _ctx.globalAlpha = 1 - t;
+                _ctx.fillText(`-${this.deltas[i].delta}`, x + w + 5, y + h - 12 - t * 25);
+                _ctx.globalAlpha = 1;
+            }
             
             // вандализм
-            _ctx.drawImage(this.vandalismCanvas, battle.defaultBounds.x1 - 55, 0);
+            _ctx.drawImage(this.vandalismCanvas, x - 55, y - 25);
         }
 
         let harmed = this.enemy.weakened > 0;
@@ -738,6 +778,8 @@ class PromoDuck extends Enemy
 
     DecreaseResetCounter(_delta)
     {
+        this.sprite.AddDelta(_delta);
+
         this.resetCounter -= _delta;
         if(this.resetCounter <= 0)
         {

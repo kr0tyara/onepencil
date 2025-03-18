@@ -1025,7 +1025,7 @@ class GameResources
         this.sfxNames = 
         {
             bgm: {
-                url: 'DUCK IDK.mp3',
+                url: 'DUCK IDK2.mp3',
                 loop: true,
                 volume: 0.7,
             },
