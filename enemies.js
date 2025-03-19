@@ -163,8 +163,8 @@ class PromoDuckSprite extends EnemySprite
         
         this.stakeShown = true;
 
-        this.deltaTime = 60;
-        this.deltaStickTime = 30;
+        this.deltaTime = 80;
+        this.deltaStickTime = 40;
         this.deltas = [];
 
         this.positionLocked = false;
@@ -289,7 +289,10 @@ class PromoDuckSprite extends EnemySprite
             _ctx.closePath();
             _ctx.restore();
 
-            _ctx.font = '20px Pangolin';
+            // вандализм
+            _ctx.drawImage(this.vandalismCanvas, x - 55, y - 25);
+
+            _ctx.font = '24px Pangolin';
             _ctx.textAlign = 'left';
             _ctx.textBaseline = 'bottom';
             _ctx.fillStyle = TEXT_COLORS[2];
@@ -300,12 +303,9 @@ class PromoDuckSprite extends EnemySprite
                 t = Utils.Clamp(t, 0, 1);
                 
                 _ctx.globalAlpha = 1 - t;
-                _ctx.fillText(`-${this.deltas[i].delta}`, x + w + 5, y + h - 12 - t * 25);
+                _ctx.fillText(`-${this.deltas[i].delta}`, x + w + 5, y + h - 10 - t * 25);
                 _ctx.globalAlpha = 1;
             }
-            
-            // вандализм
-            _ctx.drawImage(this.vandalismCanvas, x - 55, y - 25);
         }
 
         let harmed = this.enemy.weakened > 0;
@@ -457,7 +457,7 @@ class PromoDuck extends Enemy
 
         this.maxHP = 500;
 
-        this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack];
+        this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack, HandsAttack];
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
@@ -778,14 +778,16 @@ class PromoDuck extends Enemy
 
     DecreaseResetCounter(_delta)
     {
-        this.sprite.AddDelta(_delta);
-
         this.resetCounter -= _delta;
         if(this.resetCounter <= 0)
         {
+            _delta += this.resetCounter;
             this.resetCounter = 0;
             console.log('ВАУ!');
         }
+        
+        if(_delta > 0)
+            this.sprite.AddDelta(_delta);
     }
 
     AttackEnd()

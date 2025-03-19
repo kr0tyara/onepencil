@@ -827,7 +827,7 @@ class PopsicleAttack extends Attack
             }
         }
 
-        if(this.tipTimer <= 0 && this.break <= 2)
+        if(this.tipTimer <= 0 && this.break < this.breaksPerFrame)
         {
             _ctx.font = '36px Pangolin';
             _ctx.font = 'Pangolin'
@@ -854,6 +854,141 @@ class PopsicleAttack extends Attack
         battle.soul.SetSlowed(false);
 
         super.End();
+    }
+}
+
+class HandsAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 150, 400);
+
+        if(this.difficulty == 2)
+            this.projectileTime = 100;
+    }
+
+    SpawnProjectile(_index)
+    {
+        let projectile = new HandsProjectile(this, _index, _index % 2 + 1);
+        battle.AddProjectile(this, projectile);
+    }
+}
+class HandsProjectile extends Projectile
+{
+    constructor(_parent, _index, _side)
+    {
+        super(_parent, _index, 0, 0, 0, 0, 4);
+
+        this.honingTime = 50;
+
+        this.startTime = 25;
+        this.startTimer = 0;
+
+        this.lifeTime = 150;
+        this.endTime = 25;
+
+        this.side = _side;
+        this.destructible = false;
+    }
+
+    Start()
+    {
+        super.Start();
+
+        this.startTimer = this.startTime;
+        this.targetPos = {};
+        this.startPos = {};
+
+        this.targetPos.y = battle.bounds.y1;
+        this.y = this.startPos.y = this.targetPos.y;
+
+        this.w = (battle.bounds.x2 - battle.bounds.x1) / 2 - 5;
+        this.h = battle.bounds.y2 - battle.bounds.y1;
+        switch(this.side)
+        {
+            case 1:
+                this.targetPos.x = battle.bounds.x1;
+                this.x = this.startPos.x = this.targetPos.x - this.w;
+                break;
+
+            case 2:
+                this.targetPos.x = battle.bounds.x2 - this.w;
+                this.x = this.startPos.x = this.targetPos.x + this.w;
+                break;
+        }
+    }
+
+    GameLoop(_delta)
+    {
+        super.GameLoop(_delta);
+
+        if(this.honingTimer > 0)
+        {
+            if(this.honingTimer % 3 < 1)
+                res.sfx.warning.play();
+        }
+        else if(this.startTimer > 0)
+        {
+            this.startTimer -= 1 * _delta;
+
+            let t = (this.startTime - this.startTimer) / this.startTime;
+            this.x += (this.targetPos.x - this.x) * t;
+            this.y += (this.targetPos.y - this.y) * t;
+        }
+        else if(this.lifeTimer >= this.lifeTime - this.endTime)
+        {
+            let t = (this.lifeTime - this.lifeTimer) / this.endTime;
+
+            this.x = this.targetPos.x - (this.targetPos.x - this.startPos.x) * (1 - t);
+            this.y = this.targetPos.y - (this.targetPos.y - this.startPos.y) * (1 - t);
+
+            if(t <= 0)
+                this.toDestroy = true;
+        }
+        else
+        {
+            this.x = this.targetPos.x;
+            this.y = this.targetPos.y;
+        }
+    }
+
+    Draw(_ctx, _dt)
+    {
+        //super.Draw(_ctx, _dt);
+
+        if(this.honingTimer > 0)
+        {
+            _ctx.font = '48px Pangolin';
+            _ctx.font = 'Pangolin'
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'middle';
+
+            _ctx.fillStyle = _ctx.strokeStyle = this.honingTimer % 10 < 5 ? '#ff6a00' : '#ff0000';
+            _ctx.lineWidth = 6;
+            _ctx.strokeRect(this.targetPos.x - this.x, this.targetPos.y - this.y, this.w, this.h);
+            _ctx.fillText('!', this.targetPos.x - this.x + this.w / 2, this.targetPos.y - this.y + this.h / 2);
+        }
+        else
+        {
+            _ctx.save();
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, battle.bounds.x1 - this.x + 1, battle.bounds.y1 - this.y + 1, battle.bounds.x2 - battle.bounds.x1 - 2, battle.bounds.y2 - battle.bounds.y1 - 2, 6);
+            _ctx.clip();
+
+            for(let i = 0; i < 5; i++)
+            {
+                let offset = {x: 0, y: 0};
+                
+                let t = this.lifeTimer;
+                offset.x = (this.side == 1 ? -1 : 1) * Math.abs(Math.cos(t / 3 + i * 2)) * 10;
+                offset.y = Math.sin(t / 3 + i) * 5;
+
+                res.sheets.hands.Draw(_ctx, this.side == 1 ? 'left' : 'right', i, (this.side == 1 ? -95 : this.w - 125) + offset.x, this.h / 2 + (i - 2) * 45 + offset.y, -1, -1, false, true, 0, true);
+            }
+
+            _ctx.closePath();
+            _ctx.restore();
+        }
     }
 }
 

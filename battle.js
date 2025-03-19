@@ -928,7 +928,7 @@ class Sheet
         }
     }
 
-    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1, _centerX = false, _centerY = false, _rotation = 0)
+    Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1, _centerX = false, _centerY = false, _rotation = 0, _ignoreOriginalPos = false)
     {
         let part = this.parts[_part];
 
@@ -942,12 +942,12 @@ class Sheet
 
         if(_centerX)
             _x -= w / 2;
-        else
+        else if(!_ignoreOriginalPos)
             _x += part[_frame].spriteSourceSize.x;
 
         if(_centerY)
             _y -= h / 2;
-        else
+        else if(!_ignoreOriginalPos)
             _y += part[_frame].spriteSourceSize.y;
 
         _ctx.save();
@@ -1016,6 +1016,10 @@ class GameResources
             promo1: {
                 img: 'promo1.png',
                 json: 'promo1.json'
+            },
+            hands: {
+                img: 'hands.png',
+                json: 'hands.json'
             }
         };
 
@@ -1113,6 +1117,10 @@ class GameResources
             {
                 url: 'break.wav',
                 volume: .5,
+            },
+            warning:
+            {
+                url: 'warning.wav',
             }
         };
 
@@ -1403,7 +1411,7 @@ class Battle
 
     Start()
     {
-        //res.sfx.bgm.play();
+        res.sfx.bgm.play();
 
         this.background.Start();
         this.enemiesContainer.Start();
@@ -1414,8 +1422,8 @@ class Battle
 
         this.SetMode(IDLE);
 
-        //this.SetMode(ATTACK);
-        //this.Attack();
+        this.SetMode(ATTACK);
+        this.Attack();
     }
 
     SetBounds(_bounds, _slow = false, _instant = false)
