@@ -224,6 +224,7 @@ class DrawingMode extends TargettedBattleMode
     {
         super(_mode);
         
+        this.defaultCastTime = 80;
         this.castTime = 80;
 
         this.lineWidth = 5;
@@ -232,6 +233,11 @@ class DrawingMode extends TargettedBattleMode
 
     Start()
     {
+        if(battle.HasEffect(EFFECT_DRAWING_TIME))
+            this.castTime = this.defaultCastTime * 2;
+        else
+            this.castTime = this.defaultCastTime;
+
         this.castTimer = 0;
         this.drawingLocked = false;
 
@@ -401,6 +407,8 @@ class DrawingMode extends TargettedBattleMode
     {
         this.drawing = false;
         this.drawnPoints = [];
+
+        battle.DecreaseEffectTurns(EFFECT_DRAWING_TIME);
     }
 }
 
@@ -531,9 +539,9 @@ class OwnAttackMode extends DrawingMode
                 Utils.RoundedRect(_ctx, x, y, 200, 32, 6);
                 _ctx.clip();
                 
-                _ctx.fillStyle = '#aaa';
-                _ctx.fillRect(x, y, 200, 32);
                 _ctx.fillStyle = '#000';
+                _ctx.fillRect(x, y, 200, 32);
+                _ctx.fillStyle = '#0d85f3';
 
                 let t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.damageTime, 0, 1);
                 let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.hp) * t;
@@ -547,7 +555,7 @@ class OwnAttackMode extends DrawingMode
 
                 // дельта
                 let strength = this.attackDamage / this.currentAttack.damage;
-                _ctx.fillStyle = strength > .9 ? '#FF0000' : strength > .5 ? '#FF9F00' : '#808080';
+                _ctx.fillStyle = strength > .9 ? '#fff' : strength > .5 ? '#aaa' : '#808080';
                 _ctx.textAlign = 'center';
                 _ctx.textBaseline = 'bottom';
                 _ctx.strokeStyle = '#000';
@@ -845,7 +853,6 @@ class ActMode extends TargettedBattleMode
 
             let x = i % 2;
             let y = ~~(i / 2);
-            action.index = {x, y};
 
             action.x = battle.defaultBounds.x1 + x * w + (x + 1) * 12.5;
             action.y = battle.defaultBounds.y1 + y * h + (y + 1) * 12.5;
@@ -989,9 +996,9 @@ class ActMode extends TargettedBattleMode
                 _ctx.stroke();
                 _ctx.closePath();
 
-                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.actions, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 75 / 2 + action.h / 2, 75, 75, _ctx.fillStyle);
+                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.actions, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 50 / 2 + action.h / 2, 50, 50, _ctx.fillStyle);
 
-                _ctx.fillText(action.name, action.x + 75 + 35, action.y + action.h / 2);
+                _ctx.fillText(action.name, action.x + 50 + 35, action.y + action.h / 2);
             }
         }
         else
@@ -1066,21 +1073,201 @@ class ItemsMode extends BattleMode
     {
         super(ITEMS);
         this.locked = false;
+    
+        this.clickTarget = null;
+
+        this.items = [];
+        this.selectedItem = null;
+
+        this.typeWriter = new TypeWriter(null, true);
     }
 
     Start()
     {
+        this.locked = false;
+        
         battle.ResetBounds(false, true);
+        this.typeWriter.Start();
+
+        this.items = [];
+        for(let i in battle.inventory)
+        {
+            let itemData = battle.inventory[i];
+            let item = {data: itemData};
+            this.items.push(item);
+        }
+
+        let w = (battle.defaultBounds.x2 - battle.defaultBounds.x1) / 2 - 25 * 3 / 4;
+        let h = Math.min(85, (battle.defaultBounds.y2 - battle.defaultBounds.y1) / Math.ceil(this.items.length / 2) - 25 * 3 / 4);
+
+        for(let i in this.items)
+        {
+            let item = this.items[i];
+
+            let x = i % 2;
+            let y = ~~(i / 2);
+
+            item.x = battle.defaultBounds.x1 + x * w + (x + 1) * 12.5;
+            item.y = battle.defaultBounds.y1 + y * h + (y + 1) * 12.5;
+            item.w = w;
+            item.h = h;
+        }
+    }
+    
+    TargetItem()
+    {
+        if(
+            battle.mousePos.x < battle.defaultBounds.x1 || battle.mousePos.x > battle.defaultBounds.x2 ||
+            battle.mousePos.y < battle.defaultBounds.y1 || battle.mousePos.y > battle.defaultBounds.y2
+        )
+            return null;
+        
+        for(let i in this.items)
+        {
+            if(
+                battle.mousePos.x >= this.items[i].x && battle.mousePos.x <= this.items[i].x + this.items[i].w &&
+                battle.mousePos.y >= this.items[i].y && battle.mousePos.y <= this.items[i].y + this.items[i].h
+            )
+                return this.items[i];
+        }
+
+        return null;
+    }
+
+    GameLoop(_delta)
+    {
+        if(this.selectedItem != null)
+        {
+            this.typeWriter.GameLoop(_delta);
+
+            if(this.typeWriter.finished)
+            {
+                this.selectedItem = null;
+                battle.PreAttack();
+            }
+        }
     }
 
     PointerDown(e)
     {
-        battle.ui.PointerDown(e);
+        if(this.selectedItem != null)
+            return;
+
+        this.clickTarget = this.TargetItem();
+        if(this.clickTarget == null)
+            battle.ui.PointerDown(e);
     }
     PointerUp(e)
     {
-        battle.ui.PointerUp(e);
+        if(this.selectedItem != null)
+        {
+            this.typeWriter.PointerUp(e);
+            return;
+        }
+
+        let target = this.TargetItem();
+        if(target && target == this.clickTarget)
+        {
+            Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
+
+            this.selectedItem = target;
+
+            let item = this.selectedItem.data;
+            let result = item.Consume();
+            if(!item.IsAvailable())
+                battle.inventory.splice(battle.inventory.indexOf(item), 1);
+
+            this.typeWriter.SetText(result.text);
+            battle.lastActionResult = {
+                ...result,
+                target: battle.enemies[0],
+            }
+            delete battle.lastActionResult.text;
+
+            this.locked = true;
+        }
+        else
+            battle.ui.PointerUp(e);
+
+        this.clickTarget = null;
     }
+
+    Render(_ctx, _dt)
+    {
+        if(this.selectedItem == null)
+        {
+            _ctx.strokeStyle = '#000';
+            _ctx.fillStyle = '#000';
+            
+            _ctx.textBaseline = 'middle';
+            _ctx.lineWidth = 2;
+
+            if(this.items.length == 0)
+            {
+                _ctx.fillStyle = '#666';
+                _ctx.textAlign = 'center';
+                _ctx.font = '36px Pangolin';
+                _ctx.fillText('Пусто!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
+                return;
+            }
+
+            let target = this.TargetItem();
+
+            for(let i in this.items)
+            {
+                let item = this.items[i];
+
+                _ctx.font = '36px Pangolin';
+                if(item == target)
+                    _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
+                else
+                    _ctx.strokeStyle = _ctx.fillStyle = '#000';
+
+                _ctx.beginPath();
+                Utils.RoundedRect(_ctx, item.x, item.y, item.w, item.h, 4);
+                _ctx.stroke();
+                _ctx.closePath();
+
+                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.items, 50 * item.data.index.x, 50 * item.data.index.y, 50, 50, item.x + 15, item.y - 50 / 2 + item.h / 2, 50, 50, _ctx.fillStyle);
+
+                let txt = item.data.name;
+                let w = _ctx.measureText(txt).width;
+                _ctx.textAlign = 'left';
+                _ctx.fillText(txt, item.x + 50 + 35, item.y + item.h / 2);
+
+                switch(item.data.effect)
+                {
+                    case EFFECT_NONE:
+                        _ctx.textAlign = 'right';
+                        _ctx.fillText(`+${item.data.hp}`, item.x + item.w - 15 - 24 - 6, item.y + item.h / 2);
+        
+                        Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.effects, 0, 0, 24, 24, item.x + item.w - 24 - 15, item.y + item.h / 2 - 12 - 2, 24, 24, _ctx.fillStyle);
+                        break;
+
+                    case EFFECT_DRAWING_TIME:
+                        Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.effects, 24, 0, 24, 24, item.x + item.w - 24 - 15, item.y + item.h / 2 - 12 - 2, 24, 24, _ctx.fillStyle);
+                        break;
+                }
+                        
+                if(item.data.maxConsume > 1)
+                {
+                    _ctx.font = '30px Pangolin';
+                    _ctx.textAlign = 'left';
+                    if(item == target)
+                        _ctx.fillStyle = '#8497A8';
+                    else
+                        _ctx.fillStyle = '#666';
+
+                    _ctx.fillText(`x${item.data.maxConsume - item.data.consumed}`, item.x + 50 + 35 + w + 15, item.y + item.h / 2);
+                }
+            }
+        }
+        else
+        {
+            this.typeWriter.Render(_ctx, _dt);
+        }
+    }
+
     Back()
     {
         battle.Idle();

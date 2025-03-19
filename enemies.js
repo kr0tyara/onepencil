@@ -18,8 +18,6 @@ class Enemy
         this.hp = 0;
         this.maxHP = 5;
 
-        this.attackCounter = 0;
-
         this.alive = true;
         this.attacks = [TestAttack];
 
@@ -32,6 +30,8 @@ class Enemy
     {
         this.alive = true;
         this.hp = this.maxHP;
+
+        this.attackCounter = 0;
 
         if(this.sprite)
             this.sprite.Start();
@@ -86,6 +86,11 @@ class Enemy
             text: ['~Никто - АТК 1000 ЗЩТ -999.~Я ем любовь.'],
             speech: ['Мяу'],
         };
+    }
+
+    StoryFlow()
+    {
+        return null;
     }
 }
 
@@ -466,9 +471,9 @@ class PromoDuck extends Enemy
         
         this.actions = [
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
-            {name: 'Ставка', index: {x: 0, y: 1}, action: this.Bet.bind(this)},
-            {name: 'Вандализм', index: {x: 1, y: 1}, action: this.Vandalize.bind(this)},
-            {name: 'Ничего', index: {x: 1, y: 0}, action: this.Nothing.bind(this)},
+            {name: 'Ставка', index: {x: 1, y: 0}, action: this.Bet.bind(this)},
+            {name: 'Вандализм', index: {x: 0, y: 1}, action: this.Vandalize.bind(this)},
+            {name: 'Ничего', index: {x: 1, y: 1}, action: this.Nothing.bind(this)},
         ];
         
         this.flavourText = [

@@ -22,7 +22,8 @@ const   IDLE = 0,
             '#000000',
             '#ff0000',
             '#ff6a00',
-            '#ffffff'
+            '#ffffff',
+            '#0d85f3'
         ];
 
 class TypeWriter
@@ -970,6 +971,9 @@ class GameResources
             icons: 'icons.png',
             buttons: 'buttons.png',
             actions: 'actions.png',
+            items: 'items.png',
+            effects: 'effects.png',
+
             soul: 'soul.png',
             soulbreak: 'soulbreak.png',
             
@@ -1121,6 +1125,17 @@ class GameResources
             warning:
             {
                 url: 'warning.wav',
+                volume: .7
+            },
+            heal:
+            {
+                url: 'heal.ogg',
+                volume: .8
+            },
+            effect:
+            {
+                url: 'effect.ogg',
+                volume: .5
             }
         };
 
@@ -1375,6 +1390,12 @@ class Battle
         this.maxHP = 20;
         this.hp = this.maxHP;
         this.tp = 0;
+        this.effects = [];
+
+        this.inventory = [
+            new Sharpener(),
+            new RubberBand(),
+        ];
 
         this.ownAttacks = 
         {
@@ -1386,7 +1407,7 @@ class Battle
         this.ownAttackIndex = 1;
 
         this.attack = null;
-        this.attackCounter = 0;
+        this.attackCounter = 0; 
 
         this.projectiles = [];
 
@@ -1455,6 +1476,48 @@ class Battle
         this.fakeBounds = null;
     }
 
+    AddEffect(_id, _turns)
+    {
+        let existingEffect = this.GetEffect(_id);
+        if(existingEffect != null)
+            existingEffect.turns += _turns;
+        else
+        {
+            this.effects.push({id: _id, turns: _turns});
+        }
+    }
+    GetEffect(_id)
+    {
+        let existingEffect = this.effects.filter((_a) => _a.id == _id);
+        return existingEffect.length > 0 ? existingEffect[0] : null;
+    }
+    HasEffect(_id)
+    {
+        return this.GetEffect(_id) != null;
+    }
+    OnTurnEnd()
+    {
+        for(let i = this.effects.length - 1; i >= 0; i--)
+        {
+            let effect = this.effects[i];
+
+            if(effect.id == EFFECT_DRAWING_TIME)
+                continue;
+            
+            this.DecreaseEffectTurns(effect.id);
+        }
+    }
+    DecreaseEffectTurns(_id)
+    {
+        let effect = this.GetEffect(_id);
+        if(effect == null)
+            return;
+
+        effect.turns--;
+        if(effect.turns <= 0)
+            this.effects.splice(this.effects.indexOf(effect), 1);
+    }
+
     Render(_dt)
     {
         let delta = (_dt - this.lastRender) / 16.67; // 1000 / 60
@@ -1495,9 +1558,9 @@ class Battle
         Utils.RoundedRect(this.ctx, x, y, 200, 32, 6);
         this.ctx.clip();
         
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.fillRect(x, y, 200, 32);
         this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(x, y, 200, 32);
+        this.ctx.fillStyle = '#0d85f3';
         this.ctx.fillRect(x, y, 200 * this.hp / this.maxHP, 32);
 
         this.ctx.restore();
@@ -1513,9 +1576,21 @@ class Battle
         this.ctx.textBaseline = 'middle';
         this.ctx.textAlign = 'center';
         
-        this.ctx.globalCompositeOperation = 'difference';
-        this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, this.defaultBounds.y2 + 10 + 10 + 32 / 2);
-        this.ctx.globalCompositeOperation = 'source-over';
+        //this.ctx.globalCompositeOperation = 'difference';
+        this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, y + 1 + 32 / 2);
+        //this.ctx.globalCompositeOperation = 'source-over';
+
+        this.ctx.drawImage(res.sprites.effects, 0, 0, 24, 24, x - 24 - 6, y + 4, 24, 24);
+        
+        // эффекты
+        this.ctx.fillStyle = '#000';
+        this.ctx.textAlign = 'left';
+        for(let i in this.effects)
+        {
+            let effect = this.effects[i];
+            this.ctx.drawImage(res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12, y + 4, 24, 24);
+            this.ctx.fillText(`${effect.turns}`, x + 200 + 12 + 24 + 6, y + 1 + 32 / 2);
+        }
 
         // кнопки
         this.ui.Render(this.ctx, _dt);
@@ -1682,6 +1757,7 @@ class Battle
     OnAttackEnd()
     {
         this.attackCounter++;
+        this.OnTurnEnd();
 
         this.lastActionResult = this.enemies[0].AttackEnd();
         if(this.lastActionResult && this.lastActionResult.speech)
