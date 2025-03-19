@@ -18,6 +18,8 @@ class Enemy
         this.hp = 0;
         this.maxHP = 5;
 
+        this.attackCounter = 0;
+
         this.alive = true;
         this.attacks = [TestAttack];
 
@@ -41,10 +43,13 @@ class Enemy
         return this.sprite;
     }
 
-    GetAttack(_counter)
+    GetAttack()
     {
+        let attackClass = this.attacks[this.attackCounter % this.attacks.length];
+        this.attackCounter++;
+
         return {
-            attackClass: this.attacks[_counter % this.attacks.length],
+            attackClass,
             difficulty: 1
         }
     }
@@ -518,7 +523,7 @@ class PromoDuck extends Enemy
         this.dontEvenThink = 0;
     }
 
-    GetAttack(_counter)
+    GetAttack()
     {
         if(this.drawAttempt == 2)
             return {
@@ -532,13 +537,16 @@ class PromoDuck extends Enemy
                 difficulty: 1
             };
 
-        let attackData = super.GetAttack(_counter);
+        let attackClass = this.attacks[this.attackCounter % this.attacks.length];
+        let attackData = {attackClass, difficulty: 1};
 
-        if(_counter >= 4)
+        if(this.attackCounter >= this.attacks.length)
             attackData.difficulty = 2;
 
-        if(_counter >= 8)
+        if(this.attackCounter >= this.attacks.length * 2)
             attackData.attackClass = Utils.RandomArray(this.attacks);
+        
+        this.attackCounter++;
 
         return attackData;
     }

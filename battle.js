@@ -1411,7 +1411,7 @@ class Battle
 
     Start()
     {
-        res.sfx.bgm.play();
+        //res.sfx.bgm.play();
 
         this.background.Start();
         this.enemiesContainer.Start();
@@ -1422,8 +1422,8 @@ class Battle
 
         this.SetMode(IDLE);
 
-        this.SetMode(ATTACK);
-        this.Attack();
+        //this.SetMode(ATTACK);
+        //this.Attack();
     }
 
     SetBounds(_bounds, _slow = false, _instant = false)
@@ -1666,7 +1666,7 @@ class Battle
         this.SetMode(ATTACK);
         this.ResetBounds();
 
-        let attackData = this.enemies[0].GetAttack(this.attackCounter);
+        let attackData = this.enemies[0].GetAttack();
         if(attackData == null)
         {
             console.error('АТАКУ ДАЙ МНЕ ДУБИНА!!!');
