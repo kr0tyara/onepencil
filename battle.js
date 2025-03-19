@@ -2148,7 +2148,10 @@ class Soul extends Entity
         if(this.invinsible && this.invinsibleTimer % 10 < 4)
             _ctx.globalAlpha = 0.5;
 
-        _ctx.drawImage(res.sprites.soul, this.x, this.y);
+        let offset = 0;
+        if(battle.HasEffect(EFFECT_DRAWING_TIME))
+            offset = 33;
+        _ctx.drawImage(res.sprites.soul, 0, offset, 32, 32, this.x, this.y, 32, 32);
 
         _ctx.globalAlpha = 1;
     }
