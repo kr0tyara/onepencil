@@ -1,5 +1,6 @@
 const   EFFECT_NONE = 0,
-        EFFECT_DRAWING_TIME = 1;
+        EFFECT_DRAWING_TIME = 1,
+        EFFECT_INVINSIBILITY = 2;
 
 class Item
 {
@@ -96,5 +97,40 @@ class RubberBand extends Item
         this.name = 'Резинка';
         this.index = {x: 1, y: 0};
         this.text = ['Ты обвязываешь резинку вокруг карандаша.~Следующие @45 ходов@ ты сможешь рисовать дольше!'];
+    }
+}
+
+class GhostCandy extends Item
+{
+    constructor()
+    {
+        super(1);
+
+        this.hp = 0;
+        this.maxConsume = 2;
+
+        this.effect = EFFECT_INVINSIBILITY;
+        this.effectTurns = 3;
+
+        this.name = 'Конфета?';
+        this.index = {x: 0, y: 1};
+        this.text = ['Следующие @43 хода@ неуязвимость от атак увеличивается.'];
+    }
+    
+    Consume()
+    {
+        let result = super.Consume();
+
+        switch(this.consumed)
+        {
+            case 1:
+                result.text = ['Ты чувствуешь... что-то. Как будто конфета прошла тебя насквозь.~' + this.text[0]];
+                break;
+            case 2:
+                result.text = ['Ты ешь ещё одну конфету... Те же ощущения. Но у этой черничный привкус.~' + this.text[0]];
+                break;
+        }
+
+        return result;
     }
 }

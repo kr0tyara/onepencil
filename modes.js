@@ -1235,18 +1235,19 @@ class ItemsMode extends BattleMode
                 _ctx.textAlign = 'left';
                 _ctx.fillText(txt, item.x + 50 + 35, item.y + item.h / 2);
 
-                switch(item.data.effect)
+                if(item.data.effect == EFFECT_NONE && item.data.hp > 0)
                 {
-                    case EFFECT_NONE:
-                        _ctx.textAlign = 'right';
-                        _ctx.fillText(`+${item.data.hp}`, item.x + item.w - 15 - 24 - 6, item.y + item.h / 2);
-        
-                        Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.effects, 0, 0, 24, 24, item.x + item.w - 24 - 15, item.y + item.h / 2 - 12 - 2, 24, 24, _ctx.fillStyle);
-                        break;
+                    _ctx.textAlign = 'right';
+                    _ctx.fillText(`+${item.data.hp}`, item.x + item.w - 15 - 24 - 6, item.y + item.h / 2);
+    
+                    Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.effects, 0, 0, 24, 24, item.x + item.w - 24 - 15, item.y + item.h / 2 - 12 - 2, 24, 24, _ctx.fillStyle);
+                }
+                else
+                {
+                    _ctx.textAlign = 'right';
+                    _ctx.fillText(`+${item.data.effectTurns}`, item.x + item.w - 15 - 24 - 6, item.y + item.h / 2);
 
-                    case EFFECT_DRAWING_TIME:
-                        Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.effects, 24, 0, 24, 24, item.x + item.w - 24 - 15, item.y + item.h / 2 - 12 - 2, 24, 24, _ctx.fillStyle);
-                        break;
+                    Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.effects, item.data.effect * 24, 0, 24, 24, item.x + item.w - 24 - 15, item.y + item.h / 2 - 12 - 2, 24, 24, _ctx.fillStyle);
                 }
                         
                 if(item.data.maxConsume > 1)

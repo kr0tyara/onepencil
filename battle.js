@@ -1136,6 +1136,11 @@ class GameResources
             {
                 url: 'effect.ogg',
                 volume: .5
+            },
+            effectEnd:
+            {
+                url: 'effect_end.ogg',
+                volume: .5
             }
         };
 
@@ -1395,6 +1400,7 @@ class Battle
         this.inventory = [
             new Sharpener(),
             new RubberBand(),
+            new GhostCandy()
         ];
 
         this.ownAttacks = 
@@ -1515,7 +1521,10 @@ class Battle
 
         effect.turns--;
         if(effect.turns <= 0)
+        {
             this.effects.splice(this.effects.indexOf(effect), 1);
+            res.sfx.effectEnd.play();
+        }
     }
 
     Render(_dt)
@@ -1588,8 +1597,8 @@ class Battle
         for(let i in this.effects)
         {
             let effect = this.effects[i];
-            this.ctx.drawImage(res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12, y + 4, 24, 24);
-            this.ctx.fillText(`${effect.turns}`, x + 200 + 12 + 24 + 6, y + 1 + 32 / 2);
+            this.ctx.drawImage(res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12 + 64 * i, y + 4, 24, 24);
+            this.ctx.fillText(`${effect.turns}`, x + 200 + 12 + 64 * i + 24 + 6, y + 1 + 32 / 2);
         }
 
         // кнопки
@@ -2069,7 +2078,10 @@ class Soul extends Entity
 
     Hurt()
     {
-        this.invinsibleTimer = this.invinsibleTime;
+        if(battle.HasEffect(EFFECT_INVINSIBILITY))
+            this.invinsibleTimer = this.invinsibleTime * 2;
+        else
+            this.invinsibleTimer = this.invinsibleTime;
         this.invinsible = true;
 
         Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
