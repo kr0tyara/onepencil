@@ -9,7 +9,8 @@ const   IDLE = 0,
         ACT = 5,
         ITEMS = 6,
         DRAW = 7,
-        GAME_OVER = 8,
+        DEAL = 8,
+        GAME_OVER = 9,
         
         STATE_NORMAL = 0,
         STATE_HURT = 1,
@@ -67,7 +68,7 @@ class TypeWriter
     Start()
     {
         this.textSize = 36;
-        this.textBounds = {x1: battle.defaultBounds.x1 + 25, x2: battle.defaultBounds.x2 - 25, y1: battle.defaultBounds.y1 + 25, y2: battle.defaultBounds.y2 - 25};
+        this.textBounds = {x1: battle.defaultBounds.x1 + 25, x2: battle.defaultBounds.x2 - 25, y1: battle.defaultBounds.y1 + 25, y2: battle.defaultBounds.y2 - 15};
     }
 
     SetText(_text)
@@ -245,6 +246,7 @@ class TypeWriter
                     break;
                     
                 case '^':
+                case '$':
                     this.timer = 0;
                     break;
 
@@ -282,6 +284,7 @@ class TypeWriter
         {
             case '@':
             case '^':
+            case '$':
 
             case ',':
             case '?':
@@ -331,6 +334,7 @@ class TypeWriter
         let customColorSeeking = false;
 
         let shakeText = false;
+        let wawyText = false;
 
         for(let i = 0; i < lines.length; i++)
         {
@@ -384,12 +388,23 @@ class TypeWriter
                     shakeText = !shakeText;
                     continue;
                 }
+                // волна
+                if(char == '$')
+                {
+                    wawyText = !wawyText;
+                    continue;
+                }
 
                 let offset = {x: 0, y: 0};
                 if(shakeText)
                 {
                     offset.x = (Math.random() - .5) * this.textSize / 9;
                     offset.y = (Math.random() - .5) * this.textSize / 9;
+                }
+                if(wawyText)
+                {
+                    offset.x = Math.cos(_dt / 150 + (i + j) / 2) * this.textSize / 12;
+                    offset.y = -Math.sin(_dt / 150 + (i + j) / 2) * this.textSize / 12;
                 }
 
                 _ctx.fillText(char, x + offset.x, y + offset.y);
@@ -1354,6 +1369,7 @@ class Battle
             new ActMode(),
             new ItemsMode(),
             new DrawMode(),
+            new DealMode(),
             new GameOverMode()
         ];
 
@@ -1597,8 +1613,8 @@ class Battle
         for(let i in this.effects)
         {
             let effect = this.effects[i];
-            this.ctx.drawImage(res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12 + 64 * i, y + 4, 24, 24);
-            this.ctx.fillText(`${effect.turns}`, x + 200 + 12 + 64 * i + 24 + 6, y + 1 + 32 / 2);
+            this.ctx.drawImage(res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12 + 55 * i, y + 4, 24, 24);
+            this.ctx.fillText(`${effect.turns}`, x + 200 + 12 + 55 * i + 24 + 6, y + 1 + 32 / 2);
         }
 
         // кнопки
@@ -1908,7 +1924,7 @@ class Battle
         let pos = Utils.MousePos(e, this.canvas);
         this.mousePos = pos;
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK || this.mode.id == DRAW) && this.mode.drawingLocked)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.drawingLocked)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -1958,7 +1974,7 @@ class Battle
     {
         let pos = {...this.mousePos};
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || (this.mode.id == OWN_ATTACK || this.mode.id == DRAW) && this.mode.drawingLocked)
+        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.drawingLocked)
         {
             pos = this.BoundSoulPos(pos);
         }

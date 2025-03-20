@@ -992,6 +992,30 @@ class HandsProjectile extends Projectile
     }
 }
 
+class NothingAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 0, 50);
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.font = '36px Pangolin';
+        _ctx.font = 'Pangolin'
+        _ctx.fillStyle = '#666';
+        _ctx.textAlign = 'center';
+        _ctx.textBaseline = 'top';
+
+        let offset = {};
+        offset.x = (Math.random() - .5) * 2;
+        offset.y = (Math.random() - .5) * 2;
+
+        _ctx.fillText('Делай', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 - 36 + 4 + offset.y);
+        _ctx.fillText('ставку!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + 4 + offset.y);
+    }
+}
+
 /*
 class PenisAttack extends Attack
 {

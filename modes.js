@@ -986,17 +986,27 @@ class ActMode extends TargettedBattleMode
             {
                 let action = this.actions[i];
 
-                if(action == target)
-                    _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
-                else
-                    _ctx.strokeStyle = _ctx.fillStyle = '#000';
+                if(action.highlighted)
+                {
+                    if(action == target)
+                        _ctx.strokeStyle = _ctx.fillStyle = '#FFC13D';
+                    else
+                        _ctx.strokeStyle = _ctx.fillStyle = '#ff6a00';
+                }
+                else 
+                {
+                    if(action == target)
+                        _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
+                    else
+                        _ctx.strokeStyle = _ctx.fillStyle = '#000';
+                }
 
                 _ctx.beginPath();
                 Utils.RoundedRect(_ctx, action.x, action.y, action.w, action.h, 4);
                 _ctx.stroke();
                 _ctx.closePath();
 
-                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.actions, 100 * action.index.x, 100 * action.index.y, 100, 100, action.x + 15, action.y - 50 / 2 + action.h / 2, 50, 50, _ctx.fillStyle);
+                Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.actions, 50 * action.index.x, 50 * action.index.y, 50, 50, action.x + 15, action.y - 50 / 2 + action.h / 2, 50, 50, _ctx.fillStyle);
 
                 _ctx.fillText(action.name, action.x + 50 + 35, action.y + action.h / 2);
             }
@@ -1064,6 +1074,31 @@ class DrawMode extends DrawingMode
         battle.SetMode(PRE_ATTACK);
 
         super.Finish();
+    }
+}
+class DealMode extends DrawingMode
+{
+    constructor()
+    {
+        super(DEAL);
+    }
+
+    Start()
+    {
+        super.Start();
+        this.locked = true;
+
+        this.SelectTarget(battle.lastActionResult.target);
+
+        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550, a: 1});
+    }
+
+    PointerDown(e)
+    {
+        if(!battle.IsCursorInsideBounds())
+            return;
+
+        super.PointerDown(e);
     }
 }
 

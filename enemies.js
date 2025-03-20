@@ -273,27 +273,29 @@ class PromoDuckSprite extends EnemySprite
             // цена
             _ctx.fillStyle = '#edeef0';
             _ctx.fillRect(x, y + h - 80, 250, 80);
+            if(this.enemy.resetCounter > 0)
+            {
+                _ctx.fillStyle = '#000';
+                _ctx.font = '36px Pangolin';
+                txt = `324905`;
+                w = _ctx.measureText(txt).width;
+                _ctx.textBaseline = 'bottom';
 
-            _ctx.fillStyle = '#000';
-            _ctx.font = '36px Pangolin';
-            txt = `324905`;
-            w = _ctx.measureText(txt).width;
-            _ctx.textBaseline = 'bottom';
+                _ctx.drawImage(res.sprites.minipencil, x + 250 / 2 + w / 2 + 5 - 12, y + h - 70);
+                _ctx.fillText(txt, x + 250 / 2 - 16, y + h - 35);
 
-            _ctx.drawImage(res.sprites.minipencil, x + 250 / 2 + w / 2 + 5 - 12, y + h - 70);
-            _ctx.fillText(txt, x + 250 / 2 - 16, y + h - 35);
+                _ctx.textAlign = 'left';
+                _ctx.font = '24px Pangolin';
 
-            _ctx.textAlign = 'left';
-            _ctx.font = '24px Pangolin';
-
-            txt = `До сброса:`;
-            w = _ctx.measureText(txt).width + 40;
-            _ctx.fillText(txt, x + 40, y + h - 10);
-            
-            txt = ` ${this.enemy.resetCounter} м.`;
-            _ctx.fillStyle = TEXT_COLORS[2];
-            _ctx.fillText(txt, x + w, y + h - 10);
-            w += _ctx.measureText(txt).width;
+                txt = `До сброса:`;
+                w = _ctx.measureText(txt).width + 40;
+                _ctx.fillText(txt, x + 40, y + h - 10);
+                
+                txt = ` ${this.enemy.resetCounter} м.`;
+                _ctx.fillStyle = TEXT_COLORS[2];
+                _ctx.fillText(txt, x + w, y + h - 10);
+                w += _ctx.measureText(txt).width;
+            }
 
             _ctx.stroke();
             _ctx.closePath();
@@ -315,6 +317,21 @@ class PromoDuckSprite extends EnemySprite
                 _ctx.globalAlpha = 1 - t;
                 _ctx.fillText(`-${this.deltas[i].delta}`, x + w + 5, y + h - 10 - t * 25);
                 _ctx.globalAlpha = 1;
+            }
+
+            if(this.enemy.resetCounter == 0)
+            {
+                _ctx.fillStyle = '#000';
+                _ctx.beginPath();
+                Utils.RoundedRect(_ctx, x, y + h - 80, 250, 80, 6);
+                _ctx.fill();
+                _ctx.closePath();
+
+                _ctx.fillStyle = '#fff';
+                _ctx.font = '46px Pangolin';
+                _ctx.textAlign = 'center';
+                _ctx.textBaseline = 'middle';
+                _ctx.fillText('СВОБОДНО', x + 250 / 2, y + h - 70 / 2);
             }
         }
 
@@ -411,7 +428,7 @@ class PromoDuckSprite extends EnemySprite
             }
 
             res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
-            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 'B' ? 3 : harmed ? 2 : this.expression == '4' ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 'E' ? 4 : this.expression == 'B' ? 3 : harmed ? 2 : this.expression == '4' ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'feet', harmed ? 2 : 0, this.x, this.y);
 
             if(this.expression != '2')
@@ -473,7 +490,7 @@ class PromoDuck extends Enemy
             {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
             {name: 'Ставка', index: {x: 1, y: 0}, action: this.Bet.bind(this)},
             {name: 'Вандализм', index: {x: 0, y: 1}, action: this.Vandalize.bind(this)},
-            {name: 'Ничего', index: {x: 1, y: 1}, action: this.Nothing.bind(this)},
+            /*{name: 'Ничего', index: {x: 1, y: 1}, action: this.Nothing.bind(this)},*/
         ];
         
         this.flavourText = [
@@ -503,12 +520,13 @@ class PromoDuck extends Enemy
         super.Start();
 
         this.resetCounter = 45;
+        this.resetTalk = 0;
+
         this.story = 0;
 
         this.check = 0;
 
         this.bet = 0;
-        this.betShown = false;
 
         this.hurt = 0;
         this.actualHurt = 0;
@@ -533,6 +551,12 @@ class PromoDuck extends Enemy
         if(this.drawAttempt == 2)
             return {
                 attackClass: ScribbleAttack,
+                difficulty: 1
+            };
+
+        if(this.resetCounter <= 0)
+            return {
+                attackClass: NothingAttack,
                 difficulty: 1
             };
 
@@ -608,14 +632,6 @@ class PromoDuck extends Enemy
             }
             
             this.bet = 3;
-
-            if(!this.betShown)
-            {
-                this.betShown = true;
-                return message;
-            }
-
-            delete message.actions;
             return message;
         }
 
@@ -706,23 +722,25 @@ class PromoDuck extends Enemy
         if(_len >= 100)
         {
             delta = 5;
-            result.text = ['Время ставки ОЧЕНЬ СИЛЬНО понижается!!!'];
+            result.text = ['Время ставки @2ОЧЕНЬ СИЛЬНО понижается@!!!'];
         }
         else if(_len >= 50)
         {
             delta = 3;
-            result.text = ['Время ставки сильно понижается!!!'];
+            result.text = ['Время ставки @2сильно понижается@!!!'];
         }
         else if(_len >= 25)
         {
             delta = 2;
-            result.text = ['Время ставки понижается!!'];
+            result.text = ['Время ставки @2понижается@!!'];
         }
         else if(_len >= 5)
         {
             delta = 1;
-            result.text = ['Время ставки немного понижается!'];
+            result.text = ['Время ставки @2немного понижается@!'];
         }
+
+        this.DecreaseResetCounter(delta);
 
         if(delta == 0)
         {
@@ -742,14 +760,38 @@ class PromoDuck extends Enemy
             result.speech = speech;
         }
 
-        this.DecreaseResetCounter(delta);
-
         return result;
     }
 
     StoryFlow()
     {
         let result = null;
+
+        if(this.resetCounter <= 0)
+        {
+            this.resetTalk++;
+
+            switch(this.resetTalk)
+            {
+                case 1:
+                    return ['Что там у нас по времени...', 'О! Пора сбрасывать.', 'Покупателей, вижу, не намечается...~Ну, значит, тебе везёт!', 'Можешь перекупить место хоть за свой карандаш.'];
+
+                case 2:
+                    return ['Что же ты медлишь??~Уже не хочешь покупать?'];
+
+                case 3:
+                    return ['#A^Хоть понимаешь, сколько моего времени ушло впустую из-за тебя^?!', 'Время - деньги, малой.~Вместо того, чтобы с тобой драться, я мог заработать..........', '#3.%.%.', 'Впрочем, неважно. Подписывай договор и уходи!'];
+
+                case 4:
+                    return ['#E$Хи-хи! Я принесу карандаш и буду тыкать им в лицо дядюшке ПромоУтке, и он мне ничего не сделает!!$', 'Это ты.', '#A^ПОЧЕМУ ТЫ ХИХИКАЕШЬ??!?!^'];
+
+                case 10:
+                    return ['Ты получаешь от моих мучений какое-то удовольствие или что?', 'То, что я не могу тебя выгнать*, не значит, что я твой личный шут.', '#2* Туни запрещает мне прогонять клиентов после того случая.'];
+
+                default:
+                    return ['#7Делай. Ставку.'];
+            }
+        }
 
         if(this.wtf < 1)
             return result;
@@ -801,7 +843,8 @@ class PromoDuck extends Enemy
         {
             _delta += this.resetCounter;
             this.resetCounter = 0;
-            console.log('ВАУ!');
+            
+            this.actions[1].highlighted = true;
         }
         
         if(_delta > 0)
@@ -898,10 +941,17 @@ class PromoDuck extends Enemy
     {
         this.bet++;
 
+        if(this.resetCounter <= 0)
+        {
+            return {
+                text: ['~Подпиши договор, и ты выкупишь место на Промотке за карандаш.'],
+                mode: DEAL
+            }
+        }
+
         switch(this.bet)
         {
             case 1:
-                this.betShown = true;
                 return {
                     text: ['~Ты предлагаешь свой карандаш ПромоУтке.'],
                     speech: ['#9Один карандаш????~НЕ СМЕШИ!!! Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!!!', 'Не, ну ты конечно можешь ДОЖДАТЬСЯ @2сброса ставки@...', '...но я СИЛЬНО сомневаюсь, что твой карандаш выдержит мои атаки!!!'],
