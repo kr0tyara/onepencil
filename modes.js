@@ -1444,7 +1444,12 @@ class GameOverMode extends BattleMode
         }
 
         if(this.animationTimer < this.shakeTime)
-            _ctx.drawImage(res.sprites.soul, this.soulPos.x + offset.x, this.soulPos.y + offset.y);
+        {
+            let spriteOffset = 0;
+            if(battle.HasEffect(EFFECT_DRAWING_TIME))
+                spriteOffset = 33;
+            _ctx.drawImage(res.sprites.soul, 0, spriteOffset, 32, 32, this.soulPos.x + offset.x, this.soulPos.y + offset.y, 32, 32);
+        }
         else 
         {
             let t = (this.animationTimer - this.shakeTime) / this.breakSpeed;
