@@ -1011,8 +1011,63 @@ class NothingAttack extends Attack
         offset.x = (Math.random() - .5) * 2;
         offset.y = (Math.random() - .5) * 2;
 
-        _ctx.fillText('Делай', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 - 36 + 4 + offset.y);
-        _ctx.fillText('ставку!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + 4 + offset.y);
+        let text = ['Сделай', 'ставку!'];
+        if(this.caster.enemy.dealt > 0)
+            text = ['Подпиши', 'договор!!!'];
+        if(this.caster.enemy.signed == 2)
+            text = ['Спасибо', 'за карандаш!'];
+
+        _ctx.fillText(text[0], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 - 36 + 4 + offset.y);
+        _ctx.fillText(text[1], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + 4 + offset.y);
+    }
+}
+class ByeAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 40, 240);
+    
+        this.startBounds = {x1: 675 - 10, x2: 675 + 10, y1: 280 - 10, y2: 280 + 10};
+    }
+
+    Start()
+    {
+        super.Start();
+
+        this.grabbed = false;
+        
+        this.caster.SetAnimation(STATE_BYE, 0);
+        battle.enemiesContainer.SetState(STATE_BYE);
+    }
+
+    OnGameLoop(_delta)
+    {
+        super.OnGameLoop(_delta);
+        
+        let t = (this.attackTime - this.attackTimer) / (this.attackTime - 40);
+        this.caster.SetAnimation(STATE_BYE, t);
+
+        if(t > .1 && !this.grabbed)
+        {
+            this.grabbed = true;
+            battle.soul.eaten = true;
+
+            battle.ResetBounds();
+        }
+    }
+
+    SpawnProjectile(_index)
+    {
+        if(_index > 1 && battle.hp > 0)
+        {
+            Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
+            battle.hp -= 4;
+            if(battle.hp < 0)
+            {
+                battle.hp = 0;
+                this.Finish();
+            }
+        }
     }
 }
 

@@ -268,16 +268,20 @@ class PromoDuckSprite extends EnemySprite
             _ctx.fillText(txt, x + 250 / 2 + 16, y + 8 + 4);
 
             // мульт
-            res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), x, y + 45);
+            if(this.enemy.signed == 2)
+                res.sheets.promo2.Draw(_ctx, 'promo2', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo2.GetTagFrames('idle')), x, y + 45);
+            else
+                res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), x, y + 45);
 
             // цена
             _ctx.fillStyle = '#edeef0';
             _ctx.fillRect(x, y + h - 80, 250, 80);
-            if(this.enemy.resetCounter > 0)
+            if(this.enemy.resetCounter > 0 || this.enemy.signed == 2)
             {
                 _ctx.fillStyle = '#000';
                 _ctx.font = '36px Pangolin';
-                txt = `324905`;
+                
+                txt = this.enemy.signed == 2 ? '1' : '324905';
                 w = _ctx.measureText(txt).width;
                 _ctx.textBaseline = 'bottom';
 
@@ -291,8 +295,12 @@ class PromoDuckSprite extends EnemySprite
                 w = _ctx.measureText(txt).width + 40;
                 _ctx.fillText(txt, x + 40, y + h - 10);
                 
-                txt = ` ${this.enemy.resetCounter} м.`;
-                _ctx.fillStyle = TEXT_COLORS[2];
+                if(this.enemy.signed == 2)
+                    txt = ' 2 ч.';
+                else
+                    txt = ` ${this.enemy.resetCounter} м.`;
+                
+                    _ctx.fillStyle = TEXT_COLORS[2];
                 _ctx.fillText(txt, x + w, y + h - 10);
                 w += _ctx.measureText(txt).width;
             }
@@ -302,7 +310,8 @@ class PromoDuckSprite extends EnemySprite
             _ctx.restore();
 
             // вандализм
-            _ctx.drawImage(this.vandalismCanvas, x - 55, y - 25);
+            if(this.enemy.signed < 2)
+                _ctx.drawImage(this.vandalismCanvas, x - 55, y - 25);
 
             _ctx.font = '24px Pangolin';
             _ctx.textAlign = 'left';
@@ -319,7 +328,7 @@ class PromoDuckSprite extends EnemySprite
                 _ctx.globalAlpha = 1;
             }
 
-            if(this.enemy.resetCounter == 0)
+            if(this.enemy.resetCounter == 0 && this.enemy.signed < 2)
             {
                 _ctx.fillStyle = '#000';
                 _ctx.beginPath();
@@ -379,6 +388,88 @@ class PromoDuckSprite extends EnemySprite
 
             res.sheets.duck.Draw(_ctx, 'head', 8, this.x + headWobble.x, this.y + headWobble.y);
         }
+        else if(this.state == STATE_BYE)
+        {
+            let eatWobble = {
+                x: ~~(Math.cos(_dt / 25) * 2 + armWobble.x),
+                y: ~~(Math.sin(_dt / 25) * 2 + armWobble.y)
+            };
+
+            headWobble.x = 0;
+            
+            res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'feet', 0, this.x, this.y);
+
+            res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
+
+            if(this.animationTime >= .3)
+            {
+                res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + headWobble.x, this.y + headWobble.y + (_dt % 200 > 100 ? -3 : 0));
+                res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
+                res.sheets.duck.Draw(_ctx, 'head', _dt % 200 > 100 ? 1 : 0, this.x + headWobble.x, this.y + headWobble.y);
+                
+                let x = this.x + 133;
+                let y = this.y + 142;
+                let t = (this.animationTime - .3) / .25 % .8;
+                let i = ~~((this.animationTime - .3) / .25 / .8);
+
+                let pos1, pos2, pos3;
+                if(i % 3 == 0)
+                {
+                    pos1 = Utils.CurvePos({x, y}, {x: x + 130, y: _ctx.canvas.height}, 200, t);
+                    pos2 = Utils.CurvePos({x, y}, {x: x - 130, y: _ctx.canvas.height}, 300, t);
+                    pos3 = Utils.CurvePos({x, y}, {x: x + 20, y: _ctx.canvas.height}, 150, t);
+                }
+                else if(i % 3 == 1)
+                {
+                    pos1 = Utils.CurvePos({x, y}, {x: x + 70, y: _ctx.canvas.height}, 100, t);
+                    pos2 = Utils.CurvePos({x: x - 20, y}, {x: x - 50, y: _ctx.canvas.height}, 200, t);
+                    pos3 = Utils.CurvePos({x: x + 30, y}, {x: x - 20, y: _ctx.canvas.height}, 300, t);
+                }
+                else
+                {
+                    pos1 = Utils.CurvePos({x: x + 20, y}, {x: x, y: _ctx.canvas.height}, 250, t);
+                    pos2 = Utils.CurvePos({x: x - 30, y}, {x: x - 80, y: _ctx.canvas.height}, 150, t);
+                    pos3 = Utils.CurvePos({x, y}, {x: x + 20, y: _ctx.canvas.height}, 100, t);
+                }
+                
+                _ctx.save();
+                _ctx.translate(pos1.x, pos1.y);
+                _ctx.rotate(Math.PI * t * 2);
+                _ctx.drawImage(res.sprites.soulbreak, 0, 50, 9, 12, -4.5, -6, 9, 12);
+                _ctx.restore();
+
+                _ctx.save();
+                _ctx.translate(pos2.x, pos2.y);
+                _ctx.rotate(-Math.PI * t * 1.5);
+                _ctx.drawImage(res.sprites.soulbreak, 10, 51, 12, 13, -6, -7.5, 12, 13);
+                _ctx.restore();
+
+                _ctx.save();
+                _ctx.translate(pos3.x, pos3.y);
+                _ctx.rotate(Math.PI * t);
+                _ctx.drawImage(res.sprites.soulbreak, 22, 54, 8, 8, -4, -4, 8, 8);
+                _ctx.restore();
+            }
+            else if(this.animationTime > .2)
+            {
+                res.sheets.duck.Draw(_ctx, 'hair', 3, this.x + headWobble.x, this.y + headWobble.y);
+                res.sheets.duck.Draw(_ctx, 'head', res.sheets.duck.GetTagFrame('eat_2'), this.x + headWobble.x, this.y + headWobble.y);
+                res.sheets.duck.Draw(_ctx, 'arm_more', 0, this.x + eatWobble.x, this.y + eatWobble.y);
+            }
+            else if(this.animationTime > .1)
+            {
+                res.sheets.duck.Draw(_ctx, 'hair', 2, this.x + headWobble.x, this.y + headWobble.y);
+                res.sheets.duck.Draw(_ctx, 'arm_front', 7, this.x + eatWobble.x, this.y + eatWobble.y);
+                res.sheets.duck.Draw(_ctx, 'head', res.sheets.duck.GetTagFrame('eat_1'), this.x + headWobble.x, this.y + headWobble.y);
+            }
+            else
+            {
+                res.sheets.duck.Draw(_ctx, 'arm_front', 6, this.x, this.y + armWobble.y);
+                res.sheets.duck.Draw(_ctx, 'head', 8, this.x + headWobble.x, this.y + headWobble.y);
+            }
+        }
         else
         {
             let expression = this.expression;
@@ -421,6 +512,14 @@ class PromoDuckSprite extends EnemySprite
                         hairOffset.x = -1;
                     break;
 
+                case 'G':
+                    if(mouthOpen)
+                    {
+                        hairOffset.x = 2;
+                        hairOffset.y = -4;
+                    }
+                    break;
+
                 case '2':
                     headWobble.x = 0;
                     headWobble.y = 0;
@@ -428,7 +527,7 @@ class PromoDuckSprite extends EnemySprite
             }
 
             res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
-            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 'E' ? 4 : this.expression == 'B' ? 3 : harmed ? 2 : this.expression == '4' ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', this.expression == 'G' ? 5 : this.expression == 'E' ? 4 : this.expression == 'B' ? 3 : harmed ? 2 : this.expression == '4' ? 1 : 0, this.x + armWobble.x, this.y + armWobble.y);
             res.sheets.duck.Draw(_ctx, 'feet', harmed ? 2 : 0, this.x, this.y);
 
             if(this.expression != '2')
@@ -437,7 +536,7 @@ class PromoDuckSprite extends EnemySprite
             res.sheets.duck.Draw(_ctx, 'body', harmed ? 2 : 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
 
             if(this.expression != '6')
-                res.sheets.duck.Draw(_ctx, 'arm_front', this.expression == 'C' ? 4 : this.expression == 'B' ? 3 : harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
+                res.sheets.duck.Draw(_ctx, 'arm_front', this.expression == 'G' ? 5 : this.expression == 'C' ? 4 : this.expression == 'B' ? 3 : harmed ? 2 : 0, this.x + armWobble.x, this.y + armWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'head', headFrame, this.x + headWobble.x, this.y + headWobble.y);
         }
@@ -521,6 +620,8 @@ class PromoDuck extends Enemy
 
         this.resetCounter = 45;
         this.resetTalk = 0;
+        this.dealt = 0;
+        this.signed = 0;
 
         this.story = 0;
 
@@ -548,15 +649,27 @@ class PromoDuck extends Enemy
 
     GetAttack()
     {
+        if(this.signed == 2)
+            return {
+                attackClass: NothingAttack,
+                difficulty: 1
+            };
+
         if(this.drawAttempt == 2)
             return {
                 attackClass: ScribbleAttack,
                 difficulty: 1
             };
 
-        if(this.resetCounter <= 0)
+        if(this.resetCounter <= 0 && this.signed == 0)
             return {
                 attackClass: NothingAttack,
+                difficulty: 1
+            };
+
+        if(this.resetCounter <= 0 && this.signed == 1)
+            return {
+                attackClass: ByeAttack,
                 difficulty: 1
             };
 
@@ -582,6 +695,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.signed == 2)
+            return {
+                text: ['У тебя больше нет карандаша.']
+            };
+
         if(this.weakened == 2)
             return {
                 text: ['~(На твоём месте я бы прислушался к Промоутке.)']
@@ -674,7 +792,7 @@ class PromoDuck extends Enemy
 
                 this.mockAnnoyed = true;
                 return {
-                    speech: ['Ты это специально делаешь?!']
+                    speech: ['#FТы это специально делаешь?!']
                 };
             }
 
@@ -687,7 +805,7 @@ class PromoDuck extends Enemy
 
                 case 2:
                     return {
-                        speech: ['Ты ОПЯТЬ?! Не позорься!']
+                        speech: ['#FТы ОПЯТЬ?! Не позорься!']
                     };
 
                 case 3:
@@ -710,6 +828,35 @@ class PromoDuck extends Enemy
         return {
             speech: this.StoryFlow()
         };
+    }
+
+    Deal(_yes, _no, _len, _pointsOutside)
+    {
+        this.dealt++;
+
+        let text = ['Так, посмотрим посмотрим...'];
+        if(_yes && _no || (_len > 30 && _pointsOutside / _len > .7))
+        {
+            text = text.concat(['Поздравляю, бланк испорчен!']);
+        }
+        else if(!_yes && !_no)
+        {
+            text = text.concat(['...Ты не знаешь, как заполнить бланк?', 'Просто нарисуй что-нибудь внутри квадратика рядом с словом "Да".', 'Галочку там, крестик, спиральку, икосододекаэдр, всё равно.', 'Проще ж некуда!']);
+        }
+        else
+        {
+            if(_no)
+            {
+                text = text.concat(['#A^КАК ЭТО НЕТ?!^', '#FА зачем тогда ты тут ошиваешься?? Моё время тратишь??!!', '#FПиши "Да" или уходи.']);
+            }
+            else if(_yes)
+            {
+                text = text.concat(['#GПревосходно!', '#GНу а теперь оплата. Твой $кккарандашиикк$!']);
+                this.signed = 1;
+            }
+        }
+
+        return {speech: text};
     }
     
     Drawn(_len)
@@ -767,26 +914,34 @@ class PromoDuck extends Enemy
     {
         let result = null;
 
+        if(this.signed > 0)
+        {
+            return null;
+        }
+
         if(this.resetCounter <= 0)
         {
             this.resetTalk++;
+            
+            if(this.resetTalk == 1 && this.dealt > 0)
+                this.resetTalk = 2;
 
             switch(this.resetTalk)
             {
                 case 1:
-                    return ['Что там у нас по времени...', 'О! Пора сбрасывать.', 'Покупателей, вижу, не намечается...~Ну, значит, тебе везёт!', 'Можешь перекупить место хоть за свой карандаш.'];
+                    return ['Что там у нас по времени...', 'О! Пора сбрасывать!', 'Покупателей, вижу, не намечается...~Тебе повезло!', 'Можешь наконец отдать мне свой карандаш и свалить.'];
 
                 case 2:
-                    return ['Что же ты медлишь??~Уже не хочешь покупать?'];
+                    return ['#FНе затягивай.'];
 
                 case 3:
-                    return ['#A^Хоть понимаешь, сколько моего времени ушло впустую из-за тебя^?!', 'Время - деньги, малой.~Вместо того, чтобы с тобой драться, я мог заработать..........', '#3.%.%.', 'Впрочем, неважно. Подписывай договор и уходи!'];
+                    return ['#A^Хоть понимаешь, сколько моего времени ушло впустую из-за тебя^?!', '#FВремя - деньги, малой.~Вместо того, чтобы с тобой драться, я мог заработать..........', '#3.%.%.', 'Впрочем, неважно. Подписывай договор и уходи!'];
 
                 case 4:
                     return ['#E$Хи-хи! Я принесу карандаш и буду тыкать им в лицо дядюшке ПромоУтке, и он мне ничего не сделает!!$', 'Это ты.', '#A^ПОЧЕМУ ТЫ ХИХИКАЕШЬ??!?!^'];
 
                 case 10:
-                    return ['Ты получаешь от моих мучений какое-то удовольствие или что?', 'То, что я не могу тебя выгнать*, не значит, что я твой личный шут.', '#2* Туни запрещает мне прогонять клиентов после того случая.'];
+                    return ['#FТы получаешь от моих мучений какое-то удовольствие или что?', '#FТо, что я не могу тебя выгнать*, не значит, что я твой личный шут.', '#2* Туни запрещает мне прогонять клиентов после того случая.'];
 
                 default:
                     return ['#7Делай. Ставку.'];
@@ -844,7 +999,8 @@ class PromoDuck extends Enemy
             _delta += this.resetCounter;
             this.resetCounter = 0;
             
-            this.actions[1].highlighted = true;
+            if(this.dealt == 0)
+                this.actions[1].highlighted = true;
         }
         
         if(_delta > 0)
@@ -859,6 +1015,17 @@ class PromoDuck extends Enemy
             this.failedAttack = 2;
         else if(this.failedAttack == 2)
             this.failedAttack = 0;
+
+        if(this.signed == 1)
+        {
+            this.signed = 2;
+
+            this.actions = [this.actions[0]];
+
+            return {
+                speech: ['Приятно иметь дело!'],
+            };
+        }
 
         if(this.drawAttempt == 2)
         {

@@ -229,6 +229,7 @@ class DrawingMode extends TargettedBattleMode
 
         this.lineWidth = 5;
         this.color = '#000000';
+        this.text = 'Рисуй!';
     }
 
     Start()
@@ -309,7 +310,7 @@ class DrawingMode extends TargettedBattleMode
 
         // текст
         _ctx.font = '36px Pangolin';
-        let text = 'Рисуй!';
+        let text = this.text;
         let w = _ctx.measureText(text).width + 24;
         
         if(this.drawing)
@@ -1081,6 +1082,8 @@ class DealMode extends DrawingMode
     constructor()
     {
         super(DEAL);
+
+        this.text = 'Ты согласен?';
     }
 
     Start()
@@ -1090,7 +1093,17 @@ class DealMode extends DrawingMode
 
         this.SelectTarget(battle.lastActionResult.target);
 
-        battle.SetBounds({x1: 515, y1: 300, x2: 765, y2: 550, a: 1});
+        let bounds = {x1: 415, y1: 300, x2: 865, y2: 550, a: 1};
+
+        this.yesBounds = {x1: bounds.x1 + 80, y1: bounds.y1 + (bounds.y2 - bounds.y1) / 2 - 25};
+        this.yesBounds.x2 = this.yesBounds.x1 + 50;
+        this.yesBounds.y2 = this.yesBounds.y1 + 50;
+
+        this.noBounds = {x1: bounds.x2 - 150 - 50, y1: bounds.y1 + (bounds.y2 - bounds.y1) / 2 - 25};
+        this.noBounds.x2 = this.noBounds.x1 + 50;
+        this.noBounds.y2 = this.noBounds.y1 + 50;
+
+        battle.SetBounds(bounds);
     }
 
     PointerDown(e)
@@ -1099,6 +1112,57 @@ class DealMode extends DrawingMode
             return;
 
         super.PointerDown(e);
+    }
+
+    Render(_ctx, _dt)
+    {
+        _ctx.strokeStyle = '#666';
+        _ctx.lineWidth = 3;
+        _ctx.strokeRect(this.yesBounds.x1, this.yesBounds.y1, this.yesBounds.x2 - this.yesBounds.x1, this.yesBounds.y2 - this.yesBounds.y1);
+        _ctx.strokeRect(this.noBounds.x1, this.noBounds.y1, this.noBounds.x2 - this.noBounds.x1, this.noBounds.y2 - this.noBounds.y1);
+
+        _ctx.fillStyle = '#666';
+        _ctx.font = '36px Pangolin';
+        _ctx.textAlign = 'left';
+        _ctx.textBaseline = 'middle';
+        _ctx.fillText('Да', this.yesBounds.x2 + 12, this.yesBounds.y1 + (this.yesBounds.y2 - this.yesBounds.y1) / 2);
+        _ctx.fillText('Нет', this.noBounds.x2 + 12, this.noBounds.y1 + (this.noBounds.y2 - this.noBounds.y1) / 2);
+
+        _ctx.font = '8px Pangolin';
+        _ctx.textBaseline = 'bottom';
+        _ctx.fillText('Подписывая договор, вы подтверждаете передачу вашей души ООО "ПромоУтка". Да-да, вы всё правильно поняли.', battle.bounds.x1 + 12, battle.bounds.y2 - 36);
+        _ctx.fillText('Мы заберём вашу душу. Мы оцифруем её и посвятим ей клон Андертейла, а с вами не поделимся никакой прибылью.', battle.bounds.x1 + 12, battle.bounds.y2 - 24);
+        _ctx.fillText('Ха-ха-ха. Вы не можете не подписать этот договор, потому что другого варианта завершения игры нет. Даже не пытайтесь.', battle.bounds.x1 + 12, battle.bounds.y2 - 12);
+
+        super.Render(_ctx, _dt);
+    }
+
+    Finish()
+    {
+        let yes = false;
+        let no = false;
+
+        let pointsOutside = 0;
+
+        for(let i in this.drawnPoints)
+        {
+            let point = this.drawnPoints[i];
+
+            if(point.x >= this.yesBounds.x1 && point.x <= this.yesBounds.x2 &&
+                point.y >= this.yesBounds.y1 && point.y <= this.yesBounds.y2)
+                yes = true;
+            else if(point.x >= this.noBounds.x1 && point.x <= this.noBounds.x2 &&
+                point.y >= this.noBounds.y1 && point.y <= this.noBounds.y2)
+                no = true;
+            else
+                pointsOutside++;
+        }
+
+        // это очень говёно 2. во всех кинотеатрах страны.        
+        battle.lastActionResult = {...this.targetEnemy.Deal(yes, no, this.drawnPoints.length, pointsOutside), target: this.targetEnemy};
+        battle.SetMode(PRE_ATTACK);
+
+        super.Finish();
     }
 }
 

@@ -18,6 +18,11 @@ const   IDLE = 0,
         STATE_HANGING = 3,
         STATE_DEAD = 4,
         STATE_DRAW = 6,
+        STATE_BYE = 7,
+
+        EFFECT_NONE = 0,
+        EFFECT_DRAWING_TIME = 1,
+        EFFECT_INVINSIBILITY = 2,
 
         TEXT_COLORS = [
             '#000000',
@@ -793,6 +798,9 @@ class EnemiesContainer
             this.alphaBack = true;
             this.alphaTimer = this.alphaTime;
         }
+
+        if(this.state == STATE_BYE)
+            this.alphaTimer = 0;
     }
 
     Render(_ctx, _dt)
@@ -1035,6 +1043,10 @@ class GameResources
             promo1: {
                 img: 'promo1.png',
                 json: 'promo1.json'
+            },
+            promo2: {
+                img: 'promo2.png',
+                json: 'promo2.json'
             },
             hands: {
                 img: 'hands.png',
@@ -1793,6 +1805,9 @@ class Battle
 
     OwnAttack()
     {
+        if(battle.soul.eaten)
+            return;
+
         if(this.mode.id == OWN_ATTACK)
             this.Idle();
         else
@@ -1924,7 +1939,12 @@ class Battle
         let pos = Utils.MousePos(e, this.canvas);
         this.mousePos = pos;
 
-        if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.drawingLocked)
+        if(this.soul.eaten)
+        {
+            if(this.canvas.style.cursor != '')
+                this.canvas.style.cursor = '';
+        }
+        else if(this.mode.id == PRE_ATTACK || this.mode.id == ATTACK || this.mode.drawingLocked)
         {
             if(
                 pos.x >= this.bounds.x1 && pos.x <= this.bounds.x2 &&
@@ -2074,6 +2094,7 @@ class Soul extends Entity
         super(_x, _y, 0, 0);
 
         this.locked = false;
+        this.eaten = false;
 
         this.targetPos = {x: this.x, y: this.y};
 
@@ -2112,6 +2133,9 @@ class Soul extends Entity
 
     GameLoop(_delta)
     {
+        if(this.eaten)
+            return;
+
         if(this.invinsibleTimer > 0)
         {
             this.invinsibleTimer -= 1 * _delta;
@@ -2160,6 +2184,9 @@ class Soul extends Entity
 
     Render(_ctx, _dt)
     {
+        if(this.eaten)
+            return;
+
         /*
         _ctx.beginPath();
         _ctx.fillStyle = 'orange';

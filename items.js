@@ -1,7 +1,3 @@
-const   EFFECT_NONE = 0,
-        EFFECT_DRAWING_TIME = 1,
-        EFFECT_INVINSIBILITY = 2;
-
 class Item
 {
     constructor(_id)
@@ -64,6 +60,13 @@ class Sharpener extends Item
 
     Consume()
     {
+        if(battle.soul.eaten)
+        {
+            return {
+                text: ['Ты достаёшь точилку и...%~Осознаёшь, что тебе уже нечего точить.']
+            }
+        }
+
         let result = super.Consume();
 
         switch(this.consumed)
@@ -98,6 +101,18 @@ class RubberBand extends Item
         this.index = {x: 1, y: 0};
         this.text = ['Ты обвязываешь резинку вокруг карандаша.~Следующие @45 ходов@ ты сможешь рисовать дольше!'];
     }
+
+    Consume()
+    {
+        if(battle.soul.eaten)
+        {
+            return {
+                text: ['Ты достаёшь резинку.~Любуешься ей.~И убираешь обратно в карман.']
+            }
+        }
+
+        return super.Consume();
+    }
 }
 
 class GhostCandy extends Item
@@ -124,11 +139,16 @@ class GhostCandy extends Item
         switch(this.consumed)
         {
             case 1:
-                result.text = ['Ты чувствуешь... что-то. Как будто конфета прошла тебя насквозь.~' + this.text[0]];
+                result.text = ['Ты чувствуешь... что-то. Как будто конфета прошла тебя насквозь.~'];
                 break;
             case 2:
-                result.text = ['Ты ешь ещё одну конфету... Те же ощущения. Но у этой черничный привкус.~' + this.text[0]];
+                result.text = ['Ты ешь ещё одну конфету... Те же ощущения. Но у этой черничный привкус.~'];
                 break;
+        }
+
+        if(!battle.soul.eaten)
+        {
+            result.text[0] += this.text[0];
         }
 
         return result;
