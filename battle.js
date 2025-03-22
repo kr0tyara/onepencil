@@ -2477,6 +2477,7 @@ class Settings
         document.querySelector('#bgm_volume').addEventListener('change', (e) => this.OnVolumeChange(e, true));
         document.querySelector('#moving_bg').addEventListener('input', this.OnMovingBGChange.bind(this));
 
+        document.querySelector('#settings_open').addEventListener('click', this.Open.bind(this));
         document.querySelector('#settings_background').addEventListener('click', this.Close.bind(this));
         
         document.querySelector('#sfx_volume').value  = ~~(this.sfxVolume * 100);
@@ -2489,7 +2490,13 @@ class Settings
 
     Open()
     {
-        document.querySelector('#settings').classList.add('visible');
+        if(battle.mode.locked || battle.mode.drawingLocked)
+            return;
+
+        if(document.querySelector('#settings').classList.contains('visible'))
+            document.querySelector('#settings').classList.remove('visible');
+        else
+            document.querySelector('#settings').classList.add('visible');
     }
     Close()
     {

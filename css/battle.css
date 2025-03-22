@@ -1,6 +1,11 @@
+*
+{
+    -webkit-tap-highlight-color: transparent;
+}
+
 body
 {
-    background-color: #dadada;
+    background-color: #000;
 }
 .game
 {
@@ -166,9 +171,46 @@ body
 {
     background-position: -24px -24px;
 }
-.icon.settings
+.icon.cog
 {
     background-position: -48px 0px;
+}
+button:hover .icon.cog
+{
+    background-position: -48px -24px;
+}
+
+button
+{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+    width: 42px;
+    height: 42px;
+
+    background-color: #fff;
+    border: 3px solid #000;
+    border-radius: 6px;
+}
+button:hover
+{
+    border-color: #0d85f3;
+}
+
+.bottom
+{
+    position: absolute;
+
+    bottom: 0;
+    right: 0;
+}
+.bottom button
+{
+    background: none;
+    border: none;
+    cursor: none;
 }
 
 label
@@ -197,6 +239,10 @@ input[type="range"]
 	outline: none;
 	border: none;
 }
+input[type="range"]:hover::-webkit-slider-thumb
+{
+    border-color: #0d85f3 !important;
+}
 input[type="range"]::-webkit-slider-thumb
 {
     appearance: none;
@@ -209,6 +255,10 @@ input[type="range"]::-webkit-slider-thumb
 	border-radius: 50%;
 	background-color: #fff;
     cursor: pointer;
+}
+input[type="range"]:hover::-moz-range-thumb
+{
+    border-color: #0d85f3 !important;
 }
 input[type="range"]::-moz-range-thumb
 {
@@ -258,6 +308,14 @@ input[type="checkbox"]+label::before
     background-size: 75% 75%;
     background-repeat: no-repeat;
     background-position: center center;
+}
+input[type="checkbox"]:hover+label
+{
+    color: #0d85f3 !important;
+}
+input[type="checkbox"]:hover+label::before
+{
+    border-color: #0d85f3 !important;
 }
 input[type="checkbox"]:checked+label::before
 {
