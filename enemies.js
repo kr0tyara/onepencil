@@ -1127,7 +1127,6 @@ class PromoDuck extends Enemy
 
         if(this.hp / this.maxHP <= .5 && this.call < 1)
         {
-            res.sfx.bgm.playbackRate = .8;
             this.call = 1;
 
             return {

@@ -1,4 +1,5 @@
 var res,
+    settings,
     battle;
 
 const   IDLE = 0,
@@ -694,13 +695,16 @@ class BattleBackground
         _ctx.fillStyle = '#edeef0';
         _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
 
-        this.scroll.x -= this.speed * delta;
-        if(this.scroll.x <= -this.backgroundCanvas.width)
-            this.scroll.x = 0;
+        if(settings.movingBG)
+        {
+            this.scroll.x -= this.speed * delta;
+            if(this.scroll.x <= -this.backgroundCanvas.width)
+                this.scroll.x = 0;
 
-        this.scroll.y += this.speed * delta;
-        if(this.scroll.y >= this.backgroundCanvas.height)
-            this.scroll.y = 0;
+            this.scroll.y += this.speed * delta;
+            if(this.scroll.y >= this.backgroundCanvas.height)
+                this.scroll.y = 0;
+        }
 
         _ctx.save();
         _ctx.translate(this.scroll.x, this.scroll.y);
@@ -843,7 +847,7 @@ class Sheet
         this.img = new Image();
         this.img.src = this.imgUrl;
         this.img.onload = this.OnImageLoad.bind(this);
-        this.img.onerror = this.OnError.bind(this);
+        this.img.onerror = this.Error.bind(this);
 
 
         this.jsonReady = false;
@@ -928,7 +932,7 @@ class Sheet
         return arr;
     }
 
-    OnError(e)
+    Error(e)
     {
         if(this.onerror)
             this.onerror();
@@ -979,6 +983,78 @@ class Sheet
         _ctx.rotate(_rotation);
         _ctx.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, -w / 2, -h / 2, w, h);
         _ctx.restore();
+    }
+}
+
+class Sound
+{
+    constructor(_url, _volume, _speed, _loop, _music)
+    {
+        this.url = _url;
+        this.volume = _volume;
+        this.speed = _speed;
+        this.loop = _loop;
+        this.music = _music;
+        this.ended = true;
+
+        this.audio = new Audio(this.url);
+        this.audio.volume = this.volume;
+        this.audio.defaultPlaybackRate = this.speed;
+
+        this.audio.onended = this.Ended.bind(this);
+        
+        this.audio.load();
+        this.audio.oncanplaythrough = this.Load.bind(this);
+        this.audio.onerror = this.Error.bind(this);
+
+        this.onload = null;
+        this.onerror = null;
+    }
+
+    Load()
+    {
+        if(this.onload)
+            this.onload();
+    }
+    Error()
+    {
+        if(this.onerror)
+            this.onerror();
+    }
+    Reload()
+    {
+        this.audio.src = this.url + `?retry=${Date.now()}`;
+    }
+
+    Ended()
+    {
+        this.ended = true;
+
+        if(this.loop)
+        {
+            this.audio.currentTime = 0;
+            this.audio.play();
+        }
+    }
+
+    OnVolumeChange()
+    {
+        this.audio.volume = this.volume * (this.music ? settings.bgmVolume : settings.sfxVolume);
+    }
+    play()
+    {
+        if(!this.ended)
+            return;
+        
+        this.audio.volume = this.volume * (this.music ? settings.bgmVolume : settings.sfxVolume);
+
+        this.audio.currentTime = 0;
+        this.audio.play();
+        this.ended = false;
+    }
+    pause()
+    {
+        this.audio.pause();
     }
 }
 
@@ -1063,9 +1139,11 @@ class GameResources
                 url: 'DUCK IDK2.mp3',
                 loop: true,
                 volume: 0.7,
+                music: true,
             },
             fail: {
                 url: 'fail.mp3',
+                music: true
             },
             check: {
                 url: 'check.ogg',
@@ -1232,6 +1310,7 @@ class GameResources
             let volume = 1;
             let speed = 1;
             let loop = false;
+            let music = false;
 
             if(typeof sfx == 'string')
                 path = this.sfxPrefix + sfx;
@@ -1241,20 +1320,10 @@ class GameResources
                 volume = sfx.volume != null ? sfx.volume : 1;
                 loop = sfx.loop != null ? sfx.loop : false;
                 speed = sfx.speed != null ? sfx.speed : 1;
+                music = sfx.music != null ? sfx.music : false;
             }
 
-            let audio = new Audio(path);
-            audio.volume = volume;
-            audio.defaultPlaybackRate = speed;
-
-            if(loop)
-            {
-                audio.onended = (e) => {
-                    audio.currentTime = 0;
-                    audio.play();
-                }
-            }
-
+            let audio = new Sound(path, volume, speed, loop, music);
             this.sfxData[i] = 
             {
                 url: path,
@@ -1262,10 +1331,9 @@ class GameResources
                 loaded: false,
                 tries: 0
             };
-            this.sfx[i] = audio;
 
-            audio.load();
-            audio.oncanplaythrough = () => this.OnLoad(i, 1);
+            this.sfx[i] = audio;
+            audio.onload = () => this.OnLoad(i, 1);
             audio.onerror = () => this.OnError(i, 1);
         }
     }
@@ -1300,7 +1368,7 @@ class GameResources
     }
     Reload(_target, _type)
     {
-        if(_type == 0 || _type == 1)
+        if(_type == 0)
             _target.src.src = _target.url + `?retry=${Date.now()}`;
         else
             _target.src.Reload();
@@ -1356,6 +1424,14 @@ class GameResources
                 this.onReady();
         }
     }
+
+    OnVolumeChange(_bgm, _value)
+    {
+        for(let i in this.sfx)
+        {
+            this.sfx[i].OnVolumeChange();
+        }
+    }
 }
 
 class Battle
@@ -1365,6 +1441,7 @@ class Battle
         this.canvas = document.querySelector('#battle');
         this.ctx    = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
+        this.ctx.resetTransform();
         this.ctx.translate(.5, .5);
 
         this.tempCanvas = document.createElement('canvas');
@@ -2386,6 +2463,80 @@ class Utils
     }
 }
 
+class Settings
+{
+    constructor()
+    {
+        this.sfxVolume = (localStorage.getItem('promoduck_sfx_volume') != null ? localStorage.getItem('promoduck_sfx_volume') / 100 : 1);
+        this.bgmVolume = (localStorage.getItem('promoduck_bgm_volume') != null ? localStorage.getItem('promoduck_bgm_volume') / 100 : 1);
+        this.movingBG  = (localStorage.getItem('promoduck_moving_bg') != null ? localStorage.getItem('promoduck_moving_bg') == 1 : true);
+
+        document.querySelector('#sfx_volume').addEventListener('input', this.OnVolumeChange.bind(this));
+        document.querySelector('#sfx_volume').addEventListener('change', (e) => this.OnVolumeChange(e, true));
+        document.querySelector('#bgm_volume').addEventListener('input', this.OnVolumeChange.bind(this));
+        document.querySelector('#bgm_volume').addEventListener('change', (e) => this.OnVolumeChange(e, true));
+        document.querySelector('#moving_bg').addEventListener('input', this.OnMovingBGChange.bind(this));
+
+        document.querySelector('#settings_background').addEventListener('click', this.Close.bind(this));
+        
+        document.querySelector('#sfx_volume').value  = ~~(this.sfxVolume * 100);
+        document.querySelector('#bgm_volume').value  = ~~(this.bgmVolume * 100);
+        document.querySelector('#moving_bg').checked = this.movingBG;
+        
+        this.UpdateRangeBackground(document.querySelector('#sfx_volume'), this.sfxVolume);
+        this.UpdateRangeBackground(document.querySelector('#bgm_volume'), this.bgmVolume);
+    }
+
+    Open()
+    {
+        document.querySelector('#settings').classList.add('visible');
+    }
+    Close()
+    {
+        document.querySelector('#settings').classList.remove('visible');
+    }
+
+    OnVolumeChange(e, _final)
+    {
+        let bgm = false;
+        let value = e.target.value / 100;
+        if(e.target.id == 'sfx_volume')
+        {
+            bgm = false;
+            this.sfxVolume = value;
+            
+            if(_final)
+                localStorage.setItem('promoduck_sfx_volume', e.target.value);
+        }
+        else if(e.target.id == 'bgm_volume')
+        {
+            bgm = true;
+            this.bgmVolume = value;
+
+            if(_final)
+                localStorage.setItem('promoduck_bgm_volume', e.target.value);
+        }
+
+        this.UpdateRangeBackground(e.target, value);
+
+        res.OnVolumeChange(bgm, value);
+        if(_final && !bgm)
+            Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
+    }
+    UpdateRangeBackground(_target, _value)
+    {
+        let background = _target.parentNode.querySelector('.progress_background');
+        if(background != null)
+            background.style.width = `${_value * 100}%`;
+    }
+
+    OnMovingBGChange(e)
+    {
+        this.movingBG = e.target.checked;
+        localStorage.setItem('promoduck_moving_bg', this.movingBG ? 1 : 0);
+    }
+}
+
 let started = false;
 window.addEventListener('click', (e) => {
     if(started)
@@ -2399,6 +2550,8 @@ window.addEventListener('load', () =>
 {
     res = new GameResources();
     res.Load();
+
+    settings = new Settings();
 
     res.onReady = Ready;
     res.onProgress = Progress;
@@ -2424,8 +2577,7 @@ function Restart()
         let sfx = res.sfx[i];
 
         sfx.pause();
-        sfx.currentTime = 0;
-        sfx.playbackRate = 1;
+        sfx.ended = true;
     }
 
     if(battle != null)

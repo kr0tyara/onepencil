@@ -23,6 +23,36 @@
             <div class="preloader">
                 <h2 id="progress"></h2>
             </div>
+
+            <div class="settings visible" id="settings">
+                <div class="settings_background" id="settings_background"><span class="icon close"></span></div>
+                <div class="settings_container">
+                    <div class="settings_row">
+                        <span class="icon sfx"></span>
+                        <label for="sfx_volume">Звуки</label>
+                        <div class="range">
+                            <div class="range_background">
+                                <div class="progress_background"></div>
+                            </div>
+                            <input type="range" min="0" max="100" value="100" id="sfx_volume"></input>
+                        </div>
+
+                        <span class="icon music"></span>
+                        <label for="bgm_volume">Музыка</label>
+                        <div class="range">
+                            <div class="range_background">
+                                <div class="progress_background"></div>
+                            </div>
+                            <input type="range" min="0" max="100" value="100" id="bgm_volume"></input>
+                        </div>
+                    </div>
+    
+                    <div class="settings_row">
+                        <input type="checkbox" id="moving_bg" checked></input>
+                        <label for="moving_bg" style="grid-column: 1 / -1;">Анимация фона</label>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 </html>
