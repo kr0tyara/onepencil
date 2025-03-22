@@ -521,6 +521,7 @@ class GameResources
         this.loc = {};
         this.locNames = {
             ru: 'ru.json',
+            en: 'en.json',
         };
 
         this.ready = false;

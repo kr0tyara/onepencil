@@ -1,92 +1,96 @@
 {
-    "language": "ru",
+    "language": "en",
 
     "groups":
     {
         "hud":
         {
-            "click_to_start": "Кликни, чтобы начать!",
-            "sfx": "Звуки",
-            "bgm": "Музыка",
-            "moving_bg": "Анимация фона",
+            "click_to_start": "Click to start!",
+            "sfx": "SFX",
+            "bgm": "Music",
+            "moving_bg": "Background animation",
             
-            "click_to_continue": "Кликни, чтобы продолжить!",
-            "back": "Назад",
-            "attack": "Атака",
-            "act": "Действие",
-            "items": "Вещи",
-            "target": "Цель",
-            "draw": "Рисуй!",
-            "deal": "Ты согласен?",
-            "yes": "Да",
-            "no": "Нет",
-            "empty": "Пусто!",
-            "game_over": "Игра окончена",
-            "restart": "Заново",
-            "shake": "Тряси!!!",
-            "qv": "Промотка",
-            "before_reset": "до сброса:",
-            "h": "ч.",
-            "m": "м.",
-            "free": "СВОБОДНО"
+            "click_to_continue": "Click to continue!",
+            "back": "Back",
+            "attack": "Attack",
+            "act": "Act",
+            "items": "Items",
+            "target": "Target",
+            "draw": "Draw!",
+            "deal": "Do you accept?",
+            "yes": "Yes",
+            "no": "No",
+            "empty": "Empty!",
+            "game_over": "Game over",
+            "restart": "Retry",
+            "shake": "Shake!!!",
+            "qv": "Quacky Vision",
+            "before_reset": "resets in:",
+            "h": "h.",
+            "m": "m.",
+            "free": "FREE"
         },
 
         "enemies":
         {
-            "noone": "Никто",
-            "duck": "ПромоУтка"
+            "noone": "No one",
+            "duck": "PromoDuck"
         },
 
         "items":
         {
-            "nothing": "Ничего",
-            "sharpener": "Точилка",
-            "ghost_candy": "Конфета?",
-            "rubber_band": "Резинка"
+            "nothing": "Nothing",
+            "sharpener": "P. Sharpener",
+            "ghost_candy": "Candy?",
+            "rubber_band": "Rubber Band"
         },
 
         "actions":
         {
-            "check": "Проверка",
-            "bet": "Ставка",
-            "vandalism": "Изрисовать"
+            "check": "Check",
+            "bet": "Bet",
+            "vandalism": "Vandalize"
         }
     },
     "dialogue":
     {
         "noone":
         {
-            "idle": ["~Где я?"],
-            "check": ["~Никто - АТК 1000 ЗЩТ -999.~Я ем любовь."]
+            "idle": ["~Where am I?"],
+            "check": ["~No one - ATK 1000 DEF -999.~Do we remember connected rainbows?"]
         },
 
         "items":
         {
-            "nothing": ["Ты съел... э-э-э...~Ты что-то съел?~Мне плохо."],
+            "nothing": ["You ate... umm...~Did you even eat anything?~I feel sick."],
 
-            "sharpener": ["Ты точишь карандаш.~Восстановлено @47 прочности@!"],
-            "sharpener_1": ["Ты точишь карандаш.~Восстановлено @47 прочности@!~У точилки отклеились глазки."],
-            "sharpener_2": ["Ты точишь карандаш.~Восстановлено @47 прочности@!~Точилка трещит по швам."],
-            "sharpener_3": ["Ты точишь карандаш.~Восстановлено @47 прочности@!~@2Точилка сломалась.@"],
-            "sharpener_fail": ["Ты достаёшь точилку, но...%~Осознаёшь, что тебе уже нечего точить."],
+            "sharpener": ["You sharpen the pencil.~Restored @47 health@!"],
+            "sharpener_1": ["You sharpen the pencil.~Restored @47 health@!~The sharpener's googly eyes came off."],
+            "sharpener_2": ["You sharpen the pencil.~Restored @47 health@!~The sharpener is about to break."],
+            "sharpener_3": ["You sharpen the pencil.~Restored @47 health@!~@2The sharpener broke.@"],
+            "sharpener_fail": ["You take out the sharpener, but...%~You realize that you have nothing left to sharpen."],
 
-            "rubber_band": ["Ты обвязываешь резинку вокруг карандаша.~Следующие @45 ходов@ ты сможешь рисовать дольше!"],
-            "rubber_band_fail":  ["Ты достаёшь резинку.~Любуешься ей.~И убираешь обратно в карман."],
+            "rubber_band": ["You tie the rubber band around a pencil.~Next @45 turns@ you will be able to draw longer!"],
+            "rubber_band_fail":  ["You take out a rubber band.~You look at it with admiration.~You put it back in your pocket."],
 
-            "ghost_candy": ["Следующие @43 хода@ неуязвимость при получении урона будет дольше."],
-            "ghost_candy_1": ["Ты чувствуешь... что-то. %Как будто конфета прошла тебя насквозь.~"],
-            "ghost_candy_2": ["Ты ешь ещё одну конфету... %Те же ощущения. Но у этой черничный привкус.~"]
+            "ghost_candy": ["Invincibility upon taking damage increases for next @43 turns@."],
+            "ghost_candy_1": ["You feel... Something. %It's like the candy went right through you.~"],
+            "ghost_candy_2": ["You eat another piece of candy... %The same feeling. But this one has a slight blueberry aftertaste.~"]
         },
 
         "duck": 
         {
-            "disclaimer": ["Подписывая договор, вы подтверждаете передачу вашей души ООО \"ПромоУтка\". Да-да, вы всё правильно поняли.", "Мы заберём вашу душу. Мы оцифруем её и посвятим ей клон Андертейла, а с вами не поделимся никакой прибылью.", "Ха-ха-ха. Вы не можете не подписать этот договор, потому что другого варианта завершения игры нет. Даже не пытайтесь."],
-            "game_over": ["Возвращайся, когда станешь... м-м-м... побогаче.", "Однажды даже ты сможешь что-то позволить!~          Начни с чего-то малого. %С картошки."],
-            "make_bet": ["Сделай", "ставку!"],
-            "sign_contract": ["Подпиши", "договор!"],
-            "thanks": ["Спасибо", "за карандаш!"],
+            "disclaimer": [
+                "By signing this contract, you confirm the transfer of your soul to PromoDuck, LLC. Yep, you got it right.",
+                "We'll take your soul. We'll digitize it and trap inside a yet another Undertale rip-off, and we won't share any profits with you.",
+                "Qua-ha-ha! You cannot decline this contract, because there is no other way to finish the game. Don't even try."
+            ],
+            "game_over": ["Come back when you're a little... m-m-m... richer.", "One day even you will be able to afford something!~      Start with something small. A potato will do."],
+            "make_bet": ["Place", "a bet!"],
+            "sign_contract": ["Sign the", "contract!"],
+            "thanks": ["Thank", "you!"],
 
-            "check": ["~ПромоУтка — владелец Промотки.~Древесный сомелье и просто красавчик. *"],
+            "check": ["~PromoDuck — owner of the Quacky Vision.~Has a good taste in tree bark. VERY HANDSOME. *"],
             "check_speech": ["#2$* Выдержки из визитной карточки.$"],
             "check_2": ["~Промоутка — владелец Промотки.~Довольно жадный. %Имеет на удивление здоровые зубы. (у уток они вообще должны быть???)"],
 
@@ -167,7 +171,7 @@
             "geno_phone_2": ["#6^(Д-да где он...)^"],
 
             "bet_draw": ["~Подпиши договор, и ты выкупишь место на Промотке за карандаш."],
-            "bet_dumb": ["Слушай, ты не можешь заполнить бланк уже три раза.", "Туни, конечно, говорил мне, что это неправильно...~Но у меня есть секретная форма для %$тупых младенцев$.", "Желаешь попробовать?"],
+            "bet_dumb": ["Not judging ya or something, but you have failed to fill the contract THREE TIMES.", "Toony told me this is wrong...~But I made an alternate form designed for %$dumb babies$.", "Would you like to try?"],
             "bet_early": ["~Ты предлагаешь свой карандаш ПромоУтке."],
             "bet_early_speech": ["#9Один карандаш????~НЕ СМЕШИ!!! Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!!!", "Не, ну ты конечно можешь ДОЖДАТЬСЯ @2сброса ставки@...", "...но я СИЛЬНО сомневаюсь, что твой карандаш выдержит мои атаки!!!"],
             "bet_early_2": ["~У тебя всё ещё один карандаш, но ты не сдаёшься."],
