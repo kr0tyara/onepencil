@@ -1054,6 +1054,9 @@ class ByeAttack extends Attack
 
             battle.ResetBounds();
         }
+
+        if(battle.hp <= 0 && this.attackTimer > 0)
+            this.Finish();
     }
 
     SpawnProjectile(_index)
@@ -1063,10 +1066,7 @@ class ByeAttack extends Attack
             Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
             battle.hp -= 4;
             if(battle.hp < 0)
-            {
                 battle.hp = 0;
-                this.Finish();
-            }
         }
     }
 }

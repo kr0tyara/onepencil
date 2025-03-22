@@ -1103,6 +1103,13 @@ class DealMode extends DrawingMode
         this.noBounds.x2 = this.noBounds.x1 + 50;
         this.noBounds.y2 = this.noBounds.y1 + 50;
 
+        if(this.targetEnemy.dumbBaby)
+        {
+            this.yesBounds = {...bounds};
+            this.noBounds.x1 = bounds.x2 + 150;
+            this.noBounds.x2 = bounds.x2 + 150 + 50;
+        }
+
         battle.SetBounds(bounds);
     }
 

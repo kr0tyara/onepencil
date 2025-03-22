@@ -1466,7 +1466,7 @@ class Battle
 
     Start()
     {
-        //res.sfx.bgm.play();
+        res.sfx.bgm.play();
 
         this.background.Start();
         this.enemiesContainer.Start();

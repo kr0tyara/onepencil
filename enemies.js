@@ -620,8 +620,13 @@ class PromoDuck extends Enemy
 
         this.resetCounter = 45;
         this.resetTalk = 0;
+
         this.dealt = 0;
+        this.dealNo = 0;
+        this.dealBroke = 0;
+        this.dealDunno = 0;
         this.signed = 0;
+        this.dumbBaby = false;
 
         this.story = 0;
 
@@ -697,7 +702,12 @@ class PromoDuck extends Enemy
     {
         if(this.signed == 2)
             return {
-                text: ['У тебя больше нет карандаша.']
+                text: ['У тебя больше нет карандаша.~Зато твой мульт висит на Промотке!']
+            };
+
+        if(this.resetCounter <= 0)
+            return {
+                text: ['Место на Промотке освободилось.']
             };
 
         if(this.weakened == 2)
@@ -834,26 +844,83 @@ class PromoDuck extends Enemy
     {
         this.dealt++;
 
-        let text = ['Так, посмотрим посмотрим...'];
+        let text = ['Так, посмотрим- посмотрим...'];
         if(_yes && _no || (_len > 30 && _pointsOutside / _len > .7))
         {
-            text = text.concat(['Поздравляю, бланк испорчен!']);
+            this.dealBroke++;
+
+            let answer = [];
+            switch(this.dealBroke)
+            {
+                case 1:
+                    answer = ['Поздравляю, бланк испорчен!'];
+                    break;
+
+                case 2:
+                    answer = ['Не переживай, у меня этих бланков целый офис. Надолго хватит.'];
+                    break;
+
+                default:
+                    answer = ['Даже не пытайся, ты всё равно никуда не уйдёшь.'];
+                    break;
+            }
+            text = text.concat(answer);
         }
         else if(!_yes && !_no)
         {
-            text = text.concat(['...Ты не знаешь, как заполнить бланк?', 'Просто нарисуй что-нибудь внутри квадратика рядом с словом "Да".', 'Галочку там, крестик, спиральку, икосододекаэдр, всё равно.', 'Проще ж некуда!']);
+            this.dealDunno++;
+
+            let answer = [];
+            switch(this.dealDunno)
+            {
+                case 1:
+                    answer = ['...Ты не знаешь, как заполнить бланк?', 'Просто нарисуй что-нибудь внутри квадратика рядом с словом "Да".', 'Галочку там, крестик, спиральку, икосододекаэдр, всё равно.', 'Проще ж некуда!'];
+                    break;
+
+                case 2:
+                    answer = ['#FЭто шутка какая-то?', '#FЯ второй раз это всё объяснять не буду.'];
+                    break;
+
+                default:
+                    answer = ['#F^...^'];
+                    break;
+            }
+            text = text.concat(answer);
         }
         else
         {
             if(_no)
             {
-                text = text.concat(['#A^КАК ЭТО НЕТ?!^', '#FА зачем тогда ты тут ошиваешься?? Моё время тратишь??!!', '#FПиши "Да" или уходи.']);
+                this.dealNo++;
+                let answer = [];
+
+                switch(this.dealNo)
+                {
+                    case 1:
+                        answer = ['#A^КАК ЭТО НЕТ?!^', '#FА зачем тогда ты тут ошиваешься?? Моё время тратишь??!!', '#FПиши "Да" или уходи.'];
+                        break;
+
+                    case 2:
+                        answer = ['#FВ чем твоя проблема???', '#FПросто поставь "Да".'];
+                        break;
+
+                    default:
+                        answer = ['#F^...^'];
+                        break;
+                }
+
+                text = text.concat(answer);
             }
             else if(_yes)
             {
                 text = text.concat(['#GПревосходно!', '#GНу а теперь оплата. Твой $кккарандашиикк$!']);
                 this.signed = 1;
             }
+        }
+
+        if(this.dealNo + this.dealBroke + this.dealDunno >= 3 && !this.dumbBaby)
+        {
+            this.dumbBaby = true;
         }
 
         return {speech: text};
@@ -869,22 +936,22 @@ class PromoDuck extends Enemy
         if(_len >= 100)
         {
             delta = 5;
-            result.text = ['Время ставки @2ОЧЕНЬ СИЛЬНО понижается@!!!'];
+            result.text = ['Время ставки @2ОЧЕНЬ СИЛЬНО сокращается@!!!'];
         }
         else if(_len >= 50)
         {
             delta = 3;
-            result.text = ['Время ставки @2сильно понижается@!!!'];
+            result.text = ['Время ставки @2сильно сокращается@!!!'];
         }
         else if(_len >= 25)
         {
             delta = 2;
-            result.text = ['Время ставки @2понижается@!!'];
+            result.text = ['Время ставки @2сокращается@!!'];
         }
         else if(_len >= 5)
         {
             delta = 1;
-            result.text = ['Время ставки @2немного понижается@!'];
+            result.text = ['Время ставки @2немного сокращается@!'];
         }
 
         this.DecreaseResetCounter(delta);
@@ -929,7 +996,7 @@ class PromoDuck extends Enemy
             switch(this.resetTalk)
             {
                 case 1:
-                    return ['Что там у нас по времени...', 'О! Пора сбрасывать!', 'Покупателей, вижу, не намечается...~Тебе повезло!', 'Можешь наконец отдать мне свой карандаш и свалить.'];
+                    return ['Что там у нас по времени...', 'О! Время @2сброса@!', 'Покупателей, вижу, не намечается...~Тебе повезло!', 'Можешь наконец отдать мне свой карандаш и свалить.'];
 
                 case 2:
                     return ['#FНе затягивай.'];
@@ -1019,11 +1086,12 @@ class PromoDuck extends Enemy
         if(this.signed == 1)
         {
             this.signed = 2;
+            this.weakened = 0;
 
             this.actions = [this.actions[0]];
 
             return {
-                speech: ['Приятно иметь дело!'],
+                speech: ['Приятно иметь дело!~Как и договаривались, твой мульт на Промотке.', 'Хорошего дня!'],
             };
         }
 
@@ -1110,10 +1178,15 @@ class PromoDuck extends Enemy
 
         if(this.resetCounter <= 0)
         {
-            return {
+            let result = {
                 text: ['~Подпиши договор, и ты выкупишь место на Промотке за карандаш.'],
                 mode: DEAL
+            };
+            if(this.dumbBaby)
+            {
+                result.speech = ['Слушай, ты не можешь заполнить бланк уже три раза.', 'Туни, конечно, говорил мне, что это неправильно...~Но у меня есть секретная форма для %тупых детей.', 'Желаешь попробовать?'];
             }
+            return result;
         }
 
         switch(this.bet)
