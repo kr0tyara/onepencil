@@ -11,9 +11,9 @@ class Item
         this.effect = EFFECT_NONE;
         this.effectTurns = 0;
 
-        this.name = 'Ничего';
+        this.name = loc.Get('items', 'nothing');
         this.index = {x: 0, y: 0};
-        this.text = ['Ты съел... э-э-э...~Ты что-то съел?~Мне плохо.'];
+        this.text = loc.Dial('items', 'nothing');
     }
 
     Consume()
@@ -53,9 +53,9 @@ class Sharpener extends Item
         this.hp = 7;
         this.maxConsume = 4;
 
-        this.name = 'Точилка';
+        this.name = loc.Get('items', 'sharpener');
         this.index = {x: 0, y: 0};
-        this.text = ['Ты точишь карандаш.~Восстановлено @47 прочности@!'];
+        this.text = loc.Dial('items', 'sharpener');
     }
 
     Consume()
@@ -63,7 +63,7 @@ class Sharpener extends Item
         if(battle.soul.eaten)
         {
             return {
-                text: ['Ты достаёшь точилку и...%~Осознаёшь, что тебе уже нечего точить.']
+                text: loc.Dial('items', 'sharpener_fail'),
             }
         }
 
@@ -72,13 +72,13 @@ class Sharpener extends Item
         switch(this.consumed)
         {
             case 2:
-                result.text = [this.text[0] + '~У точилки отклеились глазки.'];
+                result.text = loc.Dial('items', 'sharpener_1');
                 break;
             case 3:
-                result.text = [this.text[0] + '~Точилка трещит по швам.'];
+                result.text = loc.Dial('items', 'sharpener_2');
                 break;
             case 4:
-                result.text = [this.text[0] + '~@2Точилка сломалась.@'];
+                result.text = loc.Dial('items', 'sharpener_3');
                 break;
         }
 
@@ -97,9 +97,9 @@ class RubberBand extends Item
         this.effect = EFFECT_DRAWING_TIME;
         this.effectTurns = 5;
 
-        this.name = 'Резинка';
+        this.name = loc.Get('items', 'rubber_band');
         this.index = {x: 1, y: 0};
-        this.text = ['Ты обвязываешь резинку вокруг карандаша.~Следующие @45 ходов@ ты сможешь рисовать дольше!'];
+        this.text = loc.Dial('items', 'rubber_band');
     }
 
     Consume()
@@ -107,7 +107,7 @@ class RubberBand extends Item
         if(battle.soul.eaten)
         {
             return {
-                text: ['Ты достаёшь резинку.~Любуешься ей.~И убираешь обратно в карман.']
+                text: loc.Dial('items', 'rubber_band_fail')
             }
         }
 
@@ -127,9 +127,9 @@ class GhostCandy extends Item
         this.effect = EFFECT_INVINSIBILITY;
         this.effectTurns = 3;
 
-        this.name = 'Конфета?';
+        this.name = loc.Get('items', 'ghost_candy');
         this.index = {x: 0, y: 1};
-        this.text = ['Следующие @43 хода@ неуязвимость при получении урона будет дольше.'];
+        this.text = loc.Dial('items', 'ghost_candy');
     }
     
     Consume()
@@ -139,17 +139,15 @@ class GhostCandy extends Item
         switch(this.consumed)
         {
             case 1:
-                result.text = ['Ты чувствуешь... что-то. Как будто конфета прошла тебя насквозь.~'];
+                result.text = loc.Dial('items', 'ghost_candy_1');
                 break;
             case 2:
-                result.text = ['Ты ешь ещё одну конфету... Те же ощущения. Но у этой черничный привкус.~'];
+                result.text = loc.Dial('items', 'ghost_candy_2');
                 break;
         }
 
         if(!battle.soul.eaten)
-        {
             result.text[0] += this.text[0];
-        }
 
         return result;
     }

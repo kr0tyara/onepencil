@@ -839,7 +839,7 @@ class PopsicleAttack extends Attack
             offset.x = (Math.random() - .5) * 2;
             offset.y = (Math.random() - .5) * 2;
 
-            _ctx.fillText('Тряси!!!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
+            _ctx.fillText(loc.Get('hud', 'shake'), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
         }
     }
 
@@ -1011,14 +1011,18 @@ class NothingAttack extends Attack
         offset.x = (Math.random() - .5) * 2;
         offset.y = (Math.random() - .5) * 2;
 
-        let text = ['Сделай', 'ставку!'];
-        if(this.caster.enemy.dealt > 0)
-            text = ['Подпиши', 'договор!!!'];
+        let text;
         if(this.caster.enemy.signed == 2)
-            text = ['Спасибо', 'за карандаш!'];
+            text = loc.Dial('duck', 'thanks');
+        else if(this.caster.enemy.dealt > 0)
+            text = loc.Dial('duck', 'sign_contract');
+        else
+            text = loc.Dial('duck', 'make_bet');
 
-        _ctx.fillText(text[0], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 - 36 + 4 + offset.y);
-        _ctx.fillText(text[1], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 + 4 + offset.y);
+        for(let i in text)
+        {
+            _ctx.fillText(text[i], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2 - 36 * (text.length - i - 1) + 4 + offset.y);
+        }
     }
 }
 class ByeAttack extends Attack

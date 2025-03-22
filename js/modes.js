@@ -126,7 +126,7 @@ class TargettedBattleMode extends BattleMode
         _ctx.textBaseline = 'top';
 
         _ctx.fillStyle = '#666';
-        _ctx.fillText('Цель', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
+        _ctx.fillText(loc.Get('hud', 'target'), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
 
         _ctx.strokeStyle = '#000';
         _ctx.textAlign = 'left';
@@ -229,7 +229,7 @@ class DrawingMode extends TargettedBattleMode
 
         this.lineWidth = 5;
         this.color = '#000000';
-        this.text = 'Рисуй!';
+        this.text = loc.Get('hud', 'draw');
     }
 
     Start()
@@ -1083,7 +1083,7 @@ class DealMode extends DrawingMode
     {
         super(DEAL);
 
-        this.text = 'Ты согласен?';
+        this.text = loc.Get('hud', 'deal');
     }
 
     Start()
@@ -1132,14 +1132,16 @@ class DealMode extends DrawingMode
         _ctx.font = '36px Pangolin';
         _ctx.textAlign = 'left';
         _ctx.textBaseline = 'middle';
-        _ctx.fillText('Да', this.yesBounds.x2 + 12, this.yesBounds.y1 + (this.yesBounds.y2 - this.yesBounds.y1) / 2);
-        _ctx.fillText('Нет', this.noBounds.x2 + 12, this.noBounds.y1 + (this.noBounds.y2 - this.noBounds.y1) / 2);
+        _ctx.fillText(loc.Get('hud', 'yes'), this.yesBounds.x2 + 12, this.yesBounds.y1 + (this.yesBounds.y2 - this.yesBounds.y1) / 2);
+        _ctx.fillText(loc.Get('hud', 'no'), this.noBounds.x2 + 12, this.noBounds.y1 + (this.noBounds.y2 - this.noBounds.y1) / 2);
 
         _ctx.font = '8px Pangolin';
         _ctx.textBaseline = 'bottom';
-        _ctx.fillText('Подписывая договор, вы подтверждаете передачу вашей души ООО "ПромоУтка". Да-да, вы всё правильно поняли.', battle.bounds.x1 + 12, battle.bounds.y2 - 36);
-        _ctx.fillText('Мы заберём вашу душу. Мы оцифруем её и посвятим ей клон Андертейла, а с вами не поделимся никакой прибылью.', battle.bounds.x1 + 12, battle.bounds.y2 - 24);
-        _ctx.fillText('Ха-ха-ха. Вы не можете не подписать этот договор, потому что другого варианта завершения игры нет. Даже не пытайтесь.', battle.bounds.x1 + 12, battle.bounds.y2 - 12);
+        let text = loc.Dial('duck', 'disclaimer');
+        for(let i in text)
+        {
+            _ctx.fillText(text[i], battle.bounds.x1 + 12, battle.bounds.y2 - (text.length - i) * 12);
+        }
 
         super.Render(_ctx, _dt);
     }
@@ -1313,7 +1315,7 @@ class ItemsMode extends BattleMode
                 _ctx.fillStyle = '#666';
                 _ctx.textAlign = 'center';
                 _ctx.font = '36px Pangolin';
-                _ctx.fillText('Пусто!', battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
+                _ctx.fillText(loc.Get('hud', 'empty'), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2);
                 return;
             }
 
@@ -1403,10 +1405,7 @@ class GameOverMode extends BattleMode
         this.animationTimer = 0;
 
         this.typeWriter = new TypeWriter(null, false, res.sfx.duck);
-        this.flavorText = [
-            'Возвращайся, когда станешь... м-м-м... побогаче.',
-            'Однажды даже ты сможешь что-то позволить!~          Начни с чего-то малого. %С картошки.'
-        ];
+        this.flavorText = loc.Dial('duck', 'game_over');
     }
 
     Start()
@@ -1510,7 +1509,7 @@ class GameOverMode extends BattleMode
             _ctx.fillStyle = '#aaa';
             _ctx.textBaseline = 'top';
             _ctx.textAlign = 'center';
-            _ctx.fillText('Игра окончена', _ctx.canvas.width / 2, 200);
+            _ctx.fillText(loc.Get('hud', 'game_over'), _ctx.canvas.width / 2, 200);
 
             _ctx.globalAlpha = 1;
         }
@@ -1537,7 +1536,7 @@ class GameOverMode extends BattleMode
             _ctx.font = '32px Pangolin';
             _ctx.textBaseline = 'middle';
             _ctx.textAlign = 'center';
-            _ctx.fillText('Заново', this.retryButton.x + 35 / 2 + this.retryButton.w / 2, this.retryButton.y + this.retryButton.h / 2 + 3);
+            _ctx.fillText(loc.Get('hud', 'restart'), this.retryButton.x + 35 / 2 + this.retryButton.w / 2, this.retryButton.y + this.retryButton.h / 2 + 3);
 
             _ctx.globalAlpha = 1;
         }

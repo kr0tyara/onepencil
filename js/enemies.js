@@ -4,6 +4,7 @@
     &n - триггер actions 
     @n - цвет
     ^ - тряска
+    $ - волна
     #n - лицо
 */
 
@@ -11,7 +12,8 @@ class Enemy
 {
     constructor()
     {
-        this.name = 'Никто';
+        this.code = 'noone';
+        this.name = loc.Get('enemies', 'noone');
         this.index = {x: 0, y: 0};
         this.sprite = null;
 
@@ -22,8 +24,13 @@ class Enemy
         this.attacks = [TestAttack];
 
         this.actions = [
-            {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
+            {name: loc.Get('actions', 'check'), index: {x: 0, y: 0}, action: this.Check.bind(this)},
         ];
+    }
+
+    Dial(_reference)
+    {
+        return loc.Dial(this.code, _reference);
     }
 
     Start()
@@ -63,7 +70,7 @@ class Enemy
     Idle()
     {
         return {
-            text: ['~Где я?']
+            text: this.Dial('idle')
         }
     }
 
@@ -83,8 +90,7 @@ class Enemy
     Check()
     {
         return {
-            text: ['~Никто - АТК 1000 ЗЩТ -999.~Я ем любовь.'],
-            speech: ['Мяу'],
+            text: this.Dial('check'),
         };
     }
 
@@ -262,7 +268,7 @@ class PromoDuckSprite extends EnemySprite
             _ctx.textBaseline = 'top';
 
             // заголовок
-            let txt = 'Промотка';
+            let txt = loc.Get('hud', 'qv');
             let w = _ctx.measureText(txt).width;
             _ctx.drawImage(res.sprites.ducky, x + (250 - w) / 2 - 12 - 6, y + 10);
             _ctx.fillText(txt, x + 250 / 2 + 16, y + 8 + 4);
@@ -291,14 +297,14 @@ class PromoDuckSprite extends EnemySprite
                 _ctx.textAlign = 'left';
                 _ctx.font = '24px Pangolin';
 
-                txt = `До сброса:`;
+                txt = loc.Get('hud', 'before_reset');
                 w = _ctx.measureText(txt).width + 40;
                 _ctx.fillText(txt, x + 40, y + h - 10);
                 
                 if(this.enemy.signed == 2)
-                    txt = ' 2 ч.';
+                    txt = ` 2 ${loc.Get('hud', 'h')}`;
                 else
-                    txt = ` ${this.enemy.resetCounter} м.`;
+                    txt = ` ${this.enemy.resetCounter} ${loc.Get('hud', 'm')}`;
                 
                     _ctx.fillStyle = TEXT_COLORS[2];
                 _ctx.fillText(txt, x + w, y + h - 10);
@@ -340,7 +346,7 @@ class PromoDuckSprite extends EnemySprite
                 _ctx.font = '46px Pangolin';
                 _ctx.textAlign = 'center';
                 _ctx.textBaseline = 'middle';
-                _ctx.fillText('СВОБОДНО', x + 250 / 2, y + h - 70 / 2);
+                _ctx.fillText(loc.Get('hud', 'free'), x + 250 / 2, y + h - 70 / 2);
             }
         }
 
@@ -578,7 +584,8 @@ class PromoDuck extends Enemy
     {
         super();
 
-        this.name = 'ПромоУтка';
+        this.code = 'duck';
+        this.name = loc.Get('enemies', 'duck');
         this.index = {x: 0, y: 0};
 
         this.maxHP = 500;
@@ -586,26 +593,13 @@ class PromoDuck extends Enemy
         this.attacks = [CardAttack, ThrowAttack, MouthAttack, BallAttack, HandsAttack];
         
         this.actions = [
-            {name: 'Проверка', index: {x: 0, y: 0}, action: this.Check.bind(this)},
-            {name: 'Ставка', index: {x: 1, y: 0}, action: this.Bet.bind(this)},
-            {name: 'Вандализм', index: {x: 0, y: 1}, action: this.Vandalize.bind(this)},
-            /*{name: 'Ничего', index: {x: 1, y: 1}, action: this.Nothing.bind(this)},*/
+            {name: loc.Get('actions', 'check'), index: {x: 0, y: 0}, action: this.Check.bind(this)},
+            {name: loc.Get('actions', 'bet'), index: {x: 1, y: 0}, action: this.Bet.bind(this)},
+            {name: loc.Get('actions', 'vandalism'), index: {x: 0, y: 1}, action: this.Vandalize.bind(this)},
         ];
         
-        this.flavourText = [
-            '~ПромоУтка чистит пёрышки.%~Залысину видно за километр.',
-            '~9 из 36 538 Тунеров рекомендуют!',
-            '~Пахнет грифелем.',
-            '~ПромоУтка считает свою прибыль.%~В уме.',
-            '~ПромоУтка ковыряется в зубах.~Или, скорее, просто грызёт зубочистку...',
-        ];
-        this.dangerFlavourText = [
-            '~ПромоУтка нервно глядит по сторонам.',
-            '~С ПромоУтки слетают перья.',
-            '~ПромоУтка... молится???%%%~...послышалось.',
-            '~Пахнет мокрыми наггетсами и опилками.',
-            '~ПромоУтка отменяет все встречи.%~Даже на следующий год.',
-        ];
+        this.flavourText = this.Dial('idle');
+        this.dangerFlavourText = this.Dial('idle2');
     }
 
     CreateSprite(_x, _y)
@@ -702,34 +696,34 @@ class PromoDuck extends Enemy
     {
         if(this.signed == 2)
             return {
-                text: ['У тебя больше нет карандаша.~Зато твой мульт висит на Промотке!']
+                text: this.Dial('idle_signed')
             };
 
         if(this.resetCounter <= 0)
             return {
-                text: ['Место на Промотке освободилось.']
+                text: this.Dial('idle_free')
             };
 
         if(this.weakened == 2)
             return {
-                text: ['~(На твоём месте я бы прислушался к Промоутке.)']
+                text: this.Dial('idle_weakened')
             };
 
         if(this.failedAttack == 2)
             return {
-                text: ['~(Перерисуй заклинание по шаблону, не отпуская карандаш, чтобы атаковать!)']
+                text: this.Dial('idle_tutorial')
             };
 
         if(this.call == 1)
         {
             return {
-                text: ['~ПромоУтка вызвал подкрепление.']
+                text: this.Dial('idle_geno')
             }
         }
         else if(this.call == 3)
         {
             return {
-                text: ['~Подкрепление задерживается.']
+                text: this.Dial('idle_geno2')
             }
         }
 
@@ -756,7 +750,7 @@ class PromoDuck extends Enemy
         {
             this.weakened = 1;
             let message = {
-                speech: ['^П-послушай...^', 'Ты, вижу, мастер карандаша и всё такое...', 'Н-но я не ^груша для битья^, а живое существо.', 'П-просто дождись, когда сбросится ставка на Промотке, поставь свой несчастный карандаш, и мы мирно разойдёмся.', 'Т-ты ведь здесь для этого?'],
+                speech: this.Dial('weakened'),
             }
             
             this.bet = 3;
@@ -770,7 +764,7 @@ class PromoDuck extends Enemy
             if(this.weakened == 0 && this.call == 0 && this.mockery >= 2 && this.actualHurt == 1)
             {
                 return {
-                    speech: ['У тебя получилось!!', 'Только не размахивай этой штукой ТАК сильно...', '#7^БОЛЬНО ЖЕ!^']  
+                    speech: this.Dial('attack_finally')
                 };
             }
             
@@ -779,7 +773,7 @@ class PromoDuck extends Enemy
                 this.drawAttempt = 1;
     
                 return {
-                    speech: ['Атакуешь своими рисуночками, значит?', 'А я тоже так могу!&0'],
+                    speech: this.Dial('attack_scribble'),
                     actions: [
                         () => new DrawAction(this)
                     ]
@@ -802,7 +796,7 @@ class PromoDuck extends Enemy
 
                 this.mockAnnoyed = true;
                 return {
-                    speech: ['#FТы это специально делаешь?!']
+                    speech: this.Dial('annoyed')
                 };
             }
 
@@ -810,27 +804,27 @@ class PromoDuck extends Enemy
             {
                 case 1:
                     return {
-                        speech: ['#1О боже! Какая ужасная атака! ^ПОЩАДИ МЕНЯ!!!^*', '#2* Сарказм.']
+                        speech: this.Dial('mockery1')
                     };
 
                 case 2:
                     return {
-                        speech: ['#FТы ОПЯТЬ?! Не позорься!']
+                        speech: this.Dial('mockery2')
                     };
 
                 case 3:
                     return {
-                        speech: ['Может, объяснить тебе, что надо делать?...']
+                        speech: this.Dial('mockery3')
                     };
 
                 case 4:
                     return {
-                        speech: ['Просто СРИСУЙ заклинание своим карандашом!!', 'И не отпускай его, пока не закончишь.']  
+                        speech: this.Dial('mockery4')
                     };
 
                 case 5:
                     return {
-                        speech: ['#7...']  
+                        speech: this.Dial('mockery5')
                     };
             }
         }
@@ -844,7 +838,7 @@ class PromoDuck extends Enemy
     {
         this.dealt++;
 
-        let text = ['Так, посмотрим- посмотрим...'];
+        let text = this.Dial('deal_pre');
         if(_yes && _no || (_len > 30 && _pointsOutside / _len > .7))
         {
             this.dealBroke++;
@@ -853,15 +847,15 @@ class PromoDuck extends Enemy
             switch(this.dealBroke)
             {
                 case 1:
-                    answer = ['Поздравляю, бланк испорчен!'];
+                    answer = this.Dial('deal_broke_1');
                     break;
 
                 case 2:
-                    answer = ['Не переживай, у меня этих бланков целый офис. Надолго хватит.'];
+                    answer = this.Dial('deal_broke_2');
                     break;
 
                 default:
-                    answer = ['Даже не пытайся, ты всё равно никуда не уйдёшь.'];
+                    answer = this.Dial('deal_broke_3');
                     break;
             }
             text = text.concat(answer);
@@ -874,15 +868,15 @@ class PromoDuck extends Enemy
             switch(this.dealDunno)
             {
                 case 1:
-                    answer = ['...Ты не знаешь, как заполнить бланк?', 'Просто нарисуй что-нибудь внутри квадратика рядом с словом "Да".', 'Галочку там, крестик, спиральку, икосододекаэдр, всё равно.', 'Проще ж некуда!'];
+                    answer = this.Dial('deal_dunno_1');
                     break;
 
                 case 2:
-                    answer = ['#FЭто шутка какая-то?', '#FЯ второй раз это всё объяснять не буду.'];
+                    answer = this.Dial('deal_dunno_2');
                     break;
 
                 default:
-                    answer = ['#F^...^'];
+                    answer = this.Dial('deal_dunno_3');
                     break;
             }
             text = text.concat(answer);
@@ -897,15 +891,15 @@ class PromoDuck extends Enemy
                 switch(this.dealNo)
                 {
                     case 1:
-                        answer = ['#A^КАК ЭТО НЕТ?!^', '#FА зачем тогда ты тут ошиваешься?? Моё время тратишь??!!', '#FПиши "Да" или уходи.'];
+                        answer = this.Dial('deal_no_1');
                         break;
 
                     case 2:
-                        answer = ['#FВ чем твоя проблема???', '#FПросто поставь "Да".'];
+                        answer = this.Dial('deal_no_2');
                         break;
 
                     default:
-                        answer = ['#F^...^'];
+                        answer = this.Dial('deal_no_3');
                         break;
                 }
 
@@ -913,7 +907,7 @@ class PromoDuck extends Enemy
             }
             else if(_yes)
             {
-                text = text.concat(['#GПревосходно!', '#GНу а теперь оплата. Твой $кккарандашиикк$!']);
+                text = text.concat(this.Dial('deal_signed'));
                 this.signed = 1;
             }
         }
@@ -930,28 +924,28 @@ class PromoDuck extends Enemy
     {
         this.drawn++;
         
-        let result = {text: ['...ничего не произошло.~(Постарайся нарисовать как можно больше, не отпуская карандаш!)']};
+        let result = {text: this.Dial('vandalism_fail')};
         let delta = 0;
         
         if(_len >= 100)
         {
             delta = 5;
-            result.text = ['Время ставки @2ОЧЕНЬ СИЛЬНО сокращается@!!!'];
+            result.text = this.Dial('vandalism_success_4');
         }
         else if(_len >= 50)
         {
             delta = 3;
-            result.text = ['Время ставки @2сильно сокращается@!!!'];
+            result.text = this.Dial('vandalism_success_3');
         }
         else if(_len >= 25)
         {
             delta = 2;
-            result.text = ['Время ставки @2сокращается@!!'];
+            result.text = this.Dial('vandalism_success_2');
         }
         else if(_len >= 5)
         {
             delta = 1;
-            result.text = ['Время ставки @2немного сокращается@!'];
+            result.text = this.Dial('vandalism_success_1');
         }
 
         this.DecreaseResetCounter(delta);
@@ -961,7 +955,7 @@ class PromoDuck extends Enemy
             if(this.dontEvenThink == 0 && this.wtf < 3)
             {
                 this.dontEvenThink = 1;
-                result.speech = ['#8Даже и не думай!'];
+                result.speech = this.Dial('vandalism_fail_speech');
             }
             else
                 result.speech = this.StoryFlow();
@@ -996,22 +990,22 @@ class PromoDuck extends Enemy
             switch(this.resetTalk)
             {
                 case 1:
-                    return ['Что там у нас по времени...', 'О! Время @2сброса@!', 'Покупателей, вижу, не намечается...~Тебе повезло!', 'Можешь наконец отдать мне свой карандаш и свалить.'];
+                    return this.Dial('reset_1');
 
                 case 2:
-                    return ['#FНе затягивай.'];
+                    return this.Dial('reset_2');
 
                 case 3:
-                    return ['#A^Хоть понимаешь, сколько моего времени ушло впустую из-за тебя^?!', '#FВремя - деньги, малой.~Вместо того, чтобы с тобой драться, я мог заработать..........', '#3.%.%.', 'Впрочем, неважно. Подписывай договор и уходи!'];
+                    return this.Dial('reset_3');
 
                 case 4:
-                    return ['#E$Хи-хи! Я принесу карандаш и буду тыкать им в лицо дядюшке ПромоУтке, и он мне ничего не сделает!!$', 'Это ты.', '#A^ПОЧЕМУ ТЫ ХИХИКАЕШЬ??!?!^'];
+                    return this.Dial('reset_4');
 
                 case 10:
-                    return ['#FТы получаешь от моих мучений какое-то удовольствие или что?', '#FТо, что я не могу тебя выгнать*, не значит, что я твой личный шут.', '#2* Туни запрещает мне прогонять клиентов после того случая.'];
+                    return this.Dial('reset_6');
 
                 default:
-                    return ['#7Делай. Ставку.'];
+                    return this.Dial('reset_5');
             }
         }
 
@@ -1022,29 +1016,29 @@ class PromoDuck extends Enemy
         switch(this.story)
         {
             case 1:
-                return ['#8ЭТО ЧТО ТАКОЕ?!?!?'];
+                return this.Dial('story_1');
 
             case 2:
-                return ['Буду ли я оттирать твою мазню?', 'Хороший вопрос.'];
+                return this.Dial('story_2');
 
             case 3:
-                return ['И вот ответ...', '#9...%^МНОГО ЧЕСТИ!!!^*', '#2* Договор о Промотке не предусматривает страховку от возможного ущерба.'];
+                return this.Dial('story_3');
 
             case 4:
-                return ['#BПока место приносит мне бабки, мне абсолютно всё равно.', '#BРазвлекайся!'];
+                return this.Dial('story_4');
 
             case 5: 
-                return ['#1Что-что? ^Репутационные потери?^~Расскажешь всю правду ^своим друзьям^???', '#1.%.%.%', '#9^ТЕБЕ ВСЁ РАВНО НИКТО НЕ ПОВЕРИТ!!!^'];
+                return this.Dial('story_5');
 
             case 6:
-                return ['У меня есть огромный козырь в отсутствующем рукаве.', 'Я даю людям надежду, что благодаря Промотке их творчество хоть кто-нибудь, да увидит.'];
+                return this.Dial('story_6');
             
             case 7: 
-                return ['И пока они в это верят, они будут нести мне свои Карандаши.', 'Ты в том числе.'];
+                return this.Dial('story_7');
 
             case 8:
                 if(this.weakened > 0)
-                    return ['Если, конечно, ты здесь не за ^моей смертью^.'];
+                    return this.Dial('story_8_alt');
                 break;
         }
 
@@ -1052,7 +1046,7 @@ class PromoDuck extends Enemy
         {
             this.popsicle = 1;
             this.popsicleHP = battle.hp;
-            return ['Надо же, ты ещё здесь.', 'Эт самое...~У меня кончаются идеи для атак.', '#CКак насчёт перерыва на мороженку?*', '#2* Мороженку есть буду я.'];
+            return this.Dial('story_8');
         }
 
         return null;
@@ -1091,7 +1085,7 @@ class PromoDuck extends Enemy
             this.actions = [this.actions[0]];
 
             return {
-                speech: ['Приятно иметь дело!~Как и договаривались, твой мульт на Промотке.', 'Хорошего дня!'],
+                speech: this.Dial('deal_signed_2'),
             };
         }
 
@@ -1100,7 +1094,7 @@ class PromoDuck extends Enemy
             this.drawAttempt = 3;
 
             return {
-                speech: ['#3.....', '#3..................', '#4Карандаш плохой попался.'],
+                speech: this.Dial('attack_scribble_2'),
             };
         }
 
@@ -1111,12 +1105,12 @@ class PromoDuck extends Enemy
             if(battle.hp < this.popsicleHP)
             {
                 return {
-                    speech: ['#DНям-ням!'],
+                    speech: this.Dial('attack_popsicle_fail'),
                 };
             }
 
             return {
-                speech: ['#DПалочкой обойдусь!']
+                speech: this.Dial('attack_popsicle_success')
             };
         }
 
@@ -1130,7 +1124,7 @@ class PromoDuck extends Enemy
             this.call = 1;
 
             return {
-                speech: ['#6...', '#6^(Н-нужна помощь...)^'],
+                speech: this.Dial('geno_phone'),
             };
         }
         else if(this.call == 1)
@@ -1142,7 +1136,7 @@ class PromoDuck extends Enemy
             this.call = 3;
 
             return {
-                speech: ['#6^(Д-да где он...)^'],
+                speech: this.Dial('geno_phone_2'),
             };
         }
         else if(this.call == 3)
@@ -1158,14 +1152,14 @@ class PromoDuck extends Enemy
         this.check++;
 
         let result = {
-            text: ['~ПромоУтка — владелец Промотки.~Древесный сомелье и просто красавчик. *'],
-            speech: ['#2* Выдержки из визитной карточки.']
+            text: this.Dial('check'),
+            speech: this.Dial('check_speech')
         };
 
         if(this.check > 1)
         {
             delete result.speech;
-            result.text = ['~Промоутка — владелец Промотки.~Довольно жадный. %Имеет на удивление здоровые зубы. (у уток они вообще должны быть???)'];
+            result.text = this.Dial('check_2');
             result.speech = this.StoryFlow();
         }
 
@@ -1178,12 +1172,12 @@ class PromoDuck extends Enemy
         if(this.resetCounter <= 0)
         {
             let result = {
-                text: ['~Подпиши договор, и ты выкупишь место на Промотке за карандаш.'],
+                text: this.Dial('bet_draw'),
                 mode: DEAL
             };
             if(this.dumbBaby)
             {
-                result.speech = ['Слушай, ты не можешь заполнить бланк уже три раза.', 'Туни, конечно, говорил мне, что это неправильно...~Но у меня есть секретная форма для %тупых детей.', 'Желаешь попробовать?'];
+                result.speech = this.Dial('bet_dumb');
             }
             return result;
         }
@@ -1192,19 +1186,19 @@ class PromoDuck extends Enemy
         {
             case 1:
                 return {
-                    text: ['~Ты предлагаешь свой карандаш ПромоУтке.'],
-                    speech: ['#9Один карандаш????~НЕ СМЕШИ!!! Я ЕГО ТОЛЬКО ПОГРЫЗТЬ МОГУ!!!', 'Не, ну ты конечно можешь ДОЖДАТЬСЯ @2сброса ставки@...', '...но я СИЛЬНО сомневаюсь, что твой карандаш выдержит мои атаки!!!'],
+                    text: this.Dial('bet_early'),
+                    speech: this.Dial('bet_early_speech'),
                 };
                 
             case 2:
                 return {
-                    text: ['~У тебя всё ещё один карандаш, но ты не сдаёшься.'],
-                    speech: ['Жди, когда закончится ставка, или уматывай за карандашами!*', '#2* Текущая ставка: 324905 Карандашей.~Минимальная ставка для перекупа: 324906 Карандашей.~У Вас Карандашей: 1. @1(недостаточно)@']
+                    text: this.Dial('bet_early_2'),
+                    speech: this.Dial('bet_early_2_speech')
                 };
 
             default:
                 return {
-                    text: ['~Похоже, стоит дождаться сброса ставки и только после этого предложить карандаш.'],
+                    text: this.Dial('bet_early_3'),
                     speech: this.StoryFlow(),
                 };
         }
@@ -1212,7 +1206,7 @@ class PromoDuck extends Enemy
     Vandalize()
     {
         return {
-            text: ['Нарисуй что угодно, чтобы ускорить сброс ставки!'],
+            text: this.Dial('vandalism'),
             mode: DRAW
         }
     }
