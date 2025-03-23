@@ -16,19 +16,21 @@
             "act": "Act",
             "items": "Items",
             "target": "Target",
-            "draw": "Draw!",
-            "deal": "Do you accept?",
-            "yes": "Yes",
-            "no": "No",
             "empty": "Empty!",
             "game_over": "Game over",
             "restart": "Retry",
-            "shake": "Shake!!!",
             "qv": "Quacky Vision",
             "before_reset": "resets in:",
             "h": "h.",
             "m": "m.",
-            "free": "FREE"
+            "free": "FREE",
+
+            "draw": "Draw!",
+            "shake": "Shake!!!",
+            "hurry_up": "Hurry up!!!",
+            "deal": "Do you accept?",
+            "yes": "Yes",
+            "no": "No"
         },
 
         "enemies":

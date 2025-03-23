@@ -827,7 +827,7 @@ class PopsicleAttack extends Attack
             }
         }
 
-        if(this.tipTimer <= 0 && this.break < this.breaksPerFrame)
+        if((this.tipTimer <= 0 && this.break < this.breaksPerFrame) || this.attackTimer < 150)
         {
             _ctx.font = '36px Pangolin';
             _ctx.font = 'Pangolin'
@@ -839,7 +839,7 @@ class PopsicleAttack extends Attack
             offset.x = (Math.random() - .5) * 2;
             offset.y = (Math.random() - .5) * 2;
 
-            _ctx.fillText(loc.Get('hud', 'shake'), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
+            _ctx.fillText(loc.Get('hud', this.attackTimer < 150 ? 'hurry_up' : 'shake'), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2 + offset.x, battle.bounds.y1 + 15 + 4 + offset.y);
         }
     }
 
