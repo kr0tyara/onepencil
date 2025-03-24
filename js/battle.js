@@ -290,8 +290,10 @@ class TypeWriter
     
     DrawText(_ctx, _dt)
     {
+        let defaultColor = battle.theme.Outline();
+
         _ctx.font = `${this.textSize}px Pangolin`;
-        _ctx.fillStyle = TEXT_COLORS[0];
+        _ctx.fillStyle = defaultColor;
         _ctx.textBaseline = 'top';
         _ctx.textAlign = 'left';
 
@@ -334,7 +336,7 @@ class TypeWriter
                     // если мы уже начали, то это уже закрывающий "тег"
                     else
                     {
-                        _ctx.fillStyle = TEXT_COLORS[0];
+                        _ctx.fillStyle = defaultColor;
                         customColor = false;
                     }
 
@@ -418,7 +420,13 @@ class SpeechBubble extends TypeWriter
     Render(_ctx, _dt)
     {
         if(this.currentAction != null)
+        {
             this.currentAction.Render(_ctx, _dt);
+            return;
+        }
+
+        if(this.text[this.index].length == 0)
+            return;
 
         this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
         
@@ -429,8 +437,8 @@ class SpeechBubble extends TypeWriter
         let r = 6;
 
         _ctx.lineWidth = 3;
-        _ctx.fillStyle = '#fff';
-        _ctx.strokeStyle = '#000';
+        _ctx.fillStyle = battle.theme.Background();
+        _ctx.strokeStyle = battle.theme.Outline();
         _ctx.beginPath();
         _ctx.moveTo(x - 20, y + h / 2);
         _ctx.lineTo(x, y + h / 2 - 10);
@@ -547,11 +555,11 @@ class BattleUI
             if(target == button || button.modes.indexOf(battle.mode.id) != -1)
                 _ctx.fillStyle = _ctx.strokeStyle = '#0d85f3';
             else if(battle.mode.id == IDLE || !battle.mode.locked && !battle.mode.drawingLocked)
-                _ctx.fillStyle = _ctx.strokeStyle = '#000';
+                _ctx.fillStyle = _ctx.strokeStyle = battle.theme.Outline();
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
 
-            _ctx.fillStyle = '#fff';
+            _ctx.fillStyle = battle.theme.Background();
             _ctx.beginPath();
             Utils.RoundedRect(_ctx, button.x, battle.defaultBounds.y2 + 70, button.w, 70, 6);
             _ctx.fill();
@@ -567,7 +575,7 @@ class BattleUI
     }
 }
 
-class BattleBackground
+class BattleTheme
 {
     constructor()
     {
@@ -581,6 +589,26 @@ class BattleBackground
         this.backgroundCanvas = document.createElement('canvas');
         this.backgroundCtx = this.backgroundCanvas.getContext('2d');
         this.backgroundCtx.imageSmoothingEnabled = false;
+
+        this.backgroundColor = {r: 255, g: 255, b: 255};
+        this.outlineColor = {r: 0, g: 0, b: 0};
+        this.serious = false;
+    }
+
+    Background()
+    {
+        return `rgba(${this.backgroundColor.r}, ${this.backgroundColor.g}, ${this.backgroundColor.b})`;
+    }
+    Outline()
+    {
+        return `rgba(${this.outlineColor.r}, ${this.outlineColor.g}, ${this.outlineColor.b})`;
+    }
+
+    Swap(_backgroundColor, _outlineColor, _serious)
+    {
+        this.backgroundColor = {r: _backgroundColor.r, g: _backgroundColor.g, b: _backgroundColor.b};
+        this.outlineColor = {r: _outlineColor.r, g: _outlineColor.g, b: _outlineColor.b};
+        this.serious = _serious;
     }
 
     Start()
@@ -657,6 +685,13 @@ class BattleBackground
     }
     Render(_ctx, delta)
     {
+        if(this.serious)
+        {
+            _ctx.fillStyle = this.Background();
+            _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
+            return;
+        }
+
         _ctx.fillStyle = '#edeef0';
         _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
 
@@ -811,6 +846,7 @@ class Battle
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.resetTransform();
         this.ctx.translate(.5, .5);
+        this.ctx.lineCap = this.ctx.lineJoin = 'round';
 
         this.tempCanvas = document.createElement('canvas');
         this.tempCtx    = this.tempCanvas.getContext('2d');
@@ -890,7 +926,7 @@ class Battle
 
         this.projectiles = [];
 
-        this.background = new BattleBackground();
+        this.theme = new BattleTheme();
         this.enemiesContainer = new EnemiesContainer();
 
         this.lastRender = 0;
@@ -913,7 +949,7 @@ class Battle
     {
         res.sfx.bgm.play();
 
-        this.background.Start();
+        this.theme.Start();
         this.enemiesContainer.Start();
         this.ui.Start();
 
@@ -1019,7 +1055,7 @@ class Battle
             return;
         }
         
-        this.background.Render(this.ctx, delta);
+        this.theme.Render(this.ctx, delta);
         this.enemiesContainer.Render(this.ctx, _dt);
 
         // спич баболы
@@ -1040,7 +1076,7 @@ class Battle
         Utils.RoundedRect(this.ctx, x, y, 200, 32, 6);
         this.ctx.clip();
         
-        this.ctx.fillStyle = '#000';
+        this.ctx.fillStyle = this.theme.Outline();
         this.ctx.fillRect(x, y, 200, 32);
         this.ctx.fillStyle = '#0d85f3';
         this.ctx.fillRect(x, y, 200 * this.hp / this.maxHP, 32);
@@ -1048,7 +1084,7 @@ class Battle
         this.ctx.restore();
 
         this.ctx.lineWidth = 3;
-        this.ctx.strokeStyle = '#000';
+        this.ctx.strokeStyle = this.theme.Outline();
         this.ctx.stroke();
 
         this.ctx.closePath();
@@ -1062,15 +1098,16 @@ class Battle
         this.ctx.fillText(`${this.hp} / ${this.maxHP}`, x + 200 / 2, y + 1 + 32 / 2);
         //this.ctx.globalCompositeOperation = 'source-over';
 
-        this.ctx.drawImage(res.sprites.effects, 0, 0, 24, 24, x - 24 - 6, y + 4, 24, 24);
-        
         // эффекты
-        this.ctx.fillStyle = '#000';
+        this.ctx.fillStyle = this.theme.Outline();
+        Utils.MaskSprite(this.ctx, this.tempCtx, res.sprites.effects, 0, 0, 24, 24, x - 24 - 6, y + 4, 24, 24, this.ctx.fillStyle);
+
         this.ctx.textAlign = 'left';
         for(let i in this.effects)
         {
             let effect = this.effects[i];
-            this.ctx.drawImage(res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12 + 55 * i, y + 4, 24, 24);
+
+            Utils.MaskSprite(this.ctx, this.tempCtx, res.sprites.effects, effect.id * 24, 0, 24, 24, x + 200 + 12 + 55 * i, y + 4, 24, 24, this.ctx.fillStyle);
             this.ctx.fillText(`${effect.turns}`, x + 200 + 12 + 55 * i + 24 + 6, y + 1 + 32 / 2);
         }
 
@@ -1082,8 +1119,8 @@ class Battle
         this.ctx.lineJoin = 'round';
         
         this.ctx.lineWidth = 3;
-        this.ctx.strokeStyle = '#000';
-        this.ctx.fillStyle = '#fff';
+        this.ctx.strokeStyle = this.theme.Outline();
+        this.ctx.fillStyle = this.theme.Background();
 
         this.ctx.beginPath();
         Utils.RoundedRect(this.ctx, this.bounds.x1, this.bounds.y1, this.bounds.x2 - this.bounds.x1, this.bounds.y2 - this.bounds.y1, 6);

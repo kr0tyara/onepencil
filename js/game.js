@@ -21,6 +21,8 @@ const   IDLE = 0,
         STATE_DEAD = 4,
         STATE_DRAW = 6,
         STATE_BYE = 7,
+        STATE_SHIELDING = 8,
+        STATE_BREAK = 9,
 
         EFFECT_NONE = 0,
         EFFECT_DRAWING_TIME = 1,
@@ -512,6 +514,11 @@ class GameResources
             effectEnd:
             {
                 url: 'effect_end.ogg',
+                volume: .5
+            },
+            explosion:
+            {
+                url: 'explosion.wav',
                 volume: .5
             }
         };

@@ -128,7 +128,7 @@ class TargettedBattleMode extends BattleMode
         _ctx.fillStyle = '#666';
         _ctx.fillText(loc.Get('hud', 'target'), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + 15 + 4);
 
-        _ctx.strokeStyle = '#000';
+        _ctx.strokeStyle = battle.theme.Outline();
         _ctx.textAlign = 'left';
         _ctx.textBaseline = 'middle';
         _ctx.lineWidth = 3;
@@ -142,7 +142,7 @@ class TargettedBattleMode extends BattleMode
             if(enemy == target)
                 _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
             else
-                _ctx.strokeStyle = _ctx.fillStyle = '#000';
+                _ctx.strokeStyle = _ctx.fillStyle = battle.theme.Outline();
 
             _ctx.save();
             _ctx.beginPath();
@@ -156,7 +156,7 @@ class TargettedBattleMode extends BattleMode
             _ctx.fillStyle = enemy == target ? '#B3C9DB' : '#aaa';
             _ctx.fillRect(enemy.x, enemy.y + enemy.h - 15, enemy.w, 15);
 
-            _ctx.fillStyle = enemy == target ? '#0d85f3' : '#000';
+            _ctx.fillStyle = enemy == target ? '#0d85f3' : battle.theme.Outline();
             _ctx.fillRect(enemy.x, enemy.y + enemy.h - 15, enemy.w * enemy.data.hp / enemy.data.maxHP, 15);
 
             _ctx.stroke();
@@ -262,7 +262,6 @@ class DrawingMode extends TargettedBattleMode
     
     static DrawLine(_ctx, _points, _pos, _lineWidth = 5, _color = '#000')
     {
-        _ctx.lineCap = _ctx.lineJoin = 'round';
         _ctx.lineWidth = _lineWidth;
         _ctx.strokeStyle = _color;
         _ctx.beginPath();
@@ -306,7 +305,10 @@ class DrawingMode extends TargettedBattleMode
             return;
         }
 
-        DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, this.color);
+        let c = this.color;
+        if(this.color == '#000000')
+            c = battle.theme.Outline();
+        DrawingMode.DrawLine(_ctx, this.drawnPoints, {x: battle.soul.x, y: battle.soul.y}, this.lineWidth, c);
 
         // текст
         _ctx.font = '36px Pangolin';
@@ -484,7 +486,7 @@ class OwnAttackMode extends DrawingMode
         }
 
         // анимация нашей атаки
-        if(this.attackDamage <= 5)
+        if(this.attackDamage <= 0)
         {
             // превращается в каракулю
             if(this.pendingTimer <= this.transformTime)
@@ -602,7 +604,7 @@ class OwnAttackMode extends DrawingMode
             this.soundPlayed = true;
             if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 1)
                 this.currentAttack.sfx[1].play();
-            else if(this.attackDamage <= 5)
+            else if(this.attackDamage <= 0)
                 res.sfx.scribble2.play();
         }
     }
@@ -624,8 +626,8 @@ class OwnAttackMode extends DrawingMode
             return;
         
         this.hurtAnimationFinished = true;
-        if(this.attackDamage > 5)
-            res.sfx.hurt.play();
+        if(this.attackDamage > 0)
+            Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
 
         let result = this.targetEnemy.Hurt(this.attackDamage);
         battle.lastActionResult = {
@@ -666,7 +668,7 @@ class OwnAttackMode extends DrawingMode
         this.soundPlayed = false;
         if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 0)
             this.currentAttack.sfx[0].play();
-        else if(this.attackDamage <= 5)
+        else if(this.attackDamage <= 0)
             res.sfx.scribble1.play();
 
         this.pendingTimer = 0;
@@ -973,8 +975,8 @@ class ActMode extends TargettedBattleMode
 
         if(this.selectedAction == null)
         {
-            _ctx.strokeStyle = '#000';
-            _ctx.fillStyle = '#000';
+            _ctx.strokeStyle = battle.theme.Outline();
+            _ctx.fillStyle = battle.theme.Outline();
             
             _ctx.font = '36px Pangolin';
             _ctx.textBaseline = 'middle';
@@ -999,7 +1001,7 @@ class ActMode extends TargettedBattleMode
                     if(action == target)
                         _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
                     else
-                        _ctx.strokeStyle = _ctx.fillStyle = '#000';
+                        _ctx.strokeStyle = _ctx.fillStyle = battle.theme.Outline();
                 }
 
                 _ctx.beginPath();
@@ -1304,8 +1306,8 @@ class ItemsMode extends BattleMode
     {
         if(this.selectedItem == null)
         {
-            _ctx.strokeStyle = '#000';
-            _ctx.fillStyle = '#000';
+            _ctx.strokeStyle = battle.theme.Outline();
+            _ctx.fillStyle = battle.theme.Outline();
             
             _ctx.textBaseline = 'middle';
             _ctx.lineWidth = 2;
@@ -1329,7 +1331,7 @@ class ItemsMode extends BattleMode
                 if(item == target)
                     _ctx.strokeStyle = _ctx.fillStyle = '#0d85f3';
                 else
-                    _ctx.strokeStyle = _ctx.fillStyle = '#000';
+                    _ctx.strokeStyle = _ctx.fillStyle = battle.theme.Outline();
 
                 _ctx.beginPath();
                 Utils.RoundedRect(_ctx, item.x, item.y, item.w, item.h, 4);

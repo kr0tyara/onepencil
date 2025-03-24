@@ -178,6 +178,7 @@ class PromoDuckSprite extends EnemySprite
         super(_x, _y, 300, 300, _enemy);
         
         this.stakeShown = true;
+        this.stakeShield = 0;
 
         this.deltaTime = 80;
         this.deltaStickTime = 40;
@@ -190,6 +191,7 @@ class PromoDuckSprite extends EnemySprite
         this.vandalismCanvas.height = 305;
         this.vandalismCtx = this.vandalismCanvas.getContext('2d');
         this.vandalismCtx.imageSmoothingEnabled = false;
+        this.vandalismCtx.lineCap = this.vandalismCtx.lineJoin = 'round';
         this.vandalismCtx.translate(.5, .5);
 
         //this.vandalismCtx.fillStyle = 'red';
@@ -237,119 +239,6 @@ class PromoDuckSprite extends EnemySprite
                 this.y = 0;
         }
 
-        // промотка
-        if(this.stakeShown)
-        {
-            let x = battle.defaultBounds.x1;
-            let y = 25;
-            let h = battle.defaultBounds.y1 - 25 - 25;
-            
-            if(this.state == STATE_HANGING)
-                y = -h + (h + 25) * this.animationTime;
-
-            _ctx.lineCap = _ctx.lineJoin = 'round';
-            
-            _ctx.lineWidth = 6;
-            _ctx.strokeStyle = '#000';
-            _ctx.fillStyle = '#fff';
-
-            _ctx.save();
-            _ctx.beginPath();
-            Utils.RoundedRect(_ctx, x, y, 250, h, 6);
-            _ctx.fill();
-            _ctx.clip();
-
-            _ctx.fillStyle = '#edeef0';
-            _ctx.fillRect(x, y, 250, 45);
-
-            _ctx.font = '24px Pangolin';
-            _ctx.fillStyle = '#000';
-            _ctx.textAlign = 'center';
-            _ctx.textBaseline = 'top';
-
-            // заголовок
-            let txt = loc.Get('hud', 'qv');
-            let w = _ctx.measureText(txt).width;
-            _ctx.drawImage(res.sprites.ducky, x + (250 - w) / 2 - 12 - 6, y + 10);
-            _ctx.fillText(txt, x + 250 / 2 + 16, y + 8 + 4);
-
-            // мульт
-            if(this.enemy.signed == 2)
-                res.sheets.promo2.Draw(_ctx, 'promo2', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo2.GetTagFrames('idle')), x, y + 45);
-            else
-                res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), x, y + 45);
-
-            // цена
-            _ctx.fillStyle = '#edeef0';
-            _ctx.fillRect(x, y + h - 80, 250, 80);
-            if(this.enemy.resetCounter > 0 || this.enemy.signed == 2)
-            {
-                _ctx.fillStyle = '#000';
-                _ctx.font = '36px Pangolin';
-                
-                txt = this.enemy.signed == 2 ? '1' : '324905';
-                w = _ctx.measureText(txt).width;
-                _ctx.textBaseline = 'bottom';
-
-                _ctx.drawImage(res.sprites.minipencil, x + 250 / 2 + w / 2 + 5 - 12, y + h - 70);
-                _ctx.fillText(txt, x + 250 / 2 - 16, y + h - 35);
-
-                _ctx.textAlign = 'left';
-                _ctx.font = '24px Pangolin';
-
-                txt = loc.Get('hud', 'before_reset');
-                w = _ctx.measureText(txt).width + 40;
-                _ctx.fillText(txt, x + 40, y + h - 10);
-                
-                if(this.enemy.signed == 2)
-                    txt = ` 2 ${loc.Get('hud', 'h')}`;
-                else
-                    txt = ` ${this.enemy.resetCounter} ${loc.Get('hud', 'm')}`;
-                
-                    _ctx.fillStyle = TEXT_COLORS[2];
-                _ctx.fillText(txt, x + w, y + h - 10);
-                w += _ctx.measureText(txt).width;
-            }
-
-            _ctx.stroke();
-            _ctx.closePath();
-            _ctx.restore();
-
-            // вандализм
-            if(this.enemy.signed < 2)
-                _ctx.drawImage(this.vandalismCanvas, x - 55, y - 25);
-
-            _ctx.font = '24px Pangolin';
-            _ctx.textAlign = 'left';
-            _ctx.textBaseline = 'bottom';
-            _ctx.fillStyle = TEXT_COLORS[2];
-            // дельты
-            for(let i in this.deltas)
-            {
-                let t = (this.deltaTime - this.deltas[i].timer - this.deltaStickTime) / (this.deltaTime - this.deltaStickTime);
-                t = Utils.Clamp(t, 0, 1);
-                
-                _ctx.globalAlpha = 1 - t;
-                _ctx.fillText(`-${this.deltas[i].delta}`, x + w + 5, y + h - 10 - t * 25);
-                _ctx.globalAlpha = 1;
-            }
-
-            if(this.enemy.resetCounter == 0 && this.enemy.signed < 2)
-            {
-                _ctx.fillStyle = '#000';
-                _ctx.beginPath();
-                Utils.RoundedRect(_ctx, x, y + h - 80, 250, 80, 6);
-                _ctx.fill();
-                _ctx.closePath();
-
-                _ctx.fillStyle = '#fff';
-                _ctx.font = '46px Pangolin';
-                _ctx.textAlign = 'center';
-                _ctx.textBaseline = 'middle';
-                _ctx.fillText(loc.Get('hud', 'free'), x + 250 / 2, y + h - 70 / 2);
-            }
-        }
-
         let harmed = this.enemy.weakened > 0;
 
         let t = _dt / 150;
@@ -369,7 +258,12 @@ class PromoDuckSprite extends EnemySprite
             y: ~~(Math.sin(t) * 2.5 + bodyWobble.y)
         };
 
-        if(this.state == STATE_HURT)
+        if(this.enemy.weakened == 4)
+        {
+            res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
+            res.sheets.duck.Draw(_ctx, 'body', 4, this.x, this.y);
+        }
+        else if(this.state == STATE_HURT)
         {
             let shake = Math.sin(_dt / 20) * (20 * this.animationTime);
             res.sheets.duck.Draw(_ctx, 'body', harmed ? 3 : 1, this.x + shake, this.y);
@@ -393,6 +287,35 @@ class PromoDuckSprite extends EnemySprite
             res.sheets.duck.Draw(_ctx, 'arm_front', 1, this.x + drawWobble.x, this.y + drawWobble.y);
 
             res.sheets.duck.Draw(_ctx, 'head', 8, this.x + headWobble.x, this.y + headWobble.y);
+        }
+        else if(this.state == STATE_SHIELDING)
+        {
+            let x = this.x;
+            if(this.animationTime < .3)
+            {
+                x = this.x - (this.x - battle.defaultBounds.x1) * this.animationTime / .3;
+            }
+            else if(this.animationTime < .5)
+            {
+                x = battle.defaultBounds.x1;
+                this.stakeShield = 1;
+            }
+            else if(this.animationTime < .9)
+            {
+                x = battle.defaultBounds.x1 - (battle.defaultBounds.x1 - this.x) * (this.animationTime - .5) / .4;
+            }
+
+            res.sheets.duck.Draw(_ctx, 'shadow', 0, x, this.y);
+            res.sheets.duck.Draw(_ctx, 'arm_back', 2, x, this.y);
+            res.sheets.duck.Draw(_ctx, 'feet', 2, x, this.y);
+
+            res.sheets.duck.Draw(_ctx, 'hair', 1, x, this.y);
+
+            res.sheets.duck.Draw(_ctx, 'body', 2, x, this.y);
+
+            res.sheets.duck.Draw(_ctx, 'arm_front', 2, x, this.y);
+
+            res.sheets.duck.Draw(_ctx, 'head', res.sheets.duck.GetTagFrame('expression_5'), x, this.y);
         }
         else if(this.state == STATE_BYE)
         {
@@ -575,6 +498,245 @@ class PromoDuckSprite extends EnemySprite
                 _ctx.restore();
             }
         }
+        
+        // промотка
+        if(this.stakeShown)
+        {
+            let x = battle.defaultBounds.x1;
+            let y = 25;
+            let h = battle.defaultBounds.y1 - 25 - 25;
+    
+            if(this.state == STATE_HANGING)
+                y = -h + (h + 25) * this.animationTime;
+            
+            _ctx.save();
+                _ctx.translate(x, y);
+
+                if(this.stakeShield == 1)
+                {
+                    if(this.state == STATE_SHIELDING && this.animationTime < .9)
+                    {
+                        if(this.animationTime < .5)
+                        {
+                            x = battle.defaultBounds.x1;
+                            y = y - y * Utils.Clamp((this.animationTime - .3) / .07, 0, 1);
+                        }
+                        else
+                        {
+                            x = battle.defaultBounds.x1 - (battle.defaultBounds.x1 - this.x) * (this.animationTime - .5) / .4;
+                            y = this.y;
+                        }
+                    }
+                    else if(this.state == STATE_HURT || this.state == STATE_BREAK)
+                    {
+                        x = this.x;
+                        y = this.y;
+                    }
+                    else
+                    {
+                        x = this.x + bodyWobble.x;
+                        y = this.y + bodyWobble.y;
+                    }
+        
+                    _ctx.translate(x - 50, y + 100);
+                    _ctx.translate(-250 / 2, -h / 2);
+                }
+
+                if(this.state != STATE_BREAK)
+                {
+                    _ctx.save();
+                        let shake = 0;
+                        if(this.state == STATE_HURT && this.stakeShield == 1)
+                            shake = Math.sin(_dt / 20) * 10;
+                        _ctx.translate(shake, 0);
+
+                        this.DrawQV(_ctx, _dt, h);
+
+                        if(this.stakeShield == 1)
+                        {
+                            res.sheets.duck.Draw(_ctx, 'arm_more', 1, -25, 0);
+                            res.sheets.duck.Draw(_ctx, 'arm_more', 2, -25, 0);
+                        }
+                    _ctx.restore();
+                }
+                else
+                {
+                    let shake = 0;
+                    if(this.animationTime < .3)
+                        shake = Math.sin(_dt / 20) * (11 + 10 * this.animationTime / .3);
+                    _ctx.translate(shake, 0);
+
+                    let t = 0;
+                    if(this.animationTime >= .3)
+                    {
+                        t = (this.animationTime - .3) / .5;
+                        t = Utils.Clamp(t, 0, 1);
+                    }
+                    if(this.animationTime >= .8)
+                    {
+                        this.stakeShield = 2;
+                        this.stakeShown = false;
+                    }
+
+                    let pos1 = Utils.CurvePos({x: 0, y: 0}, {x: -125, y: _ctx.canvas.height + 100}, 200, t);
+                    let pos2 = Utils.CurvePos({x: 0, y: 0}, {x: 125, y: _ctx.canvas.height + 100}, 300, t);
+
+                    _ctx.strokeStyle = '#000';
+                    _ctx.lineWidth = 6;
+                    // left
+                    _ctx.save();
+                        _ctx.beginPath();
+                        _ctx.translate(pos1.x, pos1.y);
+                        //_ctx.rotate(-Math.PI / 36);
+                        _ctx.moveTo(0, 0);
+                        _ctx.lineTo(125, 0);
+                        for(let i = 0; i < 10; i++)
+                        {
+                            let y = i * 30;
+                            _ctx.lineTo(105, y + 10);
+                            _ctx.lineTo(145, y + 20);
+                        }
+                        _ctx.lineTo(0, h);
+                        _ctx.stroke();
+                        _ctx.clip();
+                        _ctx.closePath();
+
+                        this.DrawQV(_ctx, _dt, h);
+                    _ctx.restore();
+
+                    // right
+                    _ctx.save();
+                        _ctx.beginPath();
+                        _ctx.translate(pos2.x, pos2.y);
+                        //_ctx.rotate(Math.PI / 36);
+                        _ctx.moveTo(250, 0);
+                        _ctx.lineTo(125, 0);
+                        for(let i = 0; i < 10; i++)
+                        {
+                            let y = i * 30;
+                            _ctx.lineTo(105, y + 10);
+                            _ctx.lineTo(145, y + 20);
+                        }
+                        _ctx.lineTo(250, h);
+                        _ctx.stroke();
+                        _ctx.clip();
+                        _ctx.closePath();
+
+                        this.DrawQV(_ctx, _dt, h);
+                    _ctx.restore();
+                    
+                    if(this.animationTime < .3)
+                    {
+                        res.sheets.duck.Draw(_ctx, 'arm_more', 1, -25, 0);
+                        res.sheets.duck.Draw(_ctx, 'arm_more', 2, -25, 0);
+                    }
+                }
+        
+            _ctx.restore();
+        }
+    }
+
+    DrawQV(_ctx, _dt, h)
+    {
+        _ctx.lineWidth = 6;
+        _ctx.strokeStyle = '#000';
+        _ctx.fillStyle = '#fff';
+
+        _ctx.save();
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, 0, 0, 250, h, 6);
+            _ctx.fill();
+            _ctx.clip();
+
+            _ctx.fillStyle = '#edeef0';
+            _ctx.fillRect(0, 0, 250, 45);
+
+            _ctx.font = '24px Pangolin';
+            _ctx.fillStyle = '#000';
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'top';
+
+            // заголовок
+            let txt = loc.Get('hud', 'qv');
+            let w = _ctx.measureText(txt).width;
+            _ctx.drawImage(res.sprites.ducky, (250 - w) / 2 - 12 - 6, 10);
+            _ctx.fillText(txt, 250 / 2 + 16, 8 + 4);
+
+            // мульт
+            if(this.enemy.signed == 2)
+                res.sheets.promo2.Draw(_ctx, 'promo2', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo2.GetTagFrames('idle')), 0, 45);
+            else
+                res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), 0, 45);
+
+            // цена
+            _ctx.fillStyle = '#edeef0';
+            _ctx.fillRect(0, h - 80, 250, 80);
+            if(this.enemy.resetCounter > 0 || this.enemy.signed == 2)
+            {
+                _ctx.fillStyle = '#000';
+                _ctx.font = '36px Pangolin';
+                
+                txt = this.enemy.signed == 2 ? '1' : '324905';
+                w = _ctx.measureText(txt).width;
+                _ctx.textBaseline = 'bottom';
+
+                _ctx.drawImage(res.sprites.minipencil, 250 / 2 + w / 2 + 5 - 12, h - 70);
+                _ctx.fillText(txt, 250 / 2 - 16, h - 35);
+
+                _ctx.textAlign = 'left';
+                _ctx.font = '24px Pangolin';
+
+                txt = loc.Get('hud', 'before_reset');
+                w = _ctx.measureText(txt).width + 40;
+                _ctx.fillText(txt, 40, h - 10);
+                
+                if(this.enemy.signed == 2)
+                    txt = ` 2 ${loc.Get('hud', 'h')}`;
+                else
+                    txt = ` ${this.enemy.resetCounter} ${loc.Get('hud', 'm')}`;
+                
+                    _ctx.fillStyle = TEXT_COLORS[2];
+                _ctx.fillText(txt, w, h - 10);
+                w += _ctx.measureText(txt).width;
+            }
+
+            _ctx.stroke();
+            _ctx.closePath();
+        _ctx.restore();
+
+        // вандализм
+        if(this.enemy.signed < 2)
+            _ctx.drawImage(this.vandalismCanvas, -55, -25);
+
+        _ctx.font = '24px Pangolin';
+        _ctx.textAlign = 'left';
+        _ctx.textBaseline = 'bottom';
+        _ctx.fillStyle = TEXT_COLORS[2];
+        // дельты
+        for(let i in this.deltas)
+        {
+            let t = (this.deltaTime - this.deltas[i].timer - this.deltaStickTime) / (this.deltaTime - this.deltaStickTime);
+            t = Utils.Clamp(t, 0, 1);
+            
+            _ctx.globalAlpha = 1 - t;
+            _ctx.fillText(`-${this.deltas[i].delta}`, w + 5, h - 10 - t * 25);
+            _ctx.globalAlpha = 1;
+        }
+
+        if(this.enemy.resetCounter == 0 && this.enemy.signed < 2)
+        {
+            _ctx.fillStyle = '#000';
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, 0, h - 80, 250, 80, 6);
+            _ctx.fill();
+            _ctx.closePath();
+
+            _ctx.fillStyle = '#fff';
+            _ctx.font = '46px Pangolin';
+            _ctx.textAlign = 'center';
+            _ctx.textBaseline = 'middle';
+            _ctx.fillText(loc.Get('hud', 'free'), 250 / 2, h - 70 / 2);
+        }
     }
 }
 
@@ -640,14 +802,29 @@ class PromoDuck extends Enemy
 
         this.weakened = 0;
         this.call = 0;
+        this.shielding = 0;
 
         this.drawn = 0;
         this.wtf = 0;
         this.dontEvenThink = 0;
+
+        this.hp = 200;
+        this.resetCounter = 15;
     }
 
     GetAttack()
     {
+        return {
+            attackClass: TrueNothingAttack,
+            difficulty: 1
+        };
+        
+        if(this.weakened >= 4)
+            return {
+                attackClass: TrueNothingAttack,
+                difficulty: 1
+            };
+
         if(this.signed == 2)
             return {
                 attackClass: NothingAttack,
@@ -694,6 +871,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.weakened >= 4)
+            return {
+                text: this.Dial('idle_geno3')
+            };
+
         if(this.signed == 2)
             return {
                 text: this.Dial('idle_signed')
@@ -720,7 +902,7 @@ class PromoDuck extends Enemy
                 text: this.Dial('idle_geno')
             }
         }
-        else if(this.call == 3)
+        if(this.call == 3)
         {
             return {
                 text: this.Dial('idle_geno2')
@@ -741,7 +923,17 @@ class PromoDuck extends Enemy
     {
         this.hurt++;
 
-        if(_damage > 5)
+        if(this.shielding == 1 && _damage > 0)
+        {
+            return {
+                speech: this.Dial('geno_break'),
+                actions: [
+                    () => new BreakAction(this),
+                ]
+            };
+        }
+
+        if(_damage > 0)
         {
             this.DecreaseResetCounter(1);
         }
@@ -768,7 +960,7 @@ class PromoDuck extends Enemy
                 };
             }
             
-            if(this.drawAttempt == 0)
+            if(this.drawAttempt == 0 && this.weakened == 0 && this.call == 0)
             {
                 this.drawAttempt = 1;
     
@@ -1131,12 +1323,15 @@ class PromoDuck extends Enemy
         {
             this.call = 2;
         }
-        else if(this.hp / this.maxHP <= .3 && this.call < 3)
+        else if(this.hp / this.maxHP <= .2 && this.call < 3)
         {
             this.call = 3;
 
             return {
                 speech: this.Dial('geno_phone_2'),
+                actions: [
+                    () => new ShieldAction(this)
+                ]
             };
         }
         else if(this.call == 3)
@@ -1318,6 +1513,129 @@ class StakeAction extends TriggerAction
     {
         this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
         
+        super.Finish();
+    }
+}
+
+class ShieldAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 400;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.parent.sprite.stakeShown = true;
+        this.animationTimer = this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_SHIELDING, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+        this.parent.sprite.SetAnimation(STATE_SHIELDING, 1 - this.animationTimer / this.animationTime);
+        
+        if(this.animationTimer <= 0)
+        {
+            this.Finish();
+        }
+    }
+
+    Finish()
+    {
+        this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
+        
+        this.parent.shielding = 1;
+
+        super.Finish();
+    }
+}
+class UnshieldAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 200;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.parent.sprite.stakeShown = true;
+        this.animationTimer = this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_SHIELDING, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+        this.parent.sprite.SetAnimation(STATE_SHIELDING, this.animationTimer / this.animationTime);
+        
+        if(this.animationTimer <= 0)
+        {
+            this.Finish();
+        }
+    }
+
+    Finish()
+    {
+        this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
+        
+        this.parent.shielding = 1;
+
+        super.Finish();
+    }
+}
+class BreakAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 100;
+        this.animationTimer = this.animationTime;
+
+        this.broke = false;
+    }
+
+    Start()
+    {
+        this.animationTimer = this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_BREAK, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+
+        let t = 1 - this.animationTimer / this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_BREAK, t);
+
+        if(t >= .3 && !this.broke)
+        {
+            this.broke = true;
+
+            battle.theme.Swap({r: 0, g: 0, b: 0}, {r: 170, g: 170, b: 170}, true);
+            this.parent.weakened = 4;
+
+            res.sfx.explosion.play();
+            res.sfx.bgm.pause();
+        }
+        
+        if(this.animationTimer <= 0)
+        {
+            this.Finish();
+        }
+    }
+
+    Finish()
+    {
+        this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
+        
+        this.parent.shielding = 2;
+
         super.Finish();
     }
 }

@@ -996,7 +996,7 @@ class NothingAttack extends Attack
 {
     constructor(_caster, _difficulty)
     {
-        super(_caster, _difficulty, 0, 50);
+        super(_caster, _difficulty, 50, 50);
     }
 
     Render(_ctx, _dt)
@@ -1072,6 +1072,15 @@ class ByeAttack extends Attack
             if(battle.hp < 0)
                 battle.hp = 0;
         }
+    }
+}
+class TrueNothingAttack extends Attack
+{
+    constructor(_caster, _difficulty)
+    {
+        super(_caster, _difficulty, 0, 0);
+        this.startTime = 0;
+        this.endTime = 0;
     }
 }
 
