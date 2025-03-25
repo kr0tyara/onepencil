@@ -303,7 +303,7 @@ class PromoDuckSprite extends EnemySprite
 
             res.sheets.duck.Draw(_ctx, 'head', 8, this.x + headWobble.x, this.y + headWobble.y);
         }
-        else if(this.state == STATE_SHIELDING)
+        else if(this.state == STATE_SHIELDING || this.state == STATE_UNSHIELDING)
         {
             let x = this.x;
             if(this.animationTime < .3)
@@ -529,12 +529,16 @@ class PromoDuckSprite extends EnemySprite
 
                 if(this.stakeShield == 1)
                 {
-                    if(this.state == STATE_SHIELDING && this.animationTime < .9)
+                    if((this.state == STATE_SHIELDING || this.state == STATE_UNSHIELDING) && this.animationTime < .9)
                     {
                         if(this.animationTime < .5)
                         {
-                            x = battle.defaultBounds.x1;
-                            y = y - y * Utils.Clamp((this.animationTime - .3) / .07, 0, 1);
+                            x = battle.defaultBounds.x1 - 25;
+
+                            if(this.state == STATE_SHIELDING)
+                                y = y + 20 - y * Utils.Clamp((this.animationTime - .3) / .07, 0, 1);
+                            else
+                                y = y + 20;
                         }
                         else
                         {
@@ -567,7 +571,7 @@ class PromoDuckSprite extends EnemySprite
 
                         this.DrawQV(_ctx, _dt, h);
 
-                        if(this.stakeShield == 1)
+                        if(this.stakeShield == 1 && (this.state != STATE_UNSHIELDING || this.animationTime >= .3))
                         {
                             res.sheets.duck.Draw(_ctx, 'arm_more', 1, -25, 0);
                             res.sheets.duck.Draw(_ctx, 'arm_more', 2, -25, 0);
@@ -784,6 +788,7 @@ class PromoDuck extends Enemy
         this.shieldDealActions = [
             this.actions[0],
             {name: loc.Get('actions', 'wait'), index: {x: 1, y: 1}, action: this.Wait.bind(this), highlighted: true},
+            this.actions[2],
         ]
         this.endingActions = [
             this.actions[0]
@@ -848,11 +853,18 @@ class PromoDuck extends Enemy
         /*this.hp = 10;
         this.resetCounter = 15;
         this.weakened = 2;
-        this.call = 2;*/
+        this.call = 3;
+        this.shielding = 1;*/
     }
 
     GetAttack()
     {
+        if(this.resetCounter <= 0 && this.signed == 1)
+            return {
+                attackClass: ByeAttack,
+                difficulty: 1
+            };
+
         if(this.weakened >= 4 || this.shieldDeal == 1)
             return {
                 attackClass: TrueNothingAttack,
@@ -874,12 +886,6 @@ class PromoDuck extends Enemy
         if(this.resetCounter <= 0 && this.signed == 0)
             return {
                 attackClass: NothingAttack,
-                difficulty: 1
-            };
-
-        if(this.resetCounter <= 0 && this.signed == 1)
-            return {
-                attackClass: ByeAttack,
                 difficulty: 1
             };
 
@@ -905,9 +911,9 @@ class PromoDuck extends Enemy
 
     Idle()
     {
-        if(this.shieldDeal == 1)
+        if(this.signed == 2)
             return {
-                text: this.Dial('idle_shield_deal')
+                text: this.Dial('idle_signed')
             };
 
         if(this.weakened >= 4)
@@ -915,14 +921,14 @@ class PromoDuck extends Enemy
                 text: this.Dial('idle_geno3')
             };
 
-        if(this.signed == 2)
-            return {
-                text: this.Dial('idle_signed')
-            };
-
         if(this.resetCounter <= 0)
             return {
                 text: this.Dial('idle_free')
+            };
+
+        if(this.shieldDeal == 1)
+            return {
+                text: this.Dial('idle_shield_deal')
             };
 
         if(this.weakened == 2)
@@ -970,9 +976,10 @@ class PromoDuck extends Enemy
             }
             else if(this.shielding == 1)
                 damage = 1;
-            else if(this.shielding == 2)
+            else if(this.shielding == 2 || this.shielding == -1)
             {
-                this.weakened = 5;
+                if(this.shielding == 2)
+                    this.weakened = 5;
                 damage = 99999;
             }
         }
@@ -998,11 +1005,11 @@ class PromoDuck extends Enemy
             };
         }
 
-        if(this.weakened == 5 || this.weakened == -1)
+        if(this.weakened == 5 || this.shielding == -1)
         {
             this.actions = [...this.killedActions];
 
-            if(this.weakened == -1)
+            if(this.shielding == -1)
             {
                 this.weakened = 5;
                 
@@ -1293,6 +1300,11 @@ class PromoDuck extends Enemy
         if(this.wtf < 1)
             return result;
 
+        if(this.shielding != 0)
+        {
+            return null;
+        }
+
         this.story++;
         switch(this.story)
         {
@@ -1344,8 +1356,12 @@ class PromoDuck extends Enemy
             _delta += this.resetCounter;
             this.resetCounter = 0;
             
-            if(this.dealt == 0 && this.actions[1] != null)
-                this.actions[1].highlighted = true;
+            if(!this.signed)
+            {
+                this.actions = [...this.normalActions];
+                if(this.dealt == 0 && this.actions[1] != null)
+                    this.actions[1].highlighted = true;
+            }
         }
         
         if(_delta > 0)
@@ -1489,11 +1505,26 @@ class PromoDuck extends Enemy
             return {
                 text: this.Dial('shield_deal'),
                 speech: this.Dial('shield_deal_speech'),
+                actions: [
+                    () => new UnshieldAction(this),
+                ]
             };
         }
 
         if(this.resetCounter <= 0)
         {
+            if(this.shielding == 1)
+            {
+                return {
+                    text: this.Dial('shield_deal_alt'),
+                    speech: this.Dial('shield_deal_alt_speech'),
+                    mode: DEAL,
+                    actions: [
+                        () => new UnshieldAction(this),
+                    ]
+                };
+            }
+
             let result = {
                 text: this.Dial('bet_draw'),
                 mode: DEAL
@@ -1681,6 +1712,43 @@ class ShieldAction extends TriggerAction
         super.Finish();
     }
 }
+class UnshieldAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 200;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.parent.sprite.stakeShown = true;
+        this.animationTimer = this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_UNSHIELDING, 1);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+        this.parent.sprite.SetAnimation(STATE_UNSHIELDING, this.animationTimer / this.animationTime);
+        
+        if(this.animationTimer <= 0)
+        {
+            this.Finish();
+        }
+    }
+
+    Finish()
+    {
+        this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
+        
+        this.parent.shielding = -1;
+        this.parent.sprite.stakeShield = 0;
+
+        super.Finish();
+    }
+}
 class BreakAction extends TriggerAction
 {
     constructor(_parent)
@@ -1785,7 +1853,7 @@ class WaitEndAction extends TriggerAction
         this.parent.weakened = -1;
         this.parent.shielding = -1;
         this.parent.resetTalk = 1;
-        this.parent.sprite.stakeShield = false;
+        this.parent.sprite.stakeShield = 0;
 
         res.sfx.bgm.play();
         battle.Blank();

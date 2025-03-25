@@ -888,7 +888,7 @@ class Battle
 
         this.blanked = false;
         this.blankedTimer = 0;
-        this.blankedTime = 10;
+        this.blankedTime = 15;
         this.blankedReverse = false;
 
         this.enemies = [
