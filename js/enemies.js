@@ -1359,6 +1359,10 @@ class PromoDuck extends Enemy
             if(!this.signed)
             {
                 this.actions = [...this.normalActions];
+
+                if(this.shielding == 1)
+                    this.actions = [this.actions[0], this.actions[1]];
+
                 if(this.dealt == 0 && this.actions[1] != null)
                     this.actions[1].highlighted = true;
             }
