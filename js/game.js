@@ -254,6 +254,7 @@ class Sound
     }
     pause()
     {
+        this.ended = true;
         this.audio.pause();
     }
 }
@@ -406,6 +407,12 @@ class GameResources
         {
             bgm: {
                 url: 'DUCK IDK2.mp3',
+                loop: true,
+                volume: 0.7,
+                music: true,
+            },
+            bgmGeno: {
+                url: 'DUCK GENO.ogg',
                 loop: true,
                 volume: 0.7,
                 music: true,

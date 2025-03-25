@@ -886,6 +886,11 @@ class Battle
         
         this.ui = new BattleUI();
 
+        this.blanked = false;
+        this.blankedTimer = 0;
+        this.blankedTime = 10;
+        this.blankedReverse = false;
+
         this.enemies = [
             new PromoDuck(),
         ];
@@ -1037,6 +1042,13 @@ class Battle
         }
     }
 
+    Blank(_reverse)
+    {
+        this.blanked = true;
+        this.blankedTimer = this.blankedTime;
+        this.blankedReverse = _reverse;
+    }
+
     Render(_dt)
     {
         let delta = (_dt - this.lastRender) / 16.67; // 1000 / 60
@@ -1114,6 +1126,18 @@ class Battle
 
         // кнопки
         this.ui.Render(this.ctx, _dt);
+        
+        if(this.blanked)
+        {
+            let t = this.blankedTimer / this.blankedTime;
+            if(this.blankedReverse)
+                t = 1 - t;
+
+            this.ctx.globalAlpha = t;
+            this.ctx.fillStyle = '#aaa';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.globalAlpha = 1;
+        }
 
         // поле боя
         this.ctx.lineCap = 'round';
@@ -1184,6 +1208,16 @@ class Battle
 
         this.enemiesContainer.GameLoop(_delta);
         this.mode.GameLoop(_delta);
+
+        if(this.blanked && this.blankedTimer > 0)
+        {
+            this.blankedTimer -= 1 * _delta;
+        }
+        if(this.blankedTimer <= 0 && this.blanked && !this.blankedReverse)
+        {
+            this.blanked = false;
+            this.blankedReverse = false;
+        }
 
         if(this.attack != null)
         {

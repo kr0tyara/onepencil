@@ -774,9 +774,16 @@ class PromoDuck extends Enemy
             {name: loc.Get('actions', 'bet'), index: {x: 1, y: 0}, action: this.Bet.bind(this)},
             {name: loc.Get('actions', 'vandalism'), index: {x: 0, y: 1}, action: this.Vandalize.bind(this)},
         ];
+        this.normalActions = [
+            ...this.actions
+        ]
         this.shieldedActions = [
             this.actions[0],
             this.actions[1]
+        ];
+        this.shieldDealActions = [
+            this.actions[0],
+            {name: loc.Get('actions', 'wait'), index: {x: 1, y: 1}, action: this.Wait.bind(this), highlighted: true},
         ]
         this.endingActions = [
             this.actions[0]
@@ -832,6 +839,7 @@ class PromoDuck extends Enemy
         this.weakened = 0;
         this.call = 0;
         this.shielding = 0;
+        this.shieldDeal = 0;
 
         this.drawn = 0;
         this.wtf = 0;
@@ -845,7 +853,7 @@ class PromoDuck extends Enemy
 
     GetAttack()
     {
-        if(this.weakened >= 4)
+        if(this.weakened >= 4 || this.shieldDeal == 1)
             return {
                 attackClass: TrueNothingAttack,
                 difficulty: 1
@@ -897,6 +905,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.shieldDeal == 1)
+            return {
+                text: this.Dial('idle_shield_deal')
+            };
+
         if(this.weakened >= 4)
             return {
                 text: this.Dial('idle_geno3')
@@ -975,6 +988,8 @@ class PromoDuck extends Enemy
         {
             this.actions = [...this.noActions];
 
+            this.shieldDeal = 2;
+
             return {
                 speech: this.Dial('geno_break'),
                 actions: [
@@ -983,9 +998,18 @@ class PromoDuck extends Enemy
             };
         }
 
-        if(this.weakened == 5)
+        if(this.weakened == 5 || this.weakened == -1)
         {
             this.actions = [...this.killedActions];
+
+            if(this.weakened == -1)
+            {
+                this.weakened = 5;
+                
+                battle.theme.Swap({r: 0, g: 0, b: 0}, {r: 170, g: 170, b: 170}, true);
+                res.sfx.bgm.pause();
+                res.sfx.bgmGeno.pause();
+            }
 
             return {
                 speech: ['&0'],
@@ -1006,12 +1030,15 @@ class PromoDuck extends Enemy
             let message = {
                 speech: this.Dial('weakened'),
             }
+
+            res.sfx.bgm.pause();
+            res.sfx.bgmGeno.play();
             
             this.bet = 3;
             return message;
         }
 
-        if(_damage > 5)
+        if(_damage > 0)
         {
             this.actualHurt++;
             
@@ -1384,15 +1411,13 @@ class PromoDuck extends Enemy
                 speech: this.Dial('geno_phone'),
             };
         }
-        else if(this.call == 1)
-        {
-            this.call = 2;
-        }
         else if(this.hp / this.maxHP <= .2 && this.call < 3)
         {
             this.call = 3;
 
             this.actions = [...this.shieldedActions];
+            if(this.dealt == 0 && this.actions[1] != null)
+                this.actions[1].highlighted = true;
 
             return {
                 speech: this.Dial('geno_phone_2'),
@@ -1400,6 +1425,10 @@ class PromoDuck extends Enemy
                     () => new ShieldAction(this)
                 ]
             };
+        }
+        else if(this.call == 1)
+        {
+            this.call = 2;
         }
         
         return {};
@@ -1430,9 +1459,38 @@ class PromoDuck extends Enemy
 
         return result;
     }
+
+    Wait()
+    {
+        this.shieldDeal = -1;
+        this.actions = [...this.normalActions];
+        
+        res.sfx.bgmGeno.pause();
+        battle.Blank(true);
+
+        return {
+            text: this.Dial('shield_deal_wait'),
+            speech: this.Dial('shield_deal_wait_speech'),
+            actions: [
+                () => new WaitEndAction(this),
+            ]
+        };
+    }
     Bet()
     {
         this.bet++;
+
+        if(this.shielding == 1 && this.shieldDeal == 0 && this.resetCounter > 0)
+        {
+            this.shieldDeal = 1;
+
+            this.actions = [...this.shieldDealActions];
+
+            return {
+                text: this.Dial('shield_deal'),
+                speech: this.Dial('shield_deal_speech'),
+            };
+        }
 
         if(this.resetCounter <= 0)
         {
@@ -1656,6 +1714,7 @@ class BreakAction extends TriggerAction
 
             res.sfx.explosion.play();
             res.sfx.bgm.pause();
+            res.sfx.bgmGeno.pause();
         }
         
         if(this.animationTimer <= 0)
@@ -1704,6 +1763,33 @@ class DeathAction extends TriggerAction
 
     Finish()
     {
+        super.Finish();
+    }
+}
+class WaitEndAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+    }
+
+    Start()
+    {
+        this.Finish();
+    }
+
+    Finish()
+    {
+        this.parent.DecreaseResetCounter(this.parent.resetCounter);
+
+        this.parent.weakened = -1;
+        this.parent.shielding = -1;
+        this.parent.resetTalk = 1;
+        this.parent.sprite.stakeShield = false;
+
+        res.sfx.bgm.play();
+        battle.Blank();
+        
         super.Finish();
     }
 }

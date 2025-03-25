@@ -549,7 +549,10 @@ class OwnAttackMode extends DrawingMode
                 let t = Utils.Clamp((this.pendingTimer - this.transformTime - this.flyTime) / this.damageTime, 0, 1);
                 let hp = this.hpBeforeAttack - (this.hpBeforeAttack - this.targetEnemy.hp) * t;
 
-                _ctx.fillRect(x, y, 200 * hp / this.targetEnemy.maxHP, 32);
+                let w = 200 * hp / this.targetEnemy.maxHP;
+                if(hp > 0)
+                    w = Math.max(w, 5);
+                _ctx.fillRect(x, y, w, 32);
         
                 _ctx.restore();
                 _ctx.strokeStyle = '#000';
@@ -602,7 +605,7 @@ class OwnAttackMode extends DrawingMode
         if(this.pending && this.pendingTimer >= this.transformTime && !this.soundPlayed)
         {
             this.soundPlayed = true;
-            if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 1)
+            if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 1 && this.attackDamage > 0)
                 this.currentAttack.sfx[1].play();
             else if(this.attackDamage <= 0)
                 res.sfx.scribble2.play();
@@ -665,7 +668,7 @@ class OwnAttackMode extends DrawingMode
         this.currentAttack = attack;
 
         this.soundPlayed = false;
-        if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 0)
+        if(this.currentAttack.sfx != null && this.currentAttack.sfx.length > 0 && this.attackDamage > 0)
             this.currentAttack.sfx[0].play();
         else if(this.attackDamage <= 0)
             res.sfx.scribble1.play();
@@ -1412,6 +1415,7 @@ class GameOverMode extends BattleMode
     Start()
     {
         res.sfx.bgm.pause();
+        res.sfx.bgmGeno.pause();
 
         this.soulPos = {x: battle.soul.x, y: battle.soul.y};
 
