@@ -64,7 +64,7 @@ class Enemy
     Die()
     {
         this.alive = false;
-        this.sprite.SetAnimation(STATE_DEAD, 0);
+        //this.sprite.SetAnimation(STATE_DEAD, 0);
     }
 
     Idle()
@@ -74,6 +74,14 @@ class Enemy
         }
     }
 
+    DealDamage(_damage)
+    {
+        this.hp -= _damage;
+        if(this.hp < 0)
+            this.hp = 0;
+
+        return _damage;
+    }
     Hurt(_damage)
     {
         return {};
@@ -258,7 +266,14 @@ class PromoDuckSprite extends EnemySprite
             y: ~~(Math.sin(t) * 2.5 + bodyWobble.y)
         };
 
-        if(this.enemy.weakened == 4)
+        if(this.state == STATE_DEAD)
+        {
+            let frames = res.sheets.duck.GetTagFrames('death');
+            let frame = Math.round(frames.length * this.animationTime);
+            if(frame < frames.length)
+                res.sheets.duck.Draw(_ctx, 'head', frames[frame], this.x, this.y);
+        }
+        else if(this.enemy.weakened >= 4)
         {
             res.sheets.duck.Draw(_ctx, 'shadow', 0, this.x, this.y);
             res.sheets.duck.Draw(_ctx, 'body', 4, this.x, this.y);
@@ -759,6 +774,20 @@ class PromoDuck extends Enemy
             {name: loc.Get('actions', 'bet'), index: {x: 1, y: 0}, action: this.Bet.bind(this)},
             {name: loc.Get('actions', 'vandalism'), index: {x: 0, y: 1}, action: this.Vandalize.bind(this)},
         ];
+        this.shieldedActions = [
+            this.actions[0],
+            this.actions[1]
+        ]
+        this.endingActions = [
+            this.actions[0]
+        ];
+        this.noActions = [
+            this.actions[0]
+        ];
+        this.killedActions = 
+        [
+
+        ]
         
         this.flavourText = this.Dial('idle');
         this.dangerFlavourText = this.Dial('idle2');
@@ -808,17 +837,14 @@ class PromoDuck extends Enemy
         this.wtf = 0;
         this.dontEvenThink = 0;
 
-        this.hp = 200;
+        /*this.hp = 10;
         this.resetCounter = 15;
+        this.weakened = 2;
+        this.call = 2;*/
     }
 
     GetAttack()
     {
-        return {
-            attackClass: TrueNothingAttack,
-            difficulty: 1
-        };
-        
         if(this.weakened >= 4)
             return {
                 attackClass: TrueNothingAttack,
@@ -919,16 +945,52 @@ class PromoDuck extends Enemy
             };
     }
 
+    DealDamage(_damage)
+    {
+        let damage = _damage;
+        
+        if(damage > 0)
+        {
+            if(damage > this.hp && this.shielding == 0)
+            {
+                damage = this.hp - 2;
+            }
+            else if(this.shielding == 1)
+                damage = 1;
+            else if(this.shielding == 2)
+            {
+                this.weakened = 5;
+                damage = 99999;
+            }
+        }
+
+        return super.DealDamage(damage);
+    }
+
     Hurt(_damage)
     {
         this.hurt++;
 
         if(this.shielding == 1 && _damage > 0)
         {
+            this.actions = [...this.noActions];
+
             return {
                 speech: this.Dial('geno_break'),
                 actions: [
                     () => new BreakAction(this),
+                ]
+            };
+        }
+
+        if(this.weakened == 5)
+        {
+            this.actions = [...this.killedActions];
+
+            return {
+                speech: ['&0'],
+                actions: [
+                    () => new DeathAction(this),
                 ]
             };
         }
@@ -1167,7 +1229,7 @@ class PromoDuck extends Enemy
     {
         let result = null;
 
-        if(this.signed > 0)
+        if(this.signed > 0 || this.weakened >= 4)
         {
             return null;
         }
@@ -1246,13 +1308,16 @@ class PromoDuck extends Enemy
 
     DecreaseResetCounter(_delta)
     {
+        if(this.shielding >= 2)
+            return;
+
         this.resetCounter -= _delta;
         if(this.resetCounter <= 0)
         {
             _delta += this.resetCounter;
             this.resetCounter = 0;
             
-            if(this.dealt == 0)
+            if(this.dealt == 0 && this.actions[1] != null)
                 this.actions[1].highlighted = true;
         }
         
@@ -1274,7 +1339,7 @@ class PromoDuck extends Enemy
             this.signed = 2;
             this.weakened = 0;
 
-            this.actions = [this.actions[0]];
+            this.actions = [...this.endingActions];
 
             return {
                 speech: this.Dial('deal_signed_2'),
@@ -1327,16 +1392,14 @@ class PromoDuck extends Enemy
         {
             this.call = 3;
 
+            this.actions = [...this.shieldedActions];
+
             return {
                 speech: this.Dial('geno_phone_2'),
                 actions: [
                     () => new ShieldAction(this)
                 ]
             };
-        }
-        else if(this.call == 3)
-        {
-            this.call = 4;
         }
         
         return {};
@@ -1345,6 +1408,13 @@ class PromoDuck extends Enemy
     Check()
     {
         this.check++;
+
+        if(this.weakened >= 4)
+        {
+            return {
+                text: this.Dial('check_geno')
+            }
+        }
 
         let result = {
             text: this.Dial('check'),
@@ -1553,42 +1623,6 @@ class ShieldAction extends TriggerAction
         super.Finish();
     }
 }
-class UnshieldAction extends TriggerAction
-{
-    constructor(_parent)
-    {
-        super(_parent);
-        
-        this.animationTime = 200;
-        this.animationTimer = this.animationTime;
-    }
-
-    Start()
-    {
-        this.parent.sprite.stakeShown = true;
-        this.animationTimer = this.animationTime;
-        this.parent.sprite.SetAnimation(STATE_SHIELDING, 0);
-    }
-    GameLoop(_delta)
-    {
-        this.animationTimer -= 1 * _delta;
-        this.parent.sprite.SetAnimation(STATE_SHIELDING, this.animationTimer / this.animationTime);
-        
-        if(this.animationTimer <= 0)
-        {
-            this.Finish();
-        }
-    }
-
-    Finish()
-    {
-        this.parent.sprite.SetAnimation(STATE_NORMAL, 0);
-        
-        this.parent.shielding = 1;
-
-        super.Finish();
-    }
-}
 class BreakAction extends TriggerAction
 {
     constructor(_parent)
@@ -1636,6 +1670,40 @@ class BreakAction extends TriggerAction
         
         this.parent.shielding = 2;
 
+        super.Finish();
+    }
+}
+
+class DeathAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+        
+        this.animationTime = 200;
+        this.animationTimer = this.animationTime;
+    }
+
+    Start()
+    {
+        this.animationTimer = this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_DEAD, 0);
+    }
+    GameLoop(_delta)
+    {
+        this.animationTimer -= 1 * _delta;
+
+        let t = 1 - this.animationTimer / this.animationTime;
+        this.parent.sprite.SetAnimation(STATE_DEAD, t);
+
+        if(this.animationTimer <= 0)
+        {
+            this.Finish();
+        }
+    }
+
+    Finish()
+    {
         super.Finish();
     }
 }

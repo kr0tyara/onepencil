@@ -923,6 +923,7 @@ class Battle
 
         this.attack = null;
         this.attackCounter = 0; 
+        this.finished = false;
 
         this.projectiles = [];
 
@@ -1090,7 +1091,7 @@ class Battle
         this.ctx.closePath();
 
         this.ctx.font = '24px Pangolin';
-        this.ctx.fillStyle = '#fff';
+        this.ctx.fillStyle = this.theme.Background();
         this.ctx.textBaseline = 'middle';
         this.ctx.textAlign = 'center';
         
@@ -1287,7 +1288,7 @@ class Battle
 
     OwnAttack()
     {
-        if(battle.soul.eaten)
+        if(battle.soul.eaten || this.finished)
             return;
 
         if(this.mode.id == OWN_ATTACK)
@@ -1315,17 +1316,19 @@ class Battle
                 battleFinished = false;
         }
 
-        if(!battleFinished)
-            this.PreAttack();
-        else
+        this.PreAttack();
+
+        if(battleFinished)
         {
-            alert('ТЫ ВЫИГРАЛ!');
-            this.GameOver();
+            this.finished = true;
         }
     }
 
     Act()
     {
+        if(this.finished)
+            return;
+
         if(this.mode.id == ACT)
             this.Idle();
         else
@@ -1525,13 +1528,6 @@ class Battle
             this.hp = 0;
             this.GameOver();
         }
-    }
-
-    DealDamage(_target, _damage)
-    {
-        _target.hp -= _damage;
-        if(_target.hp < 0)
-            _target.hp = 0;
     }
 }
 

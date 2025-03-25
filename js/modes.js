@@ -659,8 +659,7 @@ class OwnAttackMode extends DrawingMode
             bonus = Math.max(~~(attack.damage / 2 * (this.castTimer / this.castTime)), 0);
         }
         
-        this.attackDamage = damage + bonus;
-        battle.DealDamage(this.targetEnemy, this.attackDamage);
+        this.attackDamage = this.targetEnemy.DealDamage(damage + bonus);
         
         this.pending = true;
         this.currentAttack = attack;
