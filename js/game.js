@@ -547,6 +547,10 @@ class GameResources
             vroom:
             {
                 url: 'vroom.ogg',
+            },
+            gulp:
+            {
+                url: 'gulp.ogg',
             }
         };
 
@@ -1088,7 +1092,7 @@ function Start()
     document.querySelector('.preloader').style.display = 'none';
     
     battle = new Battle();
-    battle.Start();
+    battle.Start(true);
 }
 function Restart()
 {

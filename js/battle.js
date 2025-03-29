@@ -433,8 +433,9 @@ class SpeechBubble extends TypeWriter
         if(this.text[this.index].length == 0)
             return;
 
-        this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
-        
+        this.textBounds = {x1: this.parent.x + this.parent.w - 55 + 10, y1: this.parent.y + 85 + 10, y2: 0};
+        this.textBounds.x2 = this.textBounds.x1 + 250;
+
         let x = this.textBounds.x1 - 10;
         let y = this.textBounds.y1 - 14;
         let w = this.textBounds.x2 - x + 15;
@@ -445,16 +446,16 @@ class SpeechBubble extends TypeWriter
         _ctx.fillStyle = battle.theme.Background();
         _ctx.strokeStyle = battle.theme.Outline();
         _ctx.beginPath();
-        _ctx.moveTo(x - 20, y + h / 2);
-        _ctx.lineTo(x, y + h / 2 - 10);
+        _ctx.moveTo(x - 20, y + 25);
+        _ctx.lineTo(x, y + 25 - 10);
 
         _ctx.arcTo(x, y, x + w, y, r);
         _ctx.arcTo(x + w, y,   x + w, y + h, r);
         _ctx.arcTo(x + w, y + h, x,   y + h, r);
         _ctx.arcTo(x, y + h, x, y, r);
         
-        _ctx.lineTo(x, y + h / 2 + 10);
-        _ctx.lineTo(x - 20, y + h / 2);
+        _ctx.lineTo(x, y + 10 + 25);
+        _ctx.lineTo(x - 20, y + 25);
         _ctx.fill();
         _ctx.stroke();
         _ctx.closePath();
@@ -927,9 +928,9 @@ class Battle
         this.ownAttacks = 
         {
             '':         {id: '', damage: 0, sheet: res.sheets.triangle},
-            'circle':   {id: 'circle', damage: 25, sheet: res.sheets.circle, sfx: [res.sfx.circle1, res.sfx.circle2]},
-            'triangle': {id: 'triangle', damage: 50, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
-            'star':     {id: 'star', damage: 75, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
+            'circle':   {id: 'circle', damage: 125, sheet: res.sheets.circle, sfx: [res.sfx.circle1, res.sfx.circle2]},
+            'triangle': {id: 'triangle', damage: 150, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
+            'star':     {id: 'star', damage: 175, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
         };
         this.ownAttackIndex = 1;
 

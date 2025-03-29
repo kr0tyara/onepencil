@@ -1634,7 +1634,7 @@ class IntroMode extends BattleMode
 
         this.triggeredSkip = false;
 
-        this.stealTime = 100;
+        this.stealTime = 85;
         this.blackTime = 40;
         this.stealTimer = 0;
         this.stealing = false;
@@ -1824,8 +1824,8 @@ class IntroMode extends BattleMode
             _ctx.fillStyle = '#fff';
             _ctx.beginPath();
             Utils.RoundedRect(_ctx, this.skipButton.x, this.skipButton.y, this.skipButton.w, this.skipButton.h, 6);
-            _ctx.stroke();
             _ctx.fill();
+            _ctx.stroke();
             _ctx.closePath();
 
             _ctx.fillStyle = c;

@@ -346,8 +346,21 @@ class PromoDuckSprite extends EnemySprite
             res.sheets.duck.Draw(_ctx, 'feet', 0, this.x, this.y);
 
             res.sheets.duck.Draw(_ctx, 'body', 0, this.x + bodyWobble.x, this.y + bodyWobble.y);
-
-            if(this.animationTime >= .3)
+                
+            if(this.animationTime >= 1.3)
+            {
+                let y = headWobble.y - Utils.CurvePos({x: 0, y: 0}, {x: 0, y: 0}, -5, this.animationTime / 1.7).y;
+                res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + headWobble.x, this.y + y);
+                res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
+                res.sheets.duck.Draw(_ctx, 'head', 0, this.x + headWobble.x, this.y + y);
+            }
+            else if(this.animationTime >= 1)
+            {
+                res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + eatWobble.x, this.y + eatWobble.y);
+                res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
+                res.sheets.duck.Draw(_ctx, 'head', 0, this.x + eatWobble.x, this.y + eatWobble.y);
+            }
+            else if(this.animationTime >= .3)
             {
                 res.sheets.duck.Draw(_ctx, 'hair', 0, this.x + headWobble.x, this.y + headWobble.y + (_dt % 200 > 100 ? -3 : 0));
                 res.sheets.duck.Draw(_ctx, 'arm_front', 0, this.x + armWobble.x, this.y + armWobble.y);
@@ -518,8 +531,8 @@ class PromoDuckSprite extends EnemySprite
         if(this.stakeShown)
         {
             let x = battle.defaultBounds.x1;
-            let y = 25;
             let h = battle.defaultBounds.y1 - 25 - 25;
+            let y = battle.defaultBounds.y1 - 25 - h;
     
             if(this.state == STATE_HANGING)
                 y = -h + (h + 25) * this.animationTime;
@@ -855,6 +868,8 @@ class PromoDuck extends Enemy
         this.weakened = 2;
         this.call = 3;
         this.shielding = 1;*/
+
+        this.resetCounter = 0;
     }
 
     GetAttack()
@@ -1034,8 +1049,15 @@ class PromoDuck extends Enemy
         if(this.hp / this.maxHP <= .6 && this.weakened == 0)
         {
             this.weakened = 1;
+            
             let message = {
                 speech: this.Dial('weakened'),
+            }
+
+            if(this.resetCounter <= 0)
+            {
+                this.resetTalk = 1;
+                message.speech = this.Dial('weakened_alt');
             }
 
             res.sfx.bgm.pause();

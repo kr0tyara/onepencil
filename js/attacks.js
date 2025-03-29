@@ -1031,6 +1031,7 @@ class ByeAttack extends Attack
     {
         super(_caster, _difficulty, 40, 240);
     
+        this.endTime = 100;
         this.startBounds = {x1: 675 - 10, x2: 675 + 10, y1: 280 - 10, y2: 280 + 10};
     }
 
@@ -1060,7 +1061,10 @@ class ByeAttack extends Attack
         }
 
         if(battle.hp <= 0 && this.attackTimer > 0)
+        {
+            res.sfx.gulp.play();
             this.Finish();
+        }
     }
 
     SpawnProjectile(_index)
