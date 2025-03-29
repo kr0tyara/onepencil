@@ -441,6 +441,11 @@ class GameResources
                 url: 'duck.ogg',
                 volume: 1
             },
+            other:
+            {
+                url: 'other.ogg',
+                volume: .7
+            },
             hurt: {
                 url: 'hurt.wav',
                 volume: 0.6
@@ -1092,7 +1097,7 @@ function Start()
     document.querySelector('.preloader').style.display = 'none';
     
     battle = new Battle();
-    battle.Start(true);
+    battle.Start();
 }
 function Restart()
 {

@@ -99,6 +99,7 @@ class TypeWriter
     {
         if(this.currentAction != null)
         {
+            this.currentAction.PointerUp(e);
             return;
         }
 
@@ -394,20 +395,24 @@ class TypeWriter
 
 class SpeechBubble extends TypeWriter
 {
-    constructor(_parent = null, _voice = res.sfx.check)
+    constructor(_parent = null, _voice = res.sfx.check, _mirrored = false)
     {
         super(_parent, true, _voice);
+        this.mirrored = _mirrored;
     }
 
     Start()
     {
         this.textSize = 24;
-        this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
+
+        if(this.parent != null)
+            this.textBounds = {x1: this.parent.x + this.parent.w + 15 + 10, x2: battle.defaultBounds.x2 - 15, y1: this.parent.y + 55 + 10, y2: 0};
     }
 
     NextLine()
     {
-        this.parent.ResetExpression();
+        if(this.parent != null)
+            this.parent.ResetExpression();
         super.NextLine();
     }
 
@@ -416,10 +421,14 @@ class SpeechBubble extends TypeWriter
         super.SetIndex(_index);
 
         let expression = this.expressions[this.index];
-        if(expression != null)
-            this.parent.SetExpression(expression);
-        else
-            this.parent.ResetExpression();
+
+        if(this.parent != null)
+        {
+            if(expression != null)
+                this.parent.SetExpression(expression);
+            else
+                this.parent.ResetExpression();
+        }
     }
 
     Render(_ctx, _dt)
@@ -433,8 +442,11 @@ class SpeechBubble extends TypeWriter
         if(this.text[this.index].length == 0)
             return;
 
-        this.textBounds = {x1: this.parent.x + this.parent.w - 55 + 10, y1: this.parent.y + 85 + 10, y2: 0};
-        this.textBounds.x2 = this.textBounds.x1 + 250;
+        if(this.parent != null)
+        {
+            this.textBounds = {x1: this.parent.x + this.parent.w - 55 + 10, y1: this.parent.y + 85 + 10, y2: 0};
+            this.textBounds.x2 = this.textBounds.x1 + 250;
+        }
 
         let x = this.textBounds.x1 - 10;
         let y = this.textBounds.y1 - 14;
@@ -445,20 +457,41 @@ class SpeechBubble extends TypeWriter
         _ctx.lineWidth = 3;
         _ctx.fillStyle = battle.theme.Background();
         _ctx.strokeStyle = battle.theme.Outline();
-        _ctx.beginPath();
-        _ctx.moveTo(x - 20, y + 25);
-        _ctx.lineTo(x, y + 25 - 10);
 
-        _ctx.arcTo(x, y, x + w, y, r);
-        _ctx.arcTo(x + w, y,   x + w, y + h, r);
-        _ctx.arcTo(x + w, y + h, x,   y + h, r);
-        _ctx.arcTo(x, y + h, x, y, r);
-        
-        _ctx.lineTo(x, y + 10 + 25);
-        _ctx.lineTo(x - 20, y + 25);
-        _ctx.fill();
-        _ctx.stroke();
-        _ctx.closePath();
+        if(this.mirrored)
+        {
+            _ctx.beginPath();
+            _ctx.moveTo(x + w + 20, y + 25);
+            _ctx.lineTo(x + w, y + 25 - 10);
+    
+            _ctx.arcTo(x + w, y, x, y, r);
+            _ctx.arcTo(x, y,   x, y + h, r);
+            _ctx.arcTo(x, y + h, x + w,   y + h, r);
+            _ctx.arcTo(x + w, y + h, x + w, y, r);
+            
+            _ctx.lineTo(x + w, y + 10 + 25);
+            _ctx.lineTo(x + w + 20, y + 25);
+            _ctx.fill();
+            _ctx.stroke();
+            _ctx.closePath();
+        }
+        else
+        {
+            _ctx.beginPath();
+            _ctx.moveTo(x - 20, y + 25);
+            _ctx.lineTo(x, y + 25 - 10);
+    
+            _ctx.arcTo(x, y, x + w, y, r);
+            _ctx.arcTo(x + w, y,   x + w, y + h, r);
+            _ctx.arcTo(x + w, y + h, x,   y + h, r);
+            _ctx.arcTo(x, y + h, x, y, r);
+            
+            _ctx.lineTo(x, y + 10 + 25);
+            _ctx.lineTo(x - 20, y + 25);
+            _ctx.fill();
+            _ctx.stroke();
+            _ctx.closePath();
+        }
 
         this.DrawText(_ctx, _dt);
 

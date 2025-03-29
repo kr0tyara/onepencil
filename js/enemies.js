@@ -703,12 +703,12 @@ class PromoDuckSprite extends EnemySprite
             // цена
             _ctx.fillStyle = '#edeef0';
             _ctx.fillRect(0, h - 80, 250, 80);
-            if(this.enemy.resetCounter > 0 || this.enemy.signed == 2)
+            if(this.enemy.resetCounter > 0 || this.enemy.signed >= 2)
             {
                 _ctx.fillStyle = '#000';
                 _ctx.font = '36px Pangolin';
                 
-                txt = this.enemy.signed == 2 ? '1' : '324905';
+                txt = this.enemy.signed == 2 ? '1' : this.enemy.signed == 3 ? '2' : '324905';
                 w = _ctx.measureText(txt).width;
                 _ctx.textBaseline = 'bottom';
 
@@ -722,7 +722,7 @@ class PromoDuckSprite extends EnemySprite
                 w = _ctx.measureText(txt).width + 40;
                 _ctx.fillText(txt, 40, h - 10);
                 
-                if(this.enemy.signed == 2)
+                if(this.enemy.signed >= 2)
                     txt = ` 2 ${loc.Get('hud', 'h')}`;
                 else
                     txt = ` ${this.enemy.resetCounter} ${loc.Get('hud', 'm')}`;
@@ -867,9 +867,9 @@ class PromoDuck extends Enemy
         this.resetCounter = 15;
         this.weakened = 2;
         this.call = 3;
-        this.shielding = 1;*/
+        this.shielding = 1;
 
-        this.resetCounter = 0;
+        this.resetCounter = 0;*/
     }
 
     GetAttack()
@@ -886,7 +886,7 @@ class PromoDuck extends Enemy
                 difficulty: 1
             };
 
-        if(this.signed == 2)
+        if(this.signed >= 2)
             return {
                 attackClass: NothingAttack,
                 difficulty: 1
@@ -926,6 +926,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.signed == 3)
+            return {
+                text: this.Dial('idle_signed_alt')
+            };
+
         if(this.signed == 2)
             return {
                 text: this.Dial('idle_signed')
@@ -1406,12 +1411,25 @@ class PromoDuck extends Enemy
         if(this.signed == 1)
         {
             this.signed = 2;
+
+            let weak = this.weakened;
             this.weakened = 0;
 
             this.actions = [...this.endingActions];
 
+            if(weak != 0)
+                return {
+                    speech: this.Dial('deal_signed_2_alt'),
+                    actions: [
+                        () => new RebetAction(this),
+                    ]
+                };
+            
             return {
                 speech: this.Dial('deal_signed_2'),
+                actions: [
+                    () => new RebetAction(this),
+                ]
             };
         }
 
@@ -1616,6 +1634,10 @@ class TriggerAction
 
     }
     GameLoop(_delta)
+    {
+
+    }
+    PointerUp(e)
     {
 
     }
@@ -1884,6 +1906,48 @@ class WaitEndAction extends TriggerAction
         res.sfx.bgm.play();
         battle.Blank();
         
+        super.Finish();
+    }
+}
+
+class RebetAction extends TriggerAction
+{
+    constructor(_parent)
+    {
+        super(_parent);
+
+        this.speechBubble = new SpeechBubble(null, res.sfx.other, true);
+    }
+
+    Start()
+    {
+        this.speechBubble.Start();
+        this.speechBubble.textBounds.x1 = 1280 - 250;
+        this.speechBubble.textBounds.x2 = 1280 - 50;
+        this.speechBubble.textBounds.y1 = battle.defaultBounds.y1 - 200;
+
+        this.speechBubble.SetText(loc.Dial('duck', 'deal_signed_2_other'));
+    }
+    GameLoop(_delta)
+    {
+        this.speechBubble.GameLoop(_delta);
+
+        if(this.speechBubble.finished)
+            this.Finish();
+    }
+    PointerUp(e)
+    {
+        this.speechBubble.PointerUp(e);
+    }
+
+    Render(_ctx, _dt)
+    {
+        this.speechBubble.Render(_ctx, _dt);
+    }
+
+    Finish()
+    {
+        this.parent.signed = 3;
         super.Finish();
     }
 }
