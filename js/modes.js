@@ -1420,9 +1420,9 @@ class GameOverMode extends BattleMode
         this.soulPos = {x: battle.soul.x, y: battle.soul.y};
 
         this.retryButton = {
-            x: battle.canvas.width / 2 - 300 / 2,
-            y: battle.canvas.height - 100 - 50,
-            w: 300,
+            x: battle.canvas.width / 2 - 280 / 2,
+            y: battle.canvas.height - 100,
+            w: 280,
             h: 70
         };
 
@@ -1540,8 +1540,8 @@ class GameOverMode extends BattleMode
 
             _ctx.font = '32px Pangolin';
             _ctx.textBaseline = 'middle';
-            _ctx.textAlign = 'center';
-            _ctx.fillText(loc.Get('hud', 'restart'), this.retryButton.x + 35 / 2 + this.retryButton.w / 2, this.retryButton.y + this.retryButton.h / 2 + 3);
+            _ctx.textAlign = 'left';
+            _ctx.fillText(loc.Get('hud', 'restart'), this.retryButton.x + 70, this.retryButton.y + this.retryButton.h / 2 + 3);
 
             _ctx.globalAlpha = 1;
         }
@@ -1657,9 +1657,9 @@ class IntroMode extends BattleMode
 
         this.triggeredSkip = false;
         this.skipButton = {
-            x: battle.canvas.width / 2 - 300 / 2,
+            x: battle.canvas.width / 2 - 280 / 2,
             y: battle.canvas.height - 100,
-            w: 300,
+            w: 280,
             h: 70
         };
 
@@ -1717,6 +1717,7 @@ class IntroMode extends BattleMode
     {
         if(this.IsHovering())
         {
+            Utils.RandomArray([res.sfx.click1, res.sfx.click2, res.sfx.click3]).play();
             this.Finish();
             return;
         }
@@ -1832,8 +1833,8 @@ class IntroMode extends BattleMode
 
             _ctx.font = '32px Pangolin';
             _ctx.textBaseline = 'middle';
-            _ctx.textAlign = 'center';
-            _ctx.fillText(loc.Get('hud', 'skip'), this.skipButton.x + 35 / 2 + this.skipButton.w / 2, this.skipButton.y + this.skipButton.h / 2 + 3);
+            _ctx.textAlign = 'left';
+            _ctx.fillText(loc.Get('hud', 'skip'), this.skipButton.x + 70, this.skipButton.y + this.skipButton.h / 2 + 3);
         }
 
         if(this.stealing && this.stealTimer <= this.blackTime)
