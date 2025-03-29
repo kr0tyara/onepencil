@@ -1,0 +1,129 @@
+{ "frames": {
+   "story_0": {
+    "frame": { "x": 1, "y": 1, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_1": {
+    "frame": { "x": 643, "y": 1, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_2": {
+    "frame": { "x": 1285, "y": 1, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_3": {
+    "frame": { "x": 1927, "y": 1, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_4": {
+    "frame": { "x": 1, "y": 383, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_5": {
+    "frame": { "x": 643, "y": 383, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_6": {
+    "frame": { "x": 1285, "y": 383, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_7": {
+    "frame": { "x": 1927, "y": 383, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_8": {
+    "frame": { "x": 1, "y": 765, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_9": {
+    "frame": { "x": 643, "y": 765, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_10": {
+    "frame": { "x": 1285, "y": 765, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_11": {
+    "frame": { "x": 1927, "y": 765, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   },
+   "story_12": {
+    "frame": { "x": 1, "y": 1147, "w": 640, "h": 380 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 640, "h": 380 },
+    "sourceSize": { "w": 640, "h": 380 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.13-x64",
+  "image": "story.png",
+  "format": "RGBA8888",
+  "size": { "w": 2568, "h": 1528 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "story", "from": 0, "to": 12, "direction": "forward", "color": "#000000ff" },
+   { "name": "steal", "from": 11, "to": 12, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "Layer 6", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 2", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 3", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 5", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 4", "opacity": 255, "blendMode": "normal" },
+   { "name": "Layer 7", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

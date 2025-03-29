@@ -34,6 +34,8 @@ class TypeWriter
         this.speed = 3;
         this.speedPunctuation = 10;
         this.speedNextLine = 50;
+
+        this.onLineEnd = null;
     }
 
     Start()
@@ -131,6 +133,9 @@ class TypeWriter
         {
             this.finished = true;
         }
+
+        if(this.onLineEnd != null)
+            this.onLineEnd();
     }
 
     SetIndex(_index)
@@ -863,7 +868,9 @@ class Battle
             new ItemsMode(),
             new DrawMode(),
             new DealMode(),
-            new GameOverMode()
+            new GameOverMode(),
+            new IntroMode(),
+            new CreditsMode(),
         ];
 
         this.pointerDownBind = this.PointerDown.bind(this);
@@ -951,10 +958,8 @@ class Battle
         window.removeEventListener('pointerup', this.pointerUpBind);
     }
 
-    Start()
+    Start(_restart = false)
     {
-        res.sfx.bgm.play();
-
         this.theme.Start();
         this.enemiesContainer.Start();
         this.ui.Start();
@@ -962,10 +967,18 @@ class Battle
         for(let i in this.enemies)
             this.enemies[i].Start();
 
-        this.SetMode(IDLE);
+        if(_restart)
+            this.Begin();
+        else
+            this.Intro();
 
         //this.SetMode(ATTACK);
         //this.Attack();
+    }
+    Begin()
+    {
+        res.sfx.bgm.play();
+        this.SetMode(IDLE);
     }
 
     SetBounds(_bounds, _slow = false, _instant = false)
@@ -1062,8 +1075,11 @@ class Battle
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        if(this.mode.id == GAME_OVER)
+        if(this.mode.id == GAME_OVER || this.mode.id == INTRO || this.mode.id == CREDITS)
         {
+            if(this.mode.id != GAME_OVER)
+                this.theme.Render(this.ctx, delta);
+
             this.mode.Render(this.ctx, _dt);
             return;
         }
@@ -1181,7 +1197,7 @@ class Battle
     }
     GameLoop(_delta)
     {
-        if(this.mode.id == GAME_OVER)
+        if(this.mode.id == GAME_OVER || this.mode.id == INTRO || this.mode.id == CREDITS)
         {
             this.mode.GameLoop(_delta);
             return;
@@ -1267,7 +1283,7 @@ class Battle
 
     Back()
     {
-        if(this.mode.id == GAME_OVER)
+        if(this.mode.id == GAME_OVER || this.mode.id == INTRO || this.mode.id == CREDITS)
             return;
 
         if(!this.mode.Back)
@@ -1386,10 +1402,18 @@ class Battle
     {
         this.SetMode(GAME_OVER);
     }
+    Credits()
+    {
+        this.SetMode(CREDITS);
+    }
+    Intro()
+    {
+        this.SetMode(INTRO);
+    }
 
     SetMode(_id)
     {
-        if(this.mode != null && this.mode.id == GAME_OVER)
+        if(this.mode != null && (this.mode.id == GAME_OVER || this.mode.id == CREDITS))
             return;
 
         this.attack = null;
@@ -1474,9 +1498,14 @@ class Battle
             else if(this.canvas.style.cursor != '')
                 this.canvas.style.cursor = '';
         }
-        else if(this.mode.id == GAME_OVER)
+        else if(this.mode.id == INTRO || this.mode.id == GAME_OVER)
         {
             this.mode.UpdateCursor();
+        }
+        else if(this.mode.id == CREDITS)
+        {
+            if(this.canvas.style.cursor != '')
+                this.canvas.style.cursor = '';
         }
         else if(this.canvas.style.cursor != 'none')
             this.canvas.style.cursor = 'none';

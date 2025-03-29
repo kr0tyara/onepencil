@@ -13,6 +13,8 @@ const   IDLE = 0,
         DRAW = 7,
         DEAL = 8,
         GAME_OVER = 9,
+        INTRO = 10,
+        CREDITS = 11,
         
         STATE_NORMAL = 0,
         STATE_HURT = 1,
@@ -398,6 +400,10 @@ class GameResources
             hands: {
                 img: 'hands.png',
                 json: 'hands.json'
+            },
+            story: {
+                img: 'story.png',
+                json: 'story.json'
             }
         };
 
@@ -406,14 +412,19 @@ class GameResources
         this.sfx = {};
         this.sfxNames = 
         {
+            intro: {
+                url: 'intro.mp3',
+                loop: true,
+                music: true
+            },
             bgm: {
-                url: 'DUCK IDK2.mp3',
+                url: 'DUCKIDK2.mp3',
                 loop: true,
                 volume: 0.7,
                 music: true,
             },
             bgmGeno: {
-                url: 'DUCK GENO.ogg',
+                url: 'DUCKGENO.ogg',
                 loop: true,
                 volume: 0.7,
                 music: true,
@@ -528,6 +539,14 @@ class GameResources
             {
                 url: 'explosion.wav',
                 volume: .5
+            },
+            chop:
+            {
+                url: 'chop.wav',
+            },
+            vroom:
+            {
+                url: 'vroom.ogg',
             }
         };
 
@@ -1087,7 +1106,7 @@ function Restart()
     }
 
     battle = new Battle();
-    battle.Start();
+    battle.Start(true);
 }
 function Progress(i)
 {

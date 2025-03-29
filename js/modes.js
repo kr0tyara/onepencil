@@ -1612,3 +1612,254 @@ class GameOverMode extends BattleMode
         }
     }
 }
+
+class IntroMode extends BattleMode
+{
+    constructor()
+    {
+        super(INTRO);
+
+        this.frame = 0;
+        this.shownFrame = 0;
+        this.frames = res.sheets.story.GetTagFrames('story');
+        this.steal = res.sheets.story.GetTagFrames('steal');
+
+        this.typeWriter = new TypeWriter(null, false);
+        this.typeWriter.onLineEnd = this.NextFrame.bind(this);
+
+        this.typeWriter.autoSkipTime = 100;
+
+        this.fadeTime = 24;
+        this.fadeTimer = 0;
+
+        this.triggeredSkip = false;
+
+        this.stealTime = 100;
+        this.blackTime = 40;
+        this.stealTimer = 0;
+        this.stealing = false;
+
+        this.soundPlayed = false;
+    }
+
+    Start()
+    {
+        res.sfx.intro.play();
+
+        this.typeWriter.Start();    
+
+        this.typeWriter.textBounds.x1 = 390;
+        this.typeWriter.textBounds.y1 = 500;
+        this.typeWriter.textBounds.x2 = battle.canvas.width - 300;
+        this.typeWriter.textBounds.y2 = battle.canvas.height - 100;
+
+        this.typeWriter.SetText(loc.Dial('game', 'intro'));
+
+        this.triggeredSkip = false;
+        this.skipButton = {
+            x: battle.canvas.width / 2 - 300 / 2,
+            y: battle.canvas.height - 100,
+            w: 300,
+            h: 70
+        };
+
+        this.soundPlayed = false;
+        //this.frame = this.typeWriter.index = 11;
+    }
+    NextFrame()
+    {
+        this.frame = this.typeWriter.index;
+        if(this.frame == 9 || this.frame == 10)
+            this.typeWriter.voice = res.sfx.duck;
+        else
+            this.typeWriter.voice = res.sfx.check;
+
+        if(this.frame == this.frames.length - 1)
+        {
+            if(!this.stealing)
+            {
+                this.fadeTimer = 0;
+                this.stealing = true;
+                this.stealTimer = this.stealTime;
+                
+                res.sfx.intro.pause();
+            
+                battle.soul.x = 615;
+                battle.soul.y = 280;
+                this.UpdateCursor();
+            }
+        }
+        else
+        {
+            this.fadeTimer = this.fadeTime;
+        }
+    }
+    Finish()
+    {
+        res.sfx.intro.pause();
+        battle.Begin();
+    }
+    
+    IsHovering()
+    {
+        if(!this.triggeredSkip)
+            return false;
+
+        if(
+            battle.mousePos.x >= this.skipButton.x && battle.mousePos.x <= this.skipButton.x + this.skipButton.w &&
+            battle.mousePos.y >= this.skipButton.y && battle.mousePos.y <= this.skipButton.y + this.skipButton.h
+        )
+            return true;
+
+        return false;
+    }
+    PointerUp(e)
+    {
+        if(this.IsHovering())
+        {
+            this.Finish();
+            return;
+        }
+
+        if(!this.triggeredSkip)
+            this.triggeredSkip = true;
+
+        this.typeWriter.PointerUp(e);
+    }
+    UpdateCursor()
+    {
+        if(this.stealing)
+        {
+            if(battle.canvas.style.cursor != 'none')
+                battle.canvas.style.cursor = 'none';
+        }
+        else if(this.IsHovering())
+        {
+            if(battle.canvas.style.cursor != 'pointer')
+                battle.canvas.style.cursor = 'pointer';
+        }
+        else if(battle.canvas.style.cursor != '')
+            battle.canvas.style.cursor = '';
+    }
+
+    GameLoop(_delta)
+    {
+        if(this.fadeTimer > 0)
+            this.fadeTimer -= 1 * _delta;
+        else
+            this.typeWriter.GameLoop(_delta);
+
+        if(this.stealing)
+        {
+            if(this.stealTimer > 0)
+                this.stealTimer -= 1 * _delta;
+            else
+            {
+                this.Finish();
+                return;
+            }
+
+            if(this.stealTimer <= this.blackTime)
+            {
+                if(!this.soundPlayed)
+                {
+                    res.sfx.vroom.play();
+                    this.soundPlayed = true;
+                }
+                
+                battle.MoveSoul();
+                battle.soul.GameLoop(_delta);
+            }
+            else
+            {
+                if(this.stealTimer % 5 < 1)
+                    res.sfx.chop.play();
+            }
+        }
+    }
+
+    Render(_ctx, _dt)
+    {
+        let x = 640 - 320;
+        let y = 100;
+
+        let t = Utils.Clamp(this.fadeTimer / this.fadeTime, 0, 1);
+        if(t <= .5)
+            this.shownFrame = this.frame;
+
+        if(this.stealing && this.stealTimer > this.blackTime)
+        {
+            this.shownFrame = Utils.GetAnimationFrame(_dt, 100, this.steal);
+        }
+
+        _ctx.strokeStyle = '#000';
+        _ctx.lineWidth = 3;
+        _ctx.beginPath();
+        Utils.RoundedRect(_ctx, x, y, 640, 380, 6);
+        _ctx.save();
+            _ctx.clip();
+            res.sheets.story.Draw(_ctx, 'story', this.frames[this.shownFrame], x, y);
+        _ctx.restore();
+        _ctx.stroke();
+
+        _ctx.globalAlpha = t <= .5 ? t / .5 : (1 - (t - .5) / .5);
+        _ctx.fillStyle = '#000';
+        _ctx.fill();
+        _ctx.globalAlpha = 1;
+
+        _ctx.closePath();
+        
+        this.typeWriter.Render(_ctx, _dt);
+        
+        if(this.triggeredSkip)
+        {
+            _ctx.lineWidth = 3;
+            let c;
+            if(this.IsHovering())
+                c = _ctx.strokeStyle = '#0d85f3';
+            else
+                c = _ctx.strokeStyle = '#000';
+
+            _ctx.fillStyle = '#fff';
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, this.skipButton.x, this.skipButton.y, this.skipButton.w, this.skipButton.h, 6);
+            _ctx.stroke();
+            _ctx.fill();
+            _ctx.closePath();
+
+            _ctx.fillStyle = c;
+            Utils.MaskSprite(_ctx, battle.tempCtx, res.sprites.buttons, 1 * 50, 1 * 50, 50, 50, this.skipButton.x + 10, this.skipButton.y + this.skipButton.h / 2 - 25, 50, 50, _ctx.fillStyle);
+
+            _ctx.font = '32px Pangolin';
+            _ctx.textBaseline = 'middle';
+            _ctx.textAlign = 'center';
+            _ctx.fillText(loc.Get('hud', 'skip'), this.skipButton.x + 35 / 2 + this.skipButton.w / 2, this.skipButton.y + this.skipButton.h / 2 + 3);
+        }
+
+        if(this.stealing && this.stealTimer <= this.blackTime)
+        {
+            _ctx.fillStyle = '#000';
+            _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
+
+            battle.soul.Render(_ctx, _dt);
+        }
+    }
+}
+
+class CreditsMode extends BattleMode
+{
+    constructor()
+    {
+        super(CREDITS);
+    }
+
+    Start()
+    {
+        res.sfx.bgm.pause();
+        res.sfx.bgmGeno.pause();
+    }
+
+    Render(_ctx, _dt)
+    {
+    }
+}
