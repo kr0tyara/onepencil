@@ -1396,7 +1396,7 @@ class PromoDuck extends Enemy
             _delta += this.resetCounter;
             this.resetCounter = 0;
             
-            if(!this.signed)
+            if(!this.signed && this.shielding != -1)
             {
                 this.actions = [...this.normalActions];
 
