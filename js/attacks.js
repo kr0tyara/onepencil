@@ -827,7 +827,7 @@ class PopsicleAttack extends Attack
             }
         }
 
-        if((this.tipTimer <= 0 && this.break < this.breaksPerFrame) || this.attackTimer < 150)
+        if((this.tipTimer <= 0 && this.break < this.breaksPerFrame) || this.attackTimer < 150 && !this.broken)
         {
             _ctx.font = '36px Pangolin';
             _ctx.font = 'Pangolin'

@@ -67,11 +67,11 @@ class TypeWriter
         {
             let text = this.text[i];
 
-            let regex = /#[\dA-Za-z]+/.exec(text);
+            let regex = /#[\dA-Za-z]/.exec(text);
             if(regex)
                 this.expressions[i] = regex[0].split('#')[1];
 
-            this.text[i] = text.replaceAll(/#[\dA-Za-z]+/g, '');
+            this.text[i] = text.replaceAll(/#[\dA-Za-z]/g, '');
         }
 
         battle.ctx.font = `${this.textSize}px Pangolin`;

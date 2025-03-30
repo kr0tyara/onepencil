@@ -1089,7 +1089,7 @@ class Localization
 {
     constructor()
     {
-        this.language = 'ru';
+        this.language = 'en';
     }
 
     Get(_group, _reference)

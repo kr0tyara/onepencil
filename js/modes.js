@@ -1649,7 +1649,7 @@ class IntroMode extends BattleMode
         this.typeWriter.Start();    
 
         this.typeWriter.textBounds.x1 = 390;
-        this.typeWriter.textBounds.y1 = 500;
+        this.typeWriter.textBounds.y1 = 480;
         this.typeWriter.textBounds.x2 = battle.canvas.width - 300;
         this.typeWriter.textBounds.y2 = battle.canvas.height - 100;
 
@@ -1685,7 +1685,7 @@ class IntroMode extends BattleMode
                 res.sfx.intro.pause();
             
                 battle.soul.x = 615;
-                battle.soul.y = 280;
+                battle.soul.y = 260;
                 this.UpdateCursor();
             }
         }
@@ -1782,7 +1782,7 @@ class IntroMode extends BattleMode
     Render(_ctx, _dt)
     {
         let x = 640 - 320;
-        let y = 100;
+        let y = 80;
 
         let t = Utils.Clamp(this.fadeTimer / this.fadeTime, 0, 1);
         if(t <= .5)
