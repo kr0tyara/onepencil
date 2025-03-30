@@ -1856,11 +1856,118 @@ class CreditsMode extends BattleMode
 
     Start()
     {
-        res.sfx.bgm.pause();
-        res.sfx.bgmGeno.pause();
+        //res.sfx.bgm.pause();
+        //res.sfx.bgmGeno.pause();
+
+        this.textBounds = {x1: 100, y1: 75, x2: 640, y2: 550};
+        
+        battle.ctx.font = `16px Pangolin`;
+        this.text = Utils.SliceText(battle.ctx, loc.Dial('game', 'credits'), this.textBounds);
     }
 
     Render(_ctx, _dt)
     {
+        _ctx.textBaseline = 'top';
+        _ctx.textAlign = 'left';
+
+        let lines = this.text[0].split(/\~|\n/);
+        
+        let bigText = false;
+        let wawyText = false;
+
+        let oy = 0;
+
+        for(let i = 0; i < lines.length; i++)
+        {
+            let line = lines[i];
+            
+            let x = this.textBounds.x1;
+            let y = this.textBounds.y1 + oy;
+
+            for(let j = 0; j < line.length; j++)
+            {
+                let char = line.charAt(j);
+
+                // большой тэкст
+                if(char == '^')
+                {
+                    bigText = !bigText;
+                    continue;
+                }
+                
+                let offset = {x: 0, y: 0};
+                if(bigText)
+                {
+                    _ctx.font = '36px Pangolin';
+                    _ctx.fillStyle = battle.theme.Outline();
+                    offset.x = 10;
+                    offset.y = 5;
+                }
+                else
+                {
+                    _ctx.font = '24px Pangolin';
+                    _ctx.fillStyle = '#666';
+                }
+
+                // волна
+                if(char == '%')
+                {
+                    wawyText = !wawyText;
+                    continue;
+                }
+
+                if(wawyText)
+                {
+                    offset.x += Math.cos(_dt / 200 + (i + j) / 2) * 32 / 12;
+                    offset.y += -Math.sin(_dt / 200 + (i + j) / 2) * 32 / 12;
+                }
+
+                _ctx.fillText(char, x + offset.x, y + offset.y);
+                x += _ctx.measureText(char).width;
+            }
+
+            let metrics = battle.ctx.measureText(line);
+            oy += metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
+        }
+        
+        if(battle.ending == 1 || battle.ending == 2)
+        {
+            let x = 1280 - 550;
+            let y = 50;
+            _ctx.strokeStyle = '#000';
+            _ctx.lineWidth = 3;
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, x, y, 450, 600, 6);
+            _ctx.save();
+                _ctx.clip();
+                _ctx.drawImage(res.sprites.ending, x, y);
+            _ctx.restore();
+            _ctx.stroke();
+            _ctx.closePath();
+            
+            _ctx.beginPath();
+            Utils.RoundedRect(_ctx, x + 116, y + 125, 230, 150, 12);
+            _ctx.save();
+                _ctx.clip();
+
+                if(battle.ending == 2)
+                {
+                    _ctx.fillStyle = '#e6e9ff'
+                    _ctx.fillRect(x + 106, y + 120, 250, 165);
+                    res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), x + 106, y + 120);
+                }
+                else
+                    res.sheets.promo2.Draw(_ctx, 'promo2', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo2.GetTagFrames('idle')), x + 106, y + 120);
+            _ctx.restore();
+            _ctx.closePath();
+        }
+
+
+        /*
+        let shakeText = false;
+        for(let i in lines)
+        {
+            _ctx.fillText(lines[i], this.textBounds.x1, this.textBounds.y1 + i * this.h);
+        }*/
     }
 }

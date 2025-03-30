@@ -804,14 +804,15 @@ class PromoDuck extends Enemy
             this.actions[2],
         ]
         this.endingActions = [
-            this.actions[0]
+            this.actions[0],
+            {name: loc.Get('actions', 'credits'), index: {x: 2, y: 0}, action: this.Credits.bind(this), highlighted: true},
         ];
         this.noActions = [
             this.actions[0]
         ];
         this.killedActions = 
         [
-
+            {name: loc.Get('actions', 'credits'), index: {x: 2, y: 0}, action: this.Credits.bind(this), highlighted: true},
         ]
         
         this.flavourText = this.Dial('idle');
@@ -1034,6 +1035,7 @@ class PromoDuck extends Enemy
         {
             this.actions = [...this.killedActions];
 
+            let speech = ['&0'];
             if(this.shielding == -1)
             {
                 this.weakened = 5;
@@ -1041,12 +1043,12 @@ class PromoDuck extends Enemy
                 battle.theme.Swap({r: 0, g: 0, b: 0}, {r: 170, g: 170, b: 170}, true);
                 res.sfx.bgm.pause();
                 res.sfx.bgmGeno.pause();
-            }
 
-            let speech = ['&0'];
-
-            if(this.shielding == -1)
                 speech = this.Dial('shield_betrayal');
+                battle.SetEnding(3);
+            }
+            else
+                battle.SetEnding(4);
 
             return {
                 speech,
@@ -1427,13 +1429,17 @@ class PromoDuck extends Enemy
             this.actions = [...this.endingActions];
 
             if(this.call != 0)
+            {
+                battle.SetEnding(2);
                 return {
                     speech: this.Dial('deal_signed_2_alt'),
                     actions: [
                         () => new RebetAction(this),
                     ]
                 };
+            }
             
+            battle.SetEnding(1);
             return {
                 speech: this.Dial('deal_signed_2'),
                 actions: [
@@ -1625,6 +1631,14 @@ class PromoDuck extends Enemy
         return {
             text: [''],
             speech: this.StoryFlow(),
+        };
+    }
+
+    Credits()
+    {
+        return {
+            text: this.Dial((battle.ending == 3 || battle.ending == 4) ? 'thanks_for_playing_alt' : 'thanks_for_playing'),
+            mode: CREDITS
         };
     }
 }

@@ -396,6 +396,8 @@ class GameResources
             eat: 'eat.png',
             chunks: 'chunks.png',
             star: 'star.png',
+            
+            ending: 'ending.png',
         };
         
         this.sheetPrefix = './img/sheet/';
@@ -452,7 +454,6 @@ class GameResources
         {
             intro: {
                 url: 'intro.mp3',
-                loop: true,
                 music: true
             },
             bgm: {
@@ -977,7 +978,7 @@ class Utils
         return newLines;
     }
 
-    static TextHeight(_ctx, _text, _textSize, _bounds)
+    static TextHeight(_ctx, _text, _textSize)
     {
         _ctx.font = `${_textSize}px Pangolin`;
         _ctx.textBaseline = 'top';

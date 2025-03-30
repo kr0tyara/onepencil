@@ -451,7 +451,7 @@ class SpeechBubble extends TypeWriter
         let x = this.textBounds.x1 - 10;
         let y = this.textBounds.y1 - 14;
         let w = this.textBounds.x2 - x + 15;
-        let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize, this.textBounds) + 20;
+        let h = Utils.TextHeight(_ctx, this.text[this.index], this.textSize) + 20;
         let r = 6;
 
         _ctx.lineWidth = 3;
@@ -979,7 +979,14 @@ class Battle
         this.lastRender = 0;
         this.render = requestAnimationFrame(this.Render.bind(this));
 
+        this.ending = -1;
+
         //this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
+    }
+
+    SetEnding(_id)
+    {
+        this.ending = _id;
     }
 
     Destroy()
@@ -1410,9 +1417,6 @@ class Battle
 
     Act()
     {
-        if(this.finished)
-            return;
-
         if(this.mode.id == ACT)
             this.Idle();
         else
