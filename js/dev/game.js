@@ -463,7 +463,7 @@ class GameResources
                 music: true,
             },
             bgmGeno: {
-                url: 'DUCKGENO.ogg',
+                url: 'DUCKGENO.mp3',
                 loop: true,
                 volume: 0.7,
                 music: true,
@@ -473,128 +473,128 @@ class GameResources
                 music: true
             },
             check: {
-                url: 'check.ogg',
+                url: 'check.mp3',
                 volume: 0.8,
             },
             duck: {
-                url: 'duck.ogg',
+                url: 'duck.mp3',
                 volume: 1
             },
             other:
             {
-                url: 'other.ogg',
+                url: 'other.mp3',
                 volume: .7
             },
             hurt: {
-                url: 'hurt.wav',
+                url: 'hurt.mp3',
                 volume: 0.6
             },
             hurt2: {
-                url: 'hurt2.wav',
+                url: 'hurt2.mp3',
                 volume: 0.6
             },
             death: {
-                url: 'death.wav',
+                url: 'death.mp3',
                 volume: 0.6
             },
             circle1: {
-                url: 'circle_1.ogg',
+                url: 'circle_1.mp3',
             },
             circle2: {
-                url: 'circle_2.ogg',
+                url: 'circle_2.mp3',
             },
             triangle1: {
-                url: 'triangle_1.ogg',
+                url: 'triangle_1.mp3',
             },
             triangle2: {
-                url: 'triangle_2.ogg',
+                url: 'triangle_2.mp3',
             },
             star1: {
-                url: 'star_1.ogg',
+                url: 'star_1.mp3',
             },
             star2: {
-                url: 'star_2.ogg',
+                url: 'star_2.mp3',
             },
             click1:
             {
-                url: 'jump.ogg',
+                url: 'jump.mp3',
             },
             click2:
             {
-                url: 'jump2.ogg',
+                url: 'jump2.mp3',
             },
             click3:
             {
-                url: 'jump4.ogg',
+                url: 'jump4.mp3',
             },
             scribble1:
             {
-                url: 'scribble_1.wav',
+                url: 'scribble_1.mp3',
             },
             scribble2:
             {
-                url: 'scribble_2.wav',
+                url: 'scribble_2.mp3',
             },
             tick:
             {
-                url: 'tick.wav',
+                url: 'tick.mp3',
             },
             hop:
             {
-                url: 'hop.wav',
+                url: 'hop.mp3',
                 volume: .5,
             },
             hop2:
             {
-                url: 'hop2.wav',
+                url: 'hop2.mp3',
                 volume: .6,
             },
             crack:
             {
-                url: 'crack.wav',
+                url: 'crack.mp3',
                 volume: .8,
             },
             break:
             {
-                url: 'break.wav',
+                url: 'break.mp3',
                 volume: .5,
             },
             warning:
             {
-                url: 'warning.wav',
+                url: 'warning.mp3',
                 volume: .7
             },
             heal:
             {
-                url: 'heal.ogg',
+                url: 'heal.mp3',
                 volume: .8
             },
             effect:
             {
-                url: 'effect.ogg',
+                url: 'effect.mp3',
                 volume: .5
             },
             effectEnd:
             {
-                url: 'effect_end.ogg',
+                url: 'effect_end.mp3',
                 volume: .5
             },
             explosion:
             {
-                url: 'explosion.wav',
+                url: 'explosion.mp3',
                 volume: .5
             },
             chop:
             {
-                url: 'chop.wav',
+                url: 'chop.mp3',
             },
             vroom:
             {
-                url: 'vroom.ogg',
+                url: 'vroom.mp3',
             },
             gulp:
             {
-                url: 'gulp.ogg',
+                url: 'gulp.mp3',
             }
         };
 
