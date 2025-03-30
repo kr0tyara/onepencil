@@ -109,7 +109,7 @@
                 "~9 out of 36 538 Tooners recommend!",
                 "~Smells like No. 2.",
                 "~PromoDuck is calculating his profits.%~Without a calculator.",
-                "~PromoDuck picks his teeth.~Or rather, he's just gnawing on a toothpick..."
+                "~PromoDuck picks his teeth.~Or rather, he just gnaws on a toothpick..."
             ],
             "idle2": [
                 "~PromoDuck looks around nervously.",
@@ -170,7 +170,7 @@
             "deal_signed_2_alt": ["Pleasure doing business with ya!~As agreed, your toon is now on Quacky Vision.", "&0", "Ho-ho-ho!", "#BThat's how business works, kid.~What else did you expect from such a low bid?"],
             "deal_signed_2_other": ["Hey, ducky!", "Gimme a promo for 2 pencils."],
 
-            "vandalism": ["Draw anything to speed up the reset!"],
+            "vandalism": ["Draw anything to speed up the bid reset!"],
             "vandalism_fail": ["...nothing happened.~(Try to draw as much as possible without releasing the pencil!)"],
             "vandalism_fail_speech": ["#8Don't even think!"],
             "vandalism_success_4": ["The bid time @2shortens REALLY GREATLY@!!!"],
