@@ -159,11 +159,49 @@ class Sheet
         }
     }
 
+    DrawColored(_ctx, _tmp, _part, _frame, _x, _y, _c, _w = -1, _h = -1, _centerX = false, _centerY = false, _rotation = 0)
+    {
+        let part = this.parts[_part];
+
+        if(part == null || _frame >= part.length)
+            return;
+
+        let frame = part[_frame].frame;
+        let w = _w > 0 ? _w : frame.w;
+        let h = _h > 0 ? _h : frame.h;
+        
+        _tmp.canvas.width  = w;
+        _tmp.canvas.height = h;
+
+        if(_centerX)
+            _x -= w / 2;
+        else
+            _x += part[_frame].spriteSourceSize.x;
+        
+        if(_centerY)
+            _y -= h / 2;
+        else if(!_centerY)
+            _y += part[_frame].spriteSourceSize.y;
+
+        _tmp.fillStyle = _c;
+
+        _tmp.drawImage(this.img, frame.x, frame.y, frame.w, frame.h, 0, 0, w, h);
+        _tmp.globalCompositeOperation = 'source-in';
+        _tmp.fillRect(0, 0, w, h);
+        _tmp.globalCompositeOperation = 'source-over';
+
+        _ctx.save();
+        _ctx.translate(_x + w / 2, _y + h / 2);
+        _ctx.rotate(_rotation);
+        _ctx.drawImage(_tmp.canvas, -w / 2, -h / 2, w, h);
+        _ctx.restore();
+    }
+
     Draw(_ctx, _part, _frame, _x, _y, _w = -1, _h = -1, _centerX = false, _centerY = false, _rotation = 0, _ignoreOriginalPos = false)
     {
         let part = this.parts[_part];
 
-        if(part == null)
+        if(part == null || _frame >= part.length)
             return;
 
         let frame = part[_frame].frame;

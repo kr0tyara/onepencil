@@ -471,7 +471,7 @@ class OwnAttackMode extends DrawingMode
             {
                 _ctx.globalAlpha = .5;
 
-                this.attackType.sheet.Draw(_ctx, 'attack', Utils.GetAnimationFrame(_dt, 200, this.attackAnimations.drawing), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true, true);
+                this.attackType.sheet.DrawColored(_ctx, battle.tempCtx, 'attack', Utils.GetAnimationFrame(_dt, 200, this.attackAnimations.drawing), battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, battle.theme.Outline(), -1, -1, true, true);
 
                 _ctx.globalAlpha = 1;
             }
@@ -492,8 +492,8 @@ class OwnAttackMode extends DrawingMode
             if(this.pendingTimer <= this.transformTime)
             {
                 let t = Utils.Clamp(this.pendingTimer / this.transformTime, 0, 1);
-
-                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, -1, -1, true, true);
+                
+                this.attackType.sheet.DrawColored(_ctx, battle.tempCtx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * t)], battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, battle.bounds.y1 + (battle.bounds.y2 - battle.bounds.y1) / 2, battle.theme.Outline(), -1, -1, true, true);
             }
             else
             {
@@ -505,7 +505,7 @@ class OwnAttackMode extends DrawingMode
                 _ctx.translate(battle.bounds.x1 + (battle.bounds.x2 - battle.bounds.x1) / 2, pos.y);
                 _ctx.rotate(Math.PI * t);
                 
-                this.attackType.sheet.Draw(_ctx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, -1, -1, true, true);
+                this.attackType.sheet.DrawColored(_ctx, battle.tempCtx, 'attack', this.attackAnimations.failure[Math.round((this.attackAnimations.failure.length - 1) * 3 * t) % this.attackAnimations.failure.length], 0, 0, battle.theme.Outline(), -1, -1, true, true);
 
                 _ctx.restore();
             }

@@ -961,9 +961,9 @@ class Battle
         this.ownAttacks = 
         {
             '':         {id: '', damage: 0, sheet: res.sheets.triangle},
-            'circle':   {id: 'circle', damage: 125, sheet: res.sheets.circle, sfx: [res.sfx.circle1, res.sfx.circle2]},
-            'triangle': {id: 'triangle', damage: 150, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
-            'star':     {id: 'star', damage: 175, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
+            'circle':   {id: 'circle', damage: 25, sheet: res.sheets.circle, sfx: [res.sfx.circle1, res.sfx.circle2]},
+            'triangle': {id: 'triangle', damage: 50, sheet: res.sheets.triangle, sfx: [res.sfx.triangle1, res.sfx.triangle2]},
+            'star':     {id: 'star', damage: 75, sheet: res.sheets.star, sfx: [res.sfx.star1, res.sfx.star2]},
         };
         this.ownAttackIndex = 1;
 
