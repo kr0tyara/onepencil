@@ -1031,7 +1031,7 @@ class PromoDuck extends Enemy
             };
         }
 
-        if(this.weakened == 5 || this.shielding == -1)
+        if((this.weakened == 5 || this.shielding == -1) && _damage > 0)
         {
             this.actions = [...this.killedActions];
 
