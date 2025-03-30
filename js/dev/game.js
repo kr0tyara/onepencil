@@ -1089,7 +1089,7 @@ class Localization
 {
     constructor()
     {
-        this.language = 'en';
+        this.language = 'ru';
     }
 
     Get(_group, _reference)
@@ -1124,7 +1124,7 @@ window.addEventListener('load', () =>
 });
 function Ready()
 {
-    Start();
+    //Start();
 
     settings.Start();
     
