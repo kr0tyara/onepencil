@@ -855,6 +855,7 @@ class PromoDuck extends Enemy
         this.popsicleHP = 0;
 
         this.weakened = 0;
+        this.justWeakened = false;
         this.call = 0;
         this.shielding = 0;
         this.shieldDeal = 0;
@@ -1000,7 +1001,8 @@ class PromoDuck extends Enemy
             {
                 if(this.shielding == 2)
                     this.weakened = 5;
-                damage = 99999;
+
+                damage = this.hp;
             }
         }
 
@@ -1010,6 +1012,9 @@ class PromoDuck extends Enemy
     Hurt(_damage)
     {
         this.hurt++;
+
+        if(this.justWeakened)
+            this.justWeakened = false;
 
         if(this.shielding == 1 && _damage > 0)
         {
@@ -1038,8 +1043,13 @@ class PromoDuck extends Enemy
                 res.sfx.bgmGeno.pause();
             }
 
+            let speech = ['&0'];
+
+            if(this.shielding == -1)
+                speech = this.Dial('shield_betrayal');
+
             return {
-                speech: ['&0'],
+                speech,
                 actions: [
                     () => new DeathAction(this),
                 ]
@@ -1054,6 +1064,7 @@ class PromoDuck extends Enemy
         if(this.hp / this.maxHP <= .6 && this.weakened == 0)
         {
             this.weakened = 1;
+            this.justWeakened = true;
             
             let message = {
                 speech: this.Dial('weakened'),
@@ -1411,13 +1422,11 @@ class PromoDuck extends Enemy
         if(this.signed == 1)
         {
             this.signed = 2;
-
-            let weak = this.weakened;
             this.weakened = 0;
 
             this.actions = [...this.endingActions];
 
-            if(weak != 0)
+            if(this.call != 0)
                 return {
                     speech: this.Dial('deal_signed_2_alt'),
                     actions: [
@@ -1463,32 +1472,35 @@ class PromoDuck extends Enemy
         else if(this.weakened == 2)
             this.weakened = 3;
 
-        if(this.hp / this.maxHP <= .5 && this.call < 1)
+        if(!this.justWeakened)
         {
-            this.call = 1;
+            if(this.hp / this.maxHP <= .5 && this.call < 1)
+            {
+                this.call = 1;
 
-            return {
-                speech: this.Dial('geno_phone'),
-            };
-        }
-        else if(this.hp / this.maxHP <= .2 && this.call < 3)
-        {
-            this.call = 3;
+                return {
+                    speech: this.Dial('geno_phone'),
+                };
+            }
+            else if(this.hp / this.maxHP <= .2 && this.call < 3)
+            {
+                this.call = 3;
 
-            this.actions = [...this.shieldedActions];
-            if(this.dealt == 0 && this.actions[1] != null)
-                this.actions[1].highlighted = true;
+                this.actions = [...this.shieldedActions];
+                if(this.dealt == 0 && this.actions[1] != null)
+                    this.actions[1].highlighted = true;
 
-            return {
-                speech: this.Dial('geno_phone_2'),
-                actions: [
-                    () => new ShieldAction(this)
-                ]
-            };
-        }
-        else if(this.call == 1)
-        {
-            this.call = 2;
+                return {
+                    speech: this.Dial('geno_phone_2'),
+                    actions: [
+                        () => new ShieldAction(this)
+                    ]
+                };
+            }
+            else if(this.call == 1)
+            {
+                this.call = 2;
+            }
         }
         
         return {};
@@ -1561,7 +1573,7 @@ class PromoDuck extends Enemy
             {
                 return {
                     text: this.Dial('shield_deal_alt'),
-                    speech: this.Dial('shield_deal_alt_speech'),
+                    speech: this.Dial(this.resetTalk > 0 ? 'shield_deal_alt2_speech' : 'shield_deal_alt_speech'),
                     mode: DEAL,
                     actions: [
                         () => new UnshieldAction(this),
