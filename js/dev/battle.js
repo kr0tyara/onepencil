@@ -1105,14 +1105,14 @@ class Battle
 
     Render(_dt)
     {
+        this.render = requestAnimationFrame(this.Render.bind(this));
+
         let delta = (_dt - this.lastRender) / 16.67; // 1000 / 60
         if(delta > 1)
             delta = 1;
         
         this.lastRender = _dt;
         this.GameLoop(delta);
-        
-        this.render = requestAnimationFrame(this.Render.bind(this));
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
@@ -1238,6 +1238,9 @@ class Battle
     }
     GameLoop(_delta)
     {
+        if(settings.opened)
+            return;
+
         if(this.mode.id == GAME_OVER || this.mode.id == INTRO || this.mode.id == CREDITS)
         {
             this.mode.GameLoop(_delta);
@@ -1501,16 +1504,25 @@ class Battle
 
     PointerDown(e)
     {
+        if(settings.opened)
+            return;
+
         this.UpdateMousePos(e);
         this.mode.PointerDown(e);
     }
     PointerUp(e)
     {
+        if(settings.opened)
+            return;
+
         this.UpdateMousePos(e);
         this.mode.PointerUp(e);
     }
     PointerMove(e)
     {
+        if(settings.opened)
+            return;
+        
         this.UpdateMousePos(e);
         this.mode.PointerMove(e);
     }

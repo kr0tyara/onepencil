@@ -396,8 +396,6 @@ class GameResources
             eat: 'eat.png',
             chunks: 'chunks.png',
             star: 'star.png',
-            
-            ending: 'ending.png',
         };
         
         this.sheetPrefix = './img/sheet/';
@@ -444,6 +442,10 @@ class GameResources
             story: {
                 img: 'story.png',
                 json: 'story.json'
+            },
+            ending: {
+                img: 'ending.png',
+                json: 'ending.json'
             }
         };
 
@@ -1001,6 +1003,8 @@ class Settings
 {
     constructor()
     {
+        this.opened = false;
+
         this.sfxVolume = (localStorage.getItem('promoduck_sfx_volume') != null ? localStorage.getItem('promoduck_sfx_volume') / 100 : 1);
         this.bgmVolume = (localStorage.getItem('promoduck_bgm_volume') != null ? localStorage.getItem('promoduck_bgm_volume') / 100 : 1);
         this.movingBG  = (localStorage.getItem('promoduck_moving_bg') != null ? localStorage.getItem('promoduck_moving_bg') == 1 : true);
@@ -1013,6 +1017,7 @@ class Settings
 
         document.querySelector('#settings_open').addEventListener('click', this.Open.bind(this));
         document.querySelector('#settings_background').addEventListener('click', this.Close.bind(this));
+        document.querySelector('#fullscreen').addEventListener('click', this.Fullscreen.bind(this));
         
         document.querySelector('#sfx_volume').value  = ~~(this.sfxVolume * 100);
         document.querySelector('#bgm_volume').value  = ~~(this.bgmVolume * 100);
@@ -1031,17 +1036,28 @@ class Settings
 
     Open()
     {
-        if(battle.mode.locked || battle.mode.drawingLocked)
+        if(battle != null && battle.mode.drawingLocked)
             return;
 
         if(document.querySelector('#settings').classList.contains('visible'))
-            document.querySelector('#settings').classList.remove('visible');
+            this.Close();
         else
+        {
             document.querySelector('#settings').classList.add('visible');
+            this.opened = true;
+        }
     }
     Close()
     {
         document.querySelector('#settings').classList.remove('visible');
+        this.opened = false;
+    }
+    Fullscreen()
+    {
+        if(!document.fullscreenElement)
+            document.querySelector('.game_wrapper').requestFullscreen();
+        else if(document.exitFullscreen)
+            document.exitFullscreen();
     }
 
     OnVolumeChange(e, _final)

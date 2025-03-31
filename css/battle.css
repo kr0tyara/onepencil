@@ -1,9 +1,10 @@
 *
 {
     -webkit-tap-highlight-color: transparent;
+	text-size-adjust: none;
 }
 
-body
+body, .game_wrapper
 {
     background-color: #edeef0;
 }
@@ -26,6 +27,10 @@ body
 
     width: 100%;
     height: 100%;
+    
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: pixelated;
 }
 
 .preloader 
@@ -45,6 +50,9 @@ body
     left: 50%;
     transform: translate(-50%, -50%);
     margin: 0;
+
+    user-select: none;
+    text-align: center;
 }
 
 .settings
@@ -178,6 +186,14 @@ body
 button:hover .icon.cog
 {
     background-position: -48px -24px;
+}
+.icon.fullscreen
+{
+    background-position: -72px 0px;
+}
+button:hover .icon.fullscreen
+{
+    background-position: -72px -24px;
 }
 
 button

@@ -1930,7 +1930,7 @@ class CreditsMode extends BattleMode
             oy += metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
         }
         
-        if(battle.ending == 1 || battle.ending == 2)
+        if(battle.ending > 0 && battle.ending < 4)
         {
             let x = 1280 - 550;
             let y = 50;
@@ -1940,7 +1940,7 @@ class CreditsMode extends BattleMode
             Utils.RoundedRect(_ctx, x, y, 450, 600, 6);
             _ctx.save();
                 _ctx.clip();
-                _ctx.drawImage(res.sprites.ending, x, y);
+                res.sheets.ending.Draw(_ctx, 'ending', battle.ending - 1, x, y);
             _ctx.restore();
             _ctx.stroke();
             _ctx.closePath();
@@ -1950,9 +1950,9 @@ class CreditsMode extends BattleMode
             _ctx.save();
                 _ctx.clip();
 
-                if(battle.ending == 2)
+                if(battle.ending > 1)
                 {
-                    _ctx.fillStyle = '#e6e9ff'
+                    _ctx.fillStyle = battle.ending == 3 ? '#fff' : '#e6e9ff';
                     _ctx.fillRect(x + 106, y + 120, 250, 165);
                     res.sheets.promo1.Draw(_ctx, 'promo1', Utils.GetAnimationFrame(_dt, 200, res.sheets.promo1.GetTagFrames('idle')), x + 106, y + 120);
                 }
