@@ -1005,15 +1005,18 @@ class Settings
     {
         this.opened = false;
 
-        this.sfxVolume = (localStorage.getItem('promoduck_sfx_volume') != null ? localStorage.getItem('promoduck_sfx_volume') / 100 : 1);
-        this.bgmVolume = (localStorage.getItem('promoduck_bgm_volume') != null ? localStorage.getItem('promoduck_bgm_volume') / 100 : 1);
-        this.movingBG  = (localStorage.getItem('promoduck_moving_bg') != null ? localStorage.getItem('promoduck_moving_bg') == 1 : true);
+        this.sfxVolume      = (localStorage.getItem('promoduck_sfx_volume') != null ? localStorage.getItem('promoduck_sfx_volume') / 100 : 1);
+        this.bgmVolume      = (localStorage.getItem('promoduck_bgm_volume') != null ? localStorage.getItem('promoduck_bgm_volume') / 100 : 1);
+        this.movingBG       = (localStorage.getItem('promoduck_moving_bg') != null ? localStorage.getItem('promoduck_moving_bg') == 1 : true);
+        this.screenShake    = (localStorage.getItem('promoduck_screen_shake') != null ? localStorage.getItem('promoduck_screen_shake') == 1 : true);
 
         document.querySelector('#sfx_volume').addEventListener('input', this.OnVolumeChange.bind(this));
         document.querySelector('#sfx_volume').addEventListener('change', (e) => this.OnVolumeChange(e, true));
         document.querySelector('#bgm_volume').addEventListener('input', this.OnVolumeChange.bind(this));
         document.querySelector('#bgm_volume').addEventListener('change', (e) => this.OnVolumeChange(e, true));
         document.querySelector('#moving_bg').addEventListener('input', this.OnMovingBGChange.bind(this));
+        document.querySelector('#screen_shake').addEventListener('input', this.OnSSChange.bind(this));
+        //document.querySelector('#language').addEventListener('input', this.OnLanguageChange.bind(this));
 
         document.querySelector('#settings_open').addEventListener('click', this.Open.bind(this));
         document.querySelector('#settings_background').addEventListener('click', this.Close.bind(this));
@@ -1022,6 +1025,7 @@ class Settings
         document.querySelector('#sfx_volume').value  = ~~(this.sfxVolume * 100);
         document.querySelector('#bgm_volume').value  = ~~(this.bgmVolume * 100);
         document.querySelector('#moving_bg').checked = this.movingBG;
+        document.querySelector('#screen_shake').checked = this.screenShake;
         
         this.UpdateRangeBackground(document.querySelector('#sfx_volume'), this.sfxVolume);
         this.UpdateRangeBackground(document.querySelector('#bgm_volume'), this.bgmVolume);
@@ -1032,13 +1036,12 @@ class Settings
         document.querySelector('label[for="sfx_volume"]').textContent = loc.Get('hud', 'sfx');
         document.querySelector('label[for="bgm_volume"]').textContent = loc.Get('hud', 'bgm');
         document.querySelector('label[for="moving_bg"]').textContent = loc.Get('hud', 'moving_bg');
+        document.querySelector('label[for="screen_shake"]').textContent = loc.Get('hud', 'screen_shake');
+        //document.querySelector('label[for="language"]').textContent = loc.Get('hud', 'language');
     }
 
     Open()
     {
-        if(battle != null && battle.mode.drawingLocked)
-            return;
-
         if(document.querySelector('#settings').classList.contains('visible'))
             this.Close();
         else
@@ -1099,13 +1102,26 @@ class Settings
         this.movingBG = e.target.checked;
         localStorage.setItem('promoduck_moving_bg', this.movingBG ? 1 : 0);
     }
+    OnSSChange(e)
+    {
+        this.screenShake = e.target.checked;
+        localStorage.setItem('promoduck_screen_shake', this.screenShake ? 1 : 0);
+    }
+
+    OnLanguageChange(e)
+    {
+        this.language = e.target.value;
+        loc.language = this.language;
+    }
 }
 
 class Localization
 {
     constructor()
     {
-        this.language = 'ru';
+        this.language = localStorage.getItem('promoduck_language') != null ? localStorage.getItem('promoduck_language') : 'ru';
+        if(['en', 'ru'].indexOf(this.language) == -1)
+            this.language = 'ru';
     }
 
     Get(_group, _reference)
@@ -1140,7 +1156,7 @@ window.addEventListener('load', () =>
 });
 function Ready()
 {
-    //Start();
+    Start();
 
     settings.Start();
     
@@ -1152,7 +1168,7 @@ function Start()
     document.querySelector('.preloader').style.display = 'none';
     
     battle = new Battle();
-    battle.Start();
+    battle.Start(true);
 }
 function Restart()
 {

@@ -1072,6 +1072,8 @@ class ByeAttack extends Attack
         if(_index > 1 && battle.hp > 0)
         {
             Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
+            battle.Shake(true);
+            
             battle.hp -= 4;
             if(battle.hp < 0)
                 battle.hp = 0;

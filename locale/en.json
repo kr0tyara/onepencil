@@ -9,6 +9,8 @@
             "sfx": "SFX",
             "bgm": "Music",
             "moving_bg": "Background animation",
+            "language": "Language",
+            "screen_shake": "Screen shake",
             
             "click_to_continue": "Click to continue!",
             "back": "Back",
@@ -109,7 +111,7 @@
                 "~9 out of 36 538 Tooners recommend!",
                 "~Smells like No. 2.",
                 "~PromoDuck is calculating his profits.%~Without a calculator.",
-                "~PromoDuck picks his teeth.~Or rather, he just gnaws on a toothpick..."
+                "~PromoDuck is picking his teeth.~Or rather, he's just gnawing on a toothpick..."
             ],
             "idle2": [
                 "~PromoDuck looks around nervously.",

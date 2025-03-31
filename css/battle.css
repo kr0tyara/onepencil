@@ -4,7 +4,7 @@
 	text-size-adjust: none;
 }
 
-body, .game_wrapper
+body, .game_wrapper, #battle
 {
     background-color: #edeef0;
 }
@@ -27,10 +27,6 @@ body, .game_wrapper
 
     width: 100%;
     height: 100%;
-    
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: pixelated;
 }
 
 .preloader 
@@ -170,6 +166,14 @@ body, .game_wrapper
 .icon.sfx
 {
     background-position: 0px -24px;
+}
+.icon.language
+{
+    background-position: -96px 0px;
+}
+.icon.shake
+{
+    background-position: -96px -24px;
 }
 .icon.close
 {

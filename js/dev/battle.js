@@ -734,7 +734,7 @@ class BattleTheme
         _ctx.fillStyle = '#edeef0';
         _ctx.fillRect(0, 0, _ctx.canvas.width, _ctx.canvas.height);
 
-        if(settings.movingBG)
+        if(settings.movingBG && !battle.screenShake)
         {
             this.scroll.x -= this.speed * delta;
             if(this.scroll.x <= -this.backgroundCanvas.width)
@@ -981,6 +981,10 @@ class Battle
 
         this.ending = -1;
 
+        this.screenShake = false;
+        this.shakeStrong = false;
+        this.shakeTime = 5;
+        this.shakeTimer = 0;
         //this.gameLoop = setInterval(this.GameLoop.bind(this), 1000 / 60);
     }
 
@@ -1114,7 +1118,22 @@ class Battle
         this.lastRender = _dt;
         this.GameLoop(delta);
 
+        this.ctx.save();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if(this.screenShake)
+        {
+            let shake = {
+                x: Utils.Random(-1, 1),
+                y: Utils.Random(-1, 1)
+            }
+            let t = Utils.Clamp(this.shakeTimer / this.shakeTime, 0, 1);
+            let strength = this.shakeStrong ? 3 : 2;
+            shake.x *= t * strength;
+            shake.y *= t * strength;
+
+            this.ctx.translate(shake.x, shake.y);
+        }
         
         if(this.mode.id == GAME_OVER || this.mode.id == INTRO || this.mode.id == CREDITS)
         {
@@ -1235,11 +1254,20 @@ class Battle
 
         if(this.attack != null)
             this.attack.Render(this.ctx, _dt);
+
+        this.ctx.restore();
     }
     GameLoop(_delta)
     {
         if(settings.opened)
             return;
+
+        if(this.screenShake)
+        {
+            this.shakeTimer -= 1 * _delta;
+            if(this.shakeTimer <= 0)
+                this.screenShake = false;
+        }
 
         if(this.mode.id == GAME_OVER || this.mode.id == INTRO || this.mode.id == CREDITS)
         {
@@ -1323,6 +1351,15 @@ class Battle
         }
 
         this.soul.GameLoop(_delta);
+    }
+    Shake(_strong = false)
+    {
+        if(!settings.screenShake)
+            return;
+
+        this.screenShake = true;
+        this.shakeStrong = _strong;
+        this.shakeTimer = this.shakeTime;
     }
 
     Back()
@@ -1713,6 +1750,7 @@ class Soul extends Entity
         this.invinsible = true;
 
         Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
+        battle.Shake();
     }
 
     SetSlowed(_value)

@@ -630,7 +630,10 @@ class OwnAttackMode extends DrawingMode
         
         this.hurtAnimationFinished = true;
         if(this.attackDamage > 0)
+        {
             Utils.RandomArray([res.sfx.hurt, res.sfx.hurt2]).play();
+            battle.Shake(this.attackDamage / this.currentAttack.damage > .8);
+        }
 
         let result = this.targetEnemy.Hurt(this.attackDamage);
         battle.lastActionResult = {
