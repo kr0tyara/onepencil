@@ -1156,7 +1156,7 @@ window.addEventListener('load', () =>
 });
 function Ready()
 {
-    //Start();
+    Start();
 
     settings.Start();
     
@@ -1168,7 +1168,7 @@ function Start()
     document.querySelector('.preloader').style.display = 'none';
     
     battle = new Battle();
-    battle.Start();
+    battle.Start(true);
 }
 function Restart()
 {

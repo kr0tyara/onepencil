@@ -1855,6 +1855,8 @@ class CreditsMode extends BattleMode
     constructor()
     {
         super(CREDITS);
+
+        this.scrollTime = 100;
     }
 
     Start()
@@ -1863,9 +1865,41 @@ class CreditsMode extends BattleMode
         //res.sfx.bgmGeno.pause();
 
         this.textBounds = {x1: 100, y1: 75, x2: 640, y2: 550};
+        this.scroll = 0;
+
+        this.scrollTimer = this.scrollTime;
         
         battle.ctx.font = `16px Pangolin`;
         this.text = Utils.SliceText(battle.ctx, loc.Dial('game', 'credits'), this.textBounds);
+    }
+
+    GameLoop(_delta)
+    {
+        if(this.scrollTimer > 0)
+        {
+            this.scrollTimer -= 1 * _delta;
+            return;
+        }
+
+        if(this.scroll > -950)
+        {
+            let speed = .5;
+            if(this.mouseDown)
+                speed = 5;
+
+            this.scroll -= speed * _delta;
+            this.scroll = Math.max(this.scroll, -950);
+        }
+    }
+
+    PointerDown()
+    {
+        this.mouseDown = true;
+        this.scrollTimer = 0;
+    }
+    PointerUp()
+    {
+        this.mouseDown = false;
     }
 
     Render(_ctx, _dt)
@@ -1878,60 +1912,65 @@ class CreditsMode extends BattleMode
         let bigText = false;
         let wawyText = false;
 
-        let oy = 0;
+        let oy = this.textBounds.y1 + this.scroll;
 
-        for(let i = 0; i < lines.length; i++)
-        {
-            let line = lines[i];
-            
-            let x = this.textBounds.x1;
-            let y = this.textBounds.y1 + oy;
+        _ctx.save();
+            _ctx.rect(100, 50, 600, 600);
+            _ctx.clip();
 
-            for(let j = 0; j < line.length; j++)
+            for(let i = 0; i < lines.length; i++)
             {
-                let char = line.charAt(j);
-
-                // большой тэкст
-                if(char == '^')
-                {
-                    bigText = !bigText;
-                    continue;
-                }
+                let line = lines[i];
                 
-                let offset = {x: 0, y: 0};
-                if(bigText)
+                let x = this.textBounds.x1;
+                let y = oy;
+
+                for(let j = 0; j < line.length; j++)
                 {
-                    _ctx.font = '36px Pangolin';
-                    _ctx.fillStyle = battle.theme.Outline();
-                    offset.x = 10;
-                    offset.y = 5;
-                }
-                else
-                {
-                    _ctx.font = '24px Pangolin';
-                    _ctx.fillStyle = '#666';
+                    let char = line.charAt(j);
+
+                    // большой тэкст
+                    if(char == '^')
+                    {
+                        bigText = !bigText;
+                        continue;
+                    }
+                    
+                    let offset = {x: 0, y: 0};
+                    if(bigText)
+                    {
+                        _ctx.font = '36px Pangolin';
+                        _ctx.fillStyle = battle.theme.Outline();
+                        offset.x = 10;
+                        offset.y = 5;
+                    }
+                    else
+                    {
+                        _ctx.font = '24px Pangolin';
+                        _ctx.fillStyle = '#666';
+                    }
+
+                    // волна
+                    if(char == '%')
+                    {
+                        wawyText = !wawyText;
+                        continue;
+                    }
+
+                    if(wawyText)
+                    {
+                        offset.x += Math.cos(_dt / 200 + (i + j) / 2) * 32 / 12;
+                        offset.y += -Math.sin(_dt / 200 + (i + j) / 2) * 32 / 12;
+                    }
+
+                    _ctx.fillText(char, x + offset.x, y + offset.y);
+                    x += _ctx.measureText(char).width;
                 }
 
-                // волна
-                if(char == '%')
-                {
-                    wawyText = !wawyText;
-                    continue;
-                }
-
-                if(wawyText)
-                {
-                    offset.x += Math.cos(_dt / 200 + (i + j) / 2) * 32 / 12;
-                    offset.y += -Math.sin(_dt / 200 + (i + j) / 2) * 32 / 12;
-                }
-
-                _ctx.fillText(char, x + offset.x, y + offset.y);
-                x += _ctx.measureText(char).width;
+                let metrics = battle.ctx.measureText(line);
+                oy += metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
             }
-
-            let metrics = battle.ctx.measureText(line);
-            oy += metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent;
-        }
+        _ctx.restore();
         
         if(battle.ending > 0 && battle.ending < 4)
         {
