@@ -143,6 +143,7 @@
             
             "attack_scribble": ["Attacking with your doodles, I see?", "I can do that too!", "&0"],
             "attack_scribble_2": ["#3.....", "#3..................", "#4Just a bad pencil."],
+            "attack_scribble_2_alt": ["#3.....", "#3(wait, it worked???)", "#4As you can see, I'm a great artist and I will continue to delight you with my creativity!*", "#2$* Not.$"],
             "attack_popsicle_fail": ["#DYum-yum-yum!"],
             "attack_popsicle_success": ["#DThe stick is the best part anyways!"],
 

@@ -577,9 +577,9 @@ class BallAttack extends Attack
         let tick = this.tickCount + (this.projectileTime - this.projectileTimer) / this.projectileTime;
 
         if(this.difficulty == 2)
-            this.angle = Math.PI / Utils.ReverseQuadratic(18, 30, tick * this.tails, this.count) * tick;
+            this.angle = Math.PI / Utils.ReverseQuadratic(22, 32, tick * this.tails, this.count) * tick;
         else
-            this.angle = Math.PI / Utils.ReverseQuadratic(22, 36, tick * this.tails, this.count) * tick;
+            this.angle = Math.PI / Utils.ReverseQuadratic(26, 36, tick * this.tails, this.count) * tick;
     }
 
     SpawnProjectile(_index)

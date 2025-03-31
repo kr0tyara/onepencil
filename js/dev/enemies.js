@@ -853,7 +853,7 @@ class PromoDuck extends Enemy
 
         this.drawAttempt = 0;
         this.popsicle = 0;
-        this.popsicleHP = 0;
+        this.specialAttackHP = 0;
 
         this.weakened = 0;
         this.justWeakened = false;
@@ -1099,6 +1099,7 @@ class PromoDuck extends Enemy
             if(this.drawAttempt == 0 && this.weakened == 0 && this.call == 0)
             {
                 this.drawAttempt = 1;
+                this.specialAttackHP = battle.hp;
     
                 return {
                     speech: this.Dial('attack_scribble'),
@@ -1378,7 +1379,7 @@ class PromoDuck extends Enemy
         if(this.popsicle == 0 && this.weakened == 0 && this.call == 0)
         {
             this.popsicle = 1;
-            this.popsicleHP = battle.hp;
+            this.specialAttackHP = battle.hp;
             return this.Dial('story_8');
         }
 
@@ -1452,8 +1453,15 @@ class PromoDuck extends Enemy
         {
             this.drawAttempt = 3;
 
+            if(battle.hp < this.specialAttackHP)
+            {
+                return {
+                    speech: this.Dial('attack_scribble_2_alt'),
+                };
+            }
+
             return {
-                speech: this.Dial('attack_scribble_2'),
+                speech: this.Dial('attack_scribble_2')
             };
         }
 
@@ -1461,7 +1469,7 @@ class PromoDuck extends Enemy
         {
             this.popsicle = 2;
 
-            if(battle.hp < this.popsicleHP)
+            if(battle.hp < this.specialAttackHP)
             {
                 return {
                     speech: this.Dial('attack_popsicle_fail'),
