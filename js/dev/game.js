@@ -2,6 +2,8 @@ var res,
     settings,
     loc,
     battle,
+    
+    toonioBuild = false,
 
     preloader;
 
@@ -1147,7 +1149,7 @@ window.addEventListener('click', (e) => {
 
 window.addEventListener('load', () =>
 {
-    if(window.parent && window.parent.preloader)
+    if(toonioBuild && window.parent && window.parent.preloader)
         preloader = window.parent.preloader;
     
     res = new GameResources();

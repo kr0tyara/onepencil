@@ -266,7 +266,11 @@ class PromoDuckSprite extends EnemySprite
             y: ~~(Math.sin(t) * 2.5 + bodyWobble.y)
         };
 
-        if(this.state == STATE_DEAD)
+        if(this.enemy.grave)
+        {
+            res.sheets.duck.Draw(_ctx, 'head', res.sheets.duck.GetTagFrames('tomb'), this.x, this.y);
+        }
+        else if(this.state == STATE_DEAD)
         {
             let frames = res.sheets.duck.GetTagFrames('death');
             let frame = Math.round(frames.length * this.animationTime);
@@ -865,6 +869,8 @@ class PromoDuck extends Enemy
         this.wtf = 0;
         this.dontEvenThink = 0;
 
+        this.grave = false;
+
         /*this.hp = 10;
         this.resetCounter = 15;
         this.weakened = 2;
@@ -872,6 +878,22 @@ class PromoDuck extends Enemy
         this.shielding = 1;
 
         this.resetCounter = 0;*/
+    }
+
+    AfterEnding(_ending)
+    {
+        if(_ending == 3 || _ending == 4)
+        {
+            battle.theme.Swap({r: 0, g: 0, b: 0}, {r: 170, g: 170, b: 170}, true);
+            this.grave = true;
+            this.alive = false;
+            this.weakened = 5;
+            
+            this.actions = [...this.killedActions];
+
+            if(_ending == 4)
+                this.sprite.stakeShown = false;
+        }
     }
 
     GetAttack()
@@ -928,6 +950,11 @@ class PromoDuck extends Enemy
 
     Idle()
     {
+        if(this.grave)
+            return {
+                text: this.Dial('idle_grave')
+            };
+
         if(this.signed == 3)
             return {
                 text: this.Dial('idle_signed_alt')

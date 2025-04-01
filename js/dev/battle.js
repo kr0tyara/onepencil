@@ -1008,7 +1008,13 @@ class Battle
     {
         this.ending = _id;
 
-        if(window.parent && window.parent.game)
+        let savedEnding = localStorage.getItem('promoduck_ending');
+        if(savedEnding == 3 || savedEnding == 4)
+            return;
+        
+        localStorage.setItem('promoduck_ending', _id);
+
+        if(toonioBuild && window.parent && window.parent.game)
         {
             window.parent.game.Ending(_id);
         }
@@ -1033,10 +1039,26 @@ class Battle
         for(let i in this.enemies)
             this.enemies[i].Start();
 
-        if(_restart)
-            this.Begin();
+        let ending = localStorage.getItem('promoduck_ending');
+
+        if(ending != null)
+            this.enemies[0].AfterEnding(ending);
+        
+        if(ending != null && (ending == 3 || ending == 4))
+        {
+            this.finished = true;
+            this.ending = ending;
+            this.SetMode(IDLE);
+            
+            this.inventory.length = 0;
+        }
         else
-            this.Intro();
+        {
+            if(_restart)
+                this.Begin();
+            else
+                this.Intro();
+        }
 
         //this.SetMode(ATTACK);
         //this.Attack();

@@ -129,6 +129,7 @@
             "idle_geno2": ["~The last thing he has left.~This is the time to rethink what you're doing."],
             "idle_geno3": ["~..."],
             "idle_shield_deal": ["~(Wait just a little longer!)"],
+            "idle_grave": ["~You're approaching the grave.~After all, the criminal always returns to the scene of the crime."],
 
             "weakened": ["^L-listen up...^", "I see, you're a master of your pencil and all that...", "B-but I'm not your ^punching bag^, I'm a living creature.", "J-just wait until the bid resets, promote your art for one pencil, and it all will resolve peacefully.", "T-that's why you're here%, is it not?"],
             "weakened_alt": ["^L-listen up...^", "I see, you're a master of your pencil and all that...", "B-but I'm not your ^punching bag^, I'm a living creature.", "Quacky Vision is already free, so just promote your art and we'll go our separate ways peacefully.", "T-that's why you're here%, is it not?"],
