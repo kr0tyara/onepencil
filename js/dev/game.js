@@ -408,8 +408,8 @@ class GameResources
         this.sheetNames = 
         {
             duck: {
-                img: 'duck.png',
-                json: 'duck.json',
+                img: 'duck.png?v=2',
+                json: 'duck.json?v=2',
             },
             triangle: {
                 img: 'triangle.png',
@@ -1020,7 +1020,7 @@ class Settings
         document.querySelector('#bgm_volume').addEventListener('change', (e) => this.OnVolumeChange(e, true));
         document.querySelector('#moving_bg').addEventListener('input', this.OnMovingBGChange.bind(this));
         document.querySelector('#screen_shake').addEventListener('input', this.OnSSChange.bind(this));
-        //document.querySelector('#language').addEventListener('input', this.OnLanguageChange.bind(this));
+        document.querySelector('#language').addEventListener('input', this.OnLanguageChange.bind(this));
 
         document.querySelector('#settings_open').addEventListener('click', this.Open.bind(this));
         document.querySelector('#settings_background').addEventListener('click', this.Close.bind(this));
@@ -1033,6 +1033,12 @@ class Settings
         
         this.UpdateRangeBackground(document.querySelector('#sfx_volume'), this.sfxVolume);
         this.UpdateRangeBackground(document.querySelector('#bgm_volume'), this.bgmVolume);
+
+        let languages = [...document.querySelectorAll('#language option')];
+        for(let i in languages)
+        {
+            languages[i].selected = languages[i].value == loc.language;
+        }
     }
 
     Start()
@@ -1041,7 +1047,8 @@ class Settings
         document.querySelector('label[for="bgm_volume"]').textContent = loc.Get('hud', 'bgm');
         document.querySelector('label[for="moving_bg"]').textContent = loc.Get('hud', 'moving_bg');
         document.querySelector('label[for="screen_shake"]').textContent = loc.Get('hud', 'screen_shake');
-        //document.querySelector('label[for="language"]').textContent = loc.Get('hud', 'language');
+
+        document.querySelector('#progress').textContent = loc.Get('hud', 'click_to_start');
     }
 
     Open()
@@ -1116,6 +1123,9 @@ class Settings
     {
         this.language = e.target.value;
         loc.language = this.language;
+        localStorage.setItem('promoduck_language', this.language);
+
+        this.Start();
     }
 }
 
@@ -1123,9 +1133,9 @@ class Localization
 {
     constructor()
     {
-        this.language = document.querySelector('html').lang != null ? document.querySelector('html').lang : 'ru';
+        this.language = (localStorage.getItem('promoduck_language') != null ? localStorage.getItem('promoduck_language') : 'en');
         if(['en', 'ru'].indexOf(this.language) == -1)
-            this.language = 'ru';
+            this.language = 'en';
     }
 
     Get(_group, _reference)
@@ -1139,13 +1149,6 @@ class Localization
 }
 
 let started = false;
-window.addEventListener('click', (e) => {
-    if(started)
-        return;
-    
-    if(res.ready)
-        Start();
-});
 
 window.addEventListener('load', () =>
 {
@@ -1160,6 +1163,14 @@ window.addEventListener('load', () =>
 
     res.onReady = Ready;
     res.onProgress = Progress;
+
+    document.querySelector('#preloader_bg').addEventListener('click', (e) => {
+        if(started)
+            return;
+        
+        if(res.ready)
+            Start();
+    });
 });
 function Ready()
 {
@@ -1168,8 +1179,6 @@ function Ready()
         preloader.Hide();
 
     settings.Start();
-    
-    document.querySelector('#progress').textContent = loc.Get('hud', 'click_to_start');
 }
 function Start()
 {
