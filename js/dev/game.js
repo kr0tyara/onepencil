@@ -1,7 +1,9 @@
 var res,
     settings,
     loc,
-    battle;
+    battle,
+
+    preloader;
 
 const   IDLE = 0,
         PRE_ATTACK = 1,
@@ -1119,7 +1121,7 @@ class Localization
 {
     constructor()
     {
-        this.language = localStorage.getItem('promoduck_language') != null ? localStorage.getItem('promoduck_language') : 'ru';
+        this.language = document.querySelector('html').lang != null ? document.querySelector('html').lang : 'ru';
         if(['en', 'ru'].indexOf(this.language) == -1)
             this.language = 'ru';
     }
@@ -1145,6 +1147,9 @@ window.addEventListener('click', (e) => {
 
 window.addEventListener('load', () =>
 {
+    if(window.parent && window.parent.preloader)
+        preloader = window.parent.preloader;
+    
     res = new GameResources();
     res.Load();
 
@@ -1157,6 +1162,8 @@ window.addEventListener('load', () =>
 function Ready()
 {
     //Start();
+    if(preloader)
+        preloader.Hide();
 
     settings.Start();
     
@@ -1190,5 +1197,8 @@ function Restart()
 }
 function Progress(i)
 {
+    if(preloader)
+        preloader.UpdateProgress('Loading...', i);
+
     document.querySelector('#progress').textContent = `${~~(i * 100)}%`;
 }

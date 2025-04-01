@@ -519,7 +519,7 @@ class BattleUI
             this.buttons = [
                 {name: loc.Get('hud', 'back'), modes: [IDLE], index: {x: 1, y: 2}, action: battle.Back.bind(battle), back: true},
                 {name: loc.Get('hud', 'attack'), modes: [OWN_ATTACK], index: {x: 0, y: 0}, action: battle.OwnAttack.bind(battle)},
-                {name: loc.Get('hud', 'act'), modes: [ACT, DRAW], index: {x: 1, y: 0}, action: battle.Act.bind(battle)},
+                {name: loc.Get('hud', 'act'), modes: [ACT, DRAW], index: {x: 1, y: 0}, action: battle.Act.bind(battle), act: true},
                 {name: loc.Get('hud', 'items'), modes: [ITEMS], index: {x: 0, y: 1}, action: battle.Items.bind(battle)},
             ];
 
@@ -591,10 +591,26 @@ class BattleUI
             if(button.back && (battle.mode.locked || battle.mode.drawingLocked || battle.mode.id == IDLE))
                 continue;
 
+            let highlighted = false;
+            if(button.act)
+            {
+                for(let i in battle.enemies)
+                {
+                    for(let j in battle.enemies[i].actions)
+                    {
+                        if(battle.enemies[i].actions[j].highlighted)
+                        {
+                            highlighted = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
             if(target == button || button.modes.indexOf(battle.mode.id) != -1)
-                _ctx.fillStyle = _ctx.strokeStyle = '#0d85f3';
+                _ctx.fillStyle = _ctx.strokeStyle = (highlighted ? '#FFC13D' : '#0d85f3');
             else if(battle.mode.id == IDLE || !battle.mode.locked && !battle.mode.drawingLocked)
-                _ctx.fillStyle = _ctx.strokeStyle = battle.theme.Outline();
+                _ctx.fillStyle = _ctx.strokeStyle = (highlighted ? '#ff6a00' : battle.theme.Outline());
             else
                 _ctx.fillStyle = _ctx.strokeStyle = '#aaa';
 
@@ -991,6 +1007,11 @@ class Battle
     SetEnding(_id)
     {
         this.ending = _id;
+
+        if(window.parent && window.parent.game)
+        {
+            window.parent.game.Ending(_id);
+        }
     }
 
     Destroy()

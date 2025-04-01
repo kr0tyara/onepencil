@@ -115,10 +115,10 @@
             ],
             "idle2": [
                 "~PromoDuck looks around nervously.",
-                "~PromoDuck loses his feathers.",
+                "~PromoDuck is losing his feathers.",
                 "~PromoDuck is... praying???%%%~...or perhaps you just misheard it.",
                 "~Smells like wet chicken nuggets and sawdust.",
-                "~PromoDuck cancels all meetings.%~Even for the next year."
+                "~PromoDuck is canceling all meetings.%~Even for the next year."
             ],
             "idle_signed": ["Your art is finally on Quacky Vision!~However, you don't have a pencil anymore..."],
             "idle_signed_alt": ["Tough luck..."],
@@ -126,7 +126,7 @@
             "idle_weakened": ["~(If I were you, I would listen to him.)"],
             "idle_tutorial": ["~(Redraw the spell according to the template without releasing the pencil to attack!)"],
             "idle_geno": ["~PromoDuck called for backup."],
-            "idle_geno2": ["~The last thing he has left."],
+            "idle_geno2": ["~The last thing he has left.~This is the time to rethink what you're doing."],
             "idle_geno3": ["~..."],
             "idle_shield_deal": ["~(Wait just a little longer!)"],
 
@@ -198,7 +198,7 @@
             "story_8": ["Psst, how do you like my supervillain speech? I've been preparing it for a month!", "I hope that when our club finally gathers to play \"Sandboxes and Dragoons\" again, they'll like it...", "And, welp...~I'm running out of attack ideas...", "#CHow about a popsicle break?*", "#2$* The popsicle will be consumed by %me.$"],
             "story_8_alt": ["Unless, you're here to% ^kill me^."],
 
-            "geno_phone": ["#6...", "#6^(I n-need help...)^"],
+            "geno_phone": ["D-do you even realize that you're @1^killing me?^@~It's n-not a game.", ".%.%.", "^(n-no reaction?...)^", "#6...", "#6^(I n-need help...)^"],
             "geno_phone_2": ["#6(Hello?!... Anyone??!!!)", "#A(^Where the heck is he?!^)", "(^...^)", "(I guess I can't wait for him ^any longer...^)", "(But% what% if?%....)", "&0"],
             "geno_break": ["&0", "^. % . % .^"],
 
