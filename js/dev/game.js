@@ -831,6 +831,10 @@ class GameResources
 
 class Utils
 {
+    static Lerp(_a, _b, i)
+    {
+        return (1 - i) * _a + i * _b;
+    }
     static Random(_min, _max)
     {
         return Math.random() * (_max - _min) + _min;

@@ -55,6 +55,7 @@ body, .game_wrapper, #battle
 
     user-select: none;
     text-align: center;
+    pointer-events: none;
 }
 
 .settings

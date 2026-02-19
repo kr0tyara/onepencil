@@ -1,0 +1,31 @@
+<?xml version="1.0" standalone="no" ?>
+<!DOCTYPE project PUBLIC "-//audacityproject-1.3.0//DTD//EN" "http://audacity.sourceforge.net/xml/audacityproject-1.3.0.dtd" >
+<project xmlns="http://audacity.sourceforge.net/xml/" projname="book flopping around 1_data" version="1.3.0" audacityversion="2.4.2" sel0="1.3187232143" sel1="1.8951190476" vpos="0" h="0.0000000000" zoom="841.1776487082" rate="48000.0" snapto="off" selectionformat="hh:mm:ss + milliseconds" frequencyformat="Hz" bandwidthformat="octaves">
+	<tags/>
+	<wavetrack name="book flopping around 1" isSelected="1" height="150" minimized="0" channel="2" linked="0" mute="0" solo="0" rate="48000" gain="1.0" pan="0.0" colorindex="0">
+		<waveclip offset="1.31872321" colorindex="0">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="27667">
+				<waveblock start="0">
+					<simpleblockfile filename="e0808e3b.au" len="27667" min="-0.733552" max="0.762682" rms="0.090782"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+		<waveclip offset="0.00000000" colorindex="0">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="15749">
+				<waveblock start="0">
+					<simpleblockfile filename="e0808c81.au" len="15749" min="-0.712847" max="0.595284" rms="0.090822"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+		<waveclip offset="0.32810417" colorindex="0">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="19075">
+				<waveblock start="0">
+					<simpleblockfile filename="e08086d8.au" len="19075" min="-0.160459" max="0.153086" rms="0.017475"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+</project>
